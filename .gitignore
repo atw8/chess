@@ -1,1 +1,3 @@
 /node_modules/
+/client_dist/bundle.js
+/client_dist/bundle.js.map
