@@ -1,0 +1,1 @@
+{"version":3,"file":"GameTimeInfinite.js","sourceRoot":"","sources":["GameTimeInfinite.ts"],"names":[],"mappings":";;AAAA,yDAAmD;AACnD,iDAA4C;AAI5C,sBAA8B,SAAQ,mCAAgB;IAC3C,eAAe;QAClB,OAAO,2BAAY,CAAC,QAAQ,CAAC;IACjC,CAAC;IAEM,cAAc,CAAC,QAAmB,EAAE,SAAkB;QACzD,OAAO,MAAM,CAAC,SAAS,CAAC;IAC5B,CAAC;IAED;QACI,KAAK,EAAE,CAAC;IACZ,CAAC;CAEJ;AAbD,4CAaC"}
