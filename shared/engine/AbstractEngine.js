@@ -297,7 +297,7 @@ class AbstractEngine {
                         destFileRanks.push(normalMoveFileRank);
                     }
                 }
-                normalMoveFileRank = FileRank_1.FileRank.addFileRank(normalMoveFileRank, moveVector);
+                normalMoveFileRank.addFileRank(moveVector);
             }
         };
         for (let i = 0; i < moveVectors.length; i++) {
@@ -380,7 +380,7 @@ class AbstractEngine {
             }
             let normalMoveFileRank = FileRank_1.FileRank.addFileRank(originFileRank, moveVector);
             while (this.pruneFileRankHelper(normalMoveFileRank, normalMovePruneFunctions)) {
-                normalMoveFileRank = FileRank_1.FileRank.addFileRank(normalMoveFileRank, moveVector);
+                normalMoveFileRank.addFileRank(moveVector);
             }
             let captureMoveFileRank = normalMoveFileRank;
             if (destFileRank !== null) {
@@ -488,7 +488,7 @@ class AbstractEngine {
                         destFileRanks.push(normalMoveFileRank);
                     }
                 }
-                normalMoveFileRank = FileRank_1.FileRank.addFileRank(normalMoveFileRank, moveVector);
+                normalMoveFileRank.addFileRank(moveVector);
             }
             let captureMoveFileRank = normalMoveFileRank;
             if (destFileRank !== null) {
@@ -593,7 +593,7 @@ class AbstractEngine {
                         destFileRanks.push(normalMoveFileRank);
                     }
                 }
-                normalMoveFileRank = FileRank_1.FileRank.addFileRank(normalMoveFileRank, moveVector);
+                normalMoveFileRank.addFileRank(moveVector);
             }
         };
         for (let i = 0; i < moveVectors.length; i++) {
@@ -656,13 +656,13 @@ class AbstractEngine {
             return gradVec;
         }
         let gradVec = getGradVec(diffVec);
-        let startPos = new FileRank_1.FileRank(pos1.x, pos1.y);
+        let startPos = pos1.clone();
         if (!leftInclusive) {
-            startPos = FileRank_1.FileRank.addFileRank(startPos, gradVec);
+            startPos.addFileRank(gradVec);
         }
-        let endPos = new FileRank_1.FileRank(pos2.x, pos2.y);
+        let endPos = pos2.clone();
         if (!rightInclusive) {
-            endPos = FileRank_1.FileRank.subFileRank(endPos, gradVec);
+            endPos.subFileRank(gradVec);
         }
         {
             let tmpDiffVec = FileRank_1.FileRank.subFileRank(endPos, startPos);
@@ -674,7 +674,7 @@ class AbstractEngine {
         let ret = [];
         while (AbstractEngine.fileRankNotEqual(startPos, endPos)) {
             ret.push(startPos);
-            startPos = FileRank_1.FileRank.addFileRank(startPos, gradVec);
+            startPos.addFileRank(gradVec);
         }
         ret.push(startPos);
         return ret;

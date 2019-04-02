@@ -375,7 +375,7 @@ export class AbstractEngine {
                     }
                 }
 
-                normalMoveFileRank = FileRank.addFileRank(normalMoveFileRank, moveVector);
+                normalMoveFileRank.addFileRank(moveVector);
             }
         };
 
@@ -484,7 +484,7 @@ export class AbstractEngine {
 
             let normalMoveFileRank = FileRank.addFileRank(originFileRank, moveVector);
             while(this.pruneFileRankHelper(normalMoveFileRank, normalMovePruneFunctions)){
-                normalMoveFileRank = FileRank.addFileRank(normalMoveFileRank, moveVector);
+                normalMoveFileRank.addFileRank(moveVector);
             }
 
             let captureMoveFileRank = normalMoveFileRank;
@@ -623,7 +623,7 @@ export class AbstractEngine {
                     }
                 }
 
-                normalMoveFileRank = FileRank.addFileRank(normalMoveFileRank, moveVector);
+                normalMoveFileRank.addFileRank(moveVector);
             }
 
             let captureMoveFileRank = normalMoveFileRank;
@@ -760,7 +760,7 @@ export class AbstractEngine {
                     }
                 }
 
-                normalMoveFileRank = FileRank.addFileRank(normalMoveFileRank, moveVector);
+                normalMoveFileRank.addFileRank(moveVector);
             }
         };
 
@@ -856,14 +856,14 @@ export class AbstractEngine {
 
 
 
-        let startPos = new FileRank(pos1.x, pos1.y);
+        let startPos = pos1.clone();
         if(!leftInclusive){
-            startPos = FileRank.addFileRank(startPos, gradVec);
+            startPos.addFileRank(gradVec);
         }
 
-        let endPos = new FileRank(pos2.x, pos2.y);
+        let endPos = pos2.clone();
         if(!rightInclusive){
-            endPos = FileRank.subFileRank(endPos, gradVec);
+            endPos.subFileRank(gradVec);
         }
 
         {
@@ -880,7 +880,7 @@ export class AbstractEngine {
         let ret = [];
         while(AbstractEngine.fileRankNotEqual(startPos, endPos)){
             ret.push(startPos);
-            startPos = FileRank.addFileRank(startPos, gradVec);
+            startPos.addFileRank(gradVec);
         }
         ret.push(startPos);
 
