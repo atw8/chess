@@ -14,4 +14,10 @@ export class FileRank {
     public static addFileRank(fileRank1 : FileRank, fileRank2 : FileRank):FileRank {
         return new FileRank(fileRank1.x + fileRank2.x, fileRank1.y + fileRank2.y);
     }
+
+    public static subFileRank(fileRank1 : FileRank, fileRank2 : FileRank):FileRank {
+        return new FileRank(fileRank1.x - fileRank2.x, fileRank1.x - fileRank2.y);
+    }
+
+
 }

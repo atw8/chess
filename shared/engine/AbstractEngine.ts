@@ -282,14 +282,6 @@ export class AbstractEngine {
 
 
     //Helper functions to deal with the different fairies
-    public fileRankSubMoveVector(oldFileRank : FileRank, moveVector : FileRank):FileRank{
-        let newFileRank = new FileRank(oldFileRank.x - moveVector["x"], oldFileRank.y - moveVector["y"]);
-
-        return newFileRank;
-    };
-
-
-
     public getDestFileRankFromOriginFileRankMoveVector(oldFileRank : FileRank, moveVectors : FileRank[]) :FileRank[]{
         let newFileRanks = [];
 
@@ -832,7 +824,8 @@ export class AbstractEngine {
 
     public getFileRankList(pos1 : FileRank, pos2 : FileRank, leftInclusive : boolean, rightInclusive : boolean) : FileRank[]{
         //let diffVec = { x : pos2.x - pos1.x, y : pos2.y - pos1.y};
-        let diffVec = this.fileRankSubMoveVector(pos2, pos1);
+        let diffVec = FileRank.subFileRank(pos2, pos1);
+
 
         if(diffVec["x"] !== diffVec["y"]){
             if(diffVec["x"] !== 0 && diffVec["y"] !== 0){
@@ -870,11 +863,11 @@ export class AbstractEngine {
 
         let endPos = new FileRank(pos2.x, pos2.y);
         if(!rightInclusive){
-            endPos = this.fileRankSubMoveVector(endPos, gradVec);
+            endPos = FileRank.subFileRank(endPos, gradVec);
         }
 
         {
-            let tmpDiffVec = this.fileRankSubMoveVector(endPos, startPos);
+            let tmpDiffVec = FileRank.subFileRank(endPos, startPos);
 
             let tmpGradVec = getGradVec(tmpDiffVec);
 

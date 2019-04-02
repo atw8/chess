@@ -214,11 +214,6 @@ class AbstractEngine {
     }
     ;
     //Helper functions to deal with the different fairies
-    fileRankSubMoveVector(oldFileRank, moveVector) {
-        let newFileRank = new FileRank_1.FileRank(oldFileRank.x - moveVector["x"], oldFileRank.y - moveVector["y"]);
-        return newFileRank;
-    }
-    ;
     getDestFileRankFromOriginFileRankMoveVector(oldFileRank, moveVectors) {
         let newFileRanks = [];
         for (let i = 0; i < moveVectors.length; i++) {
@@ -638,7 +633,7 @@ class AbstractEngine {
     }
     getFileRankList(pos1, pos2, leftInclusive, rightInclusive) {
         //let diffVec = { x : pos2.x - pos1.x, y : pos2.y - pos1.y};
-        let diffVec = this.fileRankSubMoveVector(pos2, pos1);
+        let diffVec = FileRank_1.FileRank.subFileRank(pos2, pos1);
         if (diffVec["x"] !== diffVec["y"]) {
             if (diffVec["x"] !== 0 && diffVec["y"] !== 0) {
                 return [];
@@ -667,10 +662,10 @@ class AbstractEngine {
         }
         let endPos = new FileRank_1.FileRank(pos2.x, pos2.y);
         if (!rightInclusive) {
-            endPos = this.fileRankSubMoveVector(endPos, gradVec);
+            endPos = FileRank_1.FileRank.subFileRank(endPos, gradVec);
         }
         {
-            let tmpDiffVec = this.fileRankSubMoveVector(endPos, startPos);
+            let tmpDiffVec = FileRank_1.FileRank.subFileRank(endPos, startPos);
             let tmpGradVec = getGradVec(tmpDiffVec);
             if (tmpGradVec["x"] !== gradVec["x"] || tmpGradVec["y"] !== gradVec["y"]) {
                 return [];

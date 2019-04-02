@@ -11,6 +11,9 @@ class FileRank {
     static addFileRank(fileRank1, fileRank2) {
         return new FileRank(fileRank1.x + fileRank2.x, fileRank1.y + fileRank2.y);
     }
+    static subFileRank(fileRank1, fileRank2) {
+        return new FileRank(fileRank1.x - fileRank2.x, fileRank1.x - fileRank2.y);
+    }
 }
 exports.FileRank = FileRank;
 //# sourceMappingURL=FileRank.js.map
