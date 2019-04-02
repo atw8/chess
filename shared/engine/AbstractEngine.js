@@ -5,42 +5,6 @@ const FileRank_1 = require("./FileRank");
 const FairyType_1 = require("./Fairy/FairyType");
 class AbstractEngine {
     constructor(numOfFiles, numOfRanks, pieceSet, sideSet) {
-        this.isRay = function (origin, dest, vector) {
-            let originX = origin["fileNumber"];
-            let originY = origin["rank"];
-            let destX = dest["fileNumber"];
-            let destY = dest["rank"];
-            let vecX = vector["x"];
-            let vecY = vector["y"];
-            let ret = false;
-            if (vecX === 0 && vecY === 0) {
-                ret = (originX === destX) && (originY === destY);
-            }
-            else if (vecX === 0 && vecY !== 0) {
-                if (originX === destX) {
-                    let tY = (destY - originY) / vecY;
-                    ret = tY > 0;
-                }
-                else {
-                    ret = false;
-                }
-            }
-            else if (vecX !== 0 && vecY === 0) {
-                if (originY === destY) {
-                    let tX = (destX - originX) / vecX;
-                    ret = tX > 0;
-                }
-                else {
-                    ret = false;
-                }
-            }
-            else if (vecX !== 0 && vecY !== 0) {
-                let tX = (destX - originX) / vecX;
-                let tY = (destY - originY) / vecY;
-                ret = (tX === tY) && (tX > 0) && (tY > 0);
-            }
-            return ret;
-        };
         this.numOfFiles = numOfFiles;
         this.numOfRanks = numOfRanks;
         this.pieceSet = pieceSet;
@@ -134,11 +98,11 @@ class AbstractEngine {
     }
     ;
     isFileRankLegal(pos) {
-        return !(pos["fileNumber"] < 1 || pos["fileNumber"] > this.getNumOfFiles() || pos["rank"] < 1 || pos["rank"] > this.getNumOfRanks());
+        return !(pos.x < 1 || pos.x > this.getNumOfFiles() || pos.y < 1 || pos.y > this.getNumOfRanks());
     }
     ;
     static fileRankEqual(fileRank1, fileRank2) {
-        return fileRank1["fileNumber"] == fileRank2["fileNumber"] && fileRank1["rank"] == fileRank2["rank"];
+        return fileRank1.x == fileRank2.x && fileRank1.y == fileRank2.y;
     }
     ;
     static fileRankNotEqual(fileRank1, fileRank2) {
@@ -201,7 +165,7 @@ class AbstractEngine {
     getPieceForFileRank(pos) {
         let ret = null;
         if (this.isFileRankLegal(pos)) {
-            ret = this.fileRankPieces[pos["fileNumber"]][pos["rank"]];
+            ret = this.fileRankPieces[pos.x][pos.y];
         }
         else {
             ret = null;
@@ -210,7 +174,7 @@ class AbstractEngine {
     }
     ;
     setPieceForFileRank(pos, piece) {
-        let oldPiece = this.fileRankPieces[pos["fileNumber"]][pos["rank"]];
+        let oldPiece = this.fileRankPieces[pos.x][pos.y];
         if (oldPiece !== null) {
             let sideType = oldPiece.getSideType();
             let pieceType = oldPiece.getPieceType();
@@ -218,7 +182,7 @@ class AbstractEngine {
             let squareArrayIndex = null;
             for (let i = 0; i < squareArray.length; i++) {
                 let square = squareArray[i];
-                if (square["fileNumber"] === pos["fileNumber"] && square["rank"] === pos["rank"]) {
+                if (square.x === pos.x && square.y === pos.y) {
                     squareArrayIndex = i;
                 }
             }
@@ -231,7 +195,7 @@ class AbstractEngine {
             let pieceType = piece.getPieceType();
             this.pieceToSquareMap[sideType][pieceType].push(pos);
         }
-        this.fileRankPieces[pos["fileNumber"]][pos["rank"]] = piece;
+        this.fileRankPieces[pos.x][pos.y] = piece;
     }
     ;
     getMoveClassForOriginDest(originFileRank, destFileRank) {
@@ -251,12 +215,12 @@ class AbstractEngine {
     ;
     //Helper functions to deal with the different fairies
     fileRankSubMoveVector(oldFileRank, moveVector) {
-        let newFileRank = new FileRank_1.FileRank(oldFileRank["fileNumber"] - moveVector["x"], oldFileRank["rank"] - moveVector["y"]);
+        let newFileRank = new FileRank_1.FileRank(oldFileRank.x - moveVector["x"], oldFileRank.y - moveVector["y"]);
         return newFileRank;
     }
     ;
     fileRankAddMoveVector(oldFileRank, moveVector) {
-        let newFileRank = new FileRank_1.FileRank(oldFileRank["fileNumber"] + moveVector["x"], oldFileRank["rank"] + moveVector["y"]);
+        let newFileRank = new FileRank_1.FileRank(oldFileRank.x + moveVector["x"], oldFileRank.y + moveVector["y"]);
         return newFileRank;
     }
     ;
@@ -267,6 +231,43 @@ class AbstractEngine {
             newFileRanks.push(this.fileRankAddMoveVector(oldFileRank, moveVector));
         }
         return newFileRanks;
+    }
+    ;
+    isRay(origin, dest, vector) {
+        let originX = origin.x;
+        let originY = origin.y;
+        let destX = dest.x;
+        let destY = dest.y;
+        let vecX = vector["x"];
+        let vecY = vector["y"];
+        let ret = false;
+        if (vecX === 0 && vecY === 0) {
+            ret = (originX === destX) && (originY === destY);
+        }
+        else if (vecX === 0 && vecY !== 0) {
+            if (originX === destX) {
+                let tY = (destY - originY) / vecY;
+                ret = tY > 0;
+            }
+            else {
+                ret = false;
+            }
+        }
+        else if (vecX !== 0 && vecY === 0) {
+            if (originY === destY) {
+                let tX = (destX - originX) / vecX;
+                ret = tX > 0;
+            }
+            else {
+                ret = false;
+            }
+        }
+        else if (vecX !== 0 && vecY !== 0) {
+            let tX = (destX - originX) / vecX;
+            let tY = (destY - originY) / vecY;
+            ret = (tX === tY) && (tX > 0) && (tY > 0);
+        }
+        return ret;
     }
     ;
     //The function that deal with normal fairy moves
@@ -641,14 +642,15 @@ class AbstractEngine {
         return this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
     }
     getFileRankList(pos1, pos2, leftInclusive, rightInclusive) {
-        let diffVec = { x: pos2["fileNumber"] - pos1["fileNumber"], y: pos2["rank"] - pos1["rank"] };
+        //let diffVec = { x : pos2.x - pos1.x, y : pos2.y - pos1.y};
+        let diffVec = this.fileRankSubMoveVector(pos2, pos1);
         if (diffVec["x"] !== diffVec["y"]) {
             if (diffVec["x"] !== 0 && diffVec["y"] !== 0) {
                 return [];
             }
         }
         function getGradVec(diffVec) {
-            let gradVec = { x: 0, y: 0 };
+            let gradVec = new FileRank_1.FileRank(0, 0);
             if (diffVec["x"] === 0) {
                 gradVec["x"] = 0;
             }
@@ -664,16 +666,16 @@ class AbstractEngine {
             return gradVec;
         }
         let gradVec = getGradVec(diffVec);
-        let startPos = { fileNumber: pos1["fileNumber"], rank: pos1["rank"] };
+        let startPos = new FileRank_1.FileRank(pos1.x, pos1.y);
         if (!leftInclusive) {
             startPos = this.fileRankAddMoveVector(startPos, gradVec);
         }
-        let endPos = { fileNumber: pos2["fileNumber"], rank: pos2["rank"] };
+        let endPos = new FileRank_1.FileRank(pos2.x, pos2.y);
         if (!rightInclusive) {
             endPos = this.fileRankSubMoveVector(endPos, gradVec);
         }
         {
-            let tmpDiffVec = { x: endPos["fileNumber"] - startPos["fileNumber"], y: endPos["rank"] - startPos["rank"] };
+            let tmpDiffVec = this.fileRankSubMoveVector(endPos, startPos);
             let tmpGradVec = getGradVec(tmpDiffVec);
             if (tmpGradVec["x"] !== gradVec["x"] || tmpGradVec["y"] !== gradVec["y"]) {
                 return [];
@@ -767,7 +769,7 @@ class AbstractEngine {
         return this.moveClasses.length;
     }
     getHashForFileRank(fileRank) {
-        let hash = (fileRank["rank"] - 1) * this.getNumOfFiles() + (fileRank["fileNumber"] - 1);
+        let hash = (fileRank.y - 1) * this.getNumOfFiles() + (fileRank.x - 1);
         return hash;
     }
 }

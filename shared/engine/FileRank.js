@@ -1,9 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class FileRank {
-    constructor(fileNumber, rank) {
-        this.fileNumber = fileNumber;
-        this.rank = rank;
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    clone() {
+        return new FileRank(this.x, this.y);
     }
 }
 exports.FileRank = FileRank;

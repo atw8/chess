@@ -1,9 +1,13 @@
 export class FileRank {
-    public fileNumber : number;
-    public rank : number;
+    public x : number;
+    public y : number;
 
-    constructor(fileNumber : number, rank : number){
-        this.fileNumber = fileNumber;
-        this.rank = rank;
+    constructor(x : number, y : number){
+        this.x = x;
+        this.y = y;
+    }
+
+    public clone():FileRank{
+        return new FileRank(this.x, this.y);
     }
 }

@@ -53,7 +53,7 @@ export class ChessEngine extends  AbstractEngine {
         return 8;
     }
     public static getHashForFileRank(fileRank: FileRank): number {
-        let hash = (fileRank["rank"] - 1) * ChessEngine.getNumOfFiles() + (fileRank["fileNumber"] - 1);
+        let hash = (fileRank.y - 1) * ChessEngine.getNumOfFiles() + (fileRank.x - 1);
 
         return hash;
     }
@@ -100,14 +100,14 @@ export class ChessEngine extends  AbstractEngine {
             let whitePawnNormalFairy = new FairyLeaper();
             let whitePawnCaptureFairy = new FairyLeaper();
 
-            blackPawnNormalFairy.addVector({x:0, y:-1});
-            whitePawnNormalFairy.addVector({x:0, y:1});
+            blackPawnNormalFairy.addVector(new FileRank(0, -1));
+            whitePawnNormalFairy.addVector(new FileRank(0, 1));
 
-            blackPawnCaptureFairy.addVector({x:-1, y:-1});
-            blackPawnCaptureFairy.addVector({x:1, y:-1});
+            blackPawnCaptureFairy.addVector(new FileRank(-1, -1));
+            blackPawnCaptureFairy.addVector(new FileRank(1, -1));
 
-            whitePawnCaptureFairy.addVector({x:-1, y:1});
-            whitePawnCaptureFairy.addVector({x:1, y:1});
+            whitePawnCaptureFairy.addVector(new FileRank(-1, 1));
+            whitePawnCaptureFairy.addVector(new FileRank(1, 1));
 
             this.normalFairy[SideType.WHITE][PieceType.PAWN] = whitePawnNormalFairy;
             this.normalFairy[SideType.BLACK][PieceType.PAWN] = blackPawnNormalFairy;
@@ -120,14 +120,14 @@ export class ChessEngine extends  AbstractEngine {
         //IMPLEMENT THE KNIGHT FAIRY
         {
             let knightFairy = new FairyLeaper();
-            knightFairy.addVector({ x : 1, y : 2});
-            knightFairy.addVector({ x : 2, y : 1});
-            knightFairy.addVector({ x : 2, y : -1});
-            knightFairy.addVector({ x : 1, y : -2});
-            knightFairy.addVector({ x : -1, y : -2});
-            knightFairy.addVector({ x : -2, y : -1});
-            knightFairy.addVector({ x : -2, y : 1});
-            knightFairy.addVector({ x : -1, y : 2});
+            knightFairy.addVector(new FileRank(1, 2));
+            knightFairy.addVector(new FileRank(2, 1));
+            knightFairy.addVector(new FileRank(2, -1));
+            knightFairy.addVector(new FileRank(1, -2));
+            knightFairy.addVector(new FileRank(-1, -2));
+            knightFairy.addVector(new FileRank(-2, -1));
+            knightFairy.addVector(new FileRank(-2, 1));
+            knightFairy.addVector(new FileRank(-1, 2));
 
             this.captureFairy[SideType.WHITE][PieceType.KNIGHT] = knightFairy;
             this.captureFairy[SideType.BLACK][PieceType.KNIGHT] = knightFairy;
@@ -140,10 +140,10 @@ export class ChessEngine extends  AbstractEngine {
         //IMPLEMENT THE BISHOP FAIRY
         {
             let bishopFairy = new FairyRider();
-            bishopFairy.addVector({ x : 1, y : 1});
-            bishopFairy.addVector({ x : 1, y : -1});
-            bishopFairy.addVector({ x : -1, y : -1});
-            bishopFairy.addVector({ x : -1, y : 1});
+            bishopFairy.addVector(new FileRank(1,1));
+            bishopFairy.addVector(new FileRank(1,-1));
+            bishopFairy.addVector(new FileRank(-1, -1));
+            bishopFairy.addVector(new FileRank(-1, 1));
 
             this.captureFairy[SideType.WHITE][PieceType.BISHOP] = bishopFairy;
             this.captureFairy[SideType.BLACK][PieceType.BISHOP] = bishopFairy;
@@ -156,10 +156,10 @@ export class ChessEngine extends  AbstractEngine {
         //IMPLEMENT THE ROOK FAIRY
         {
             let rookFairy = new FairyRider();
-            rookFairy.addVector({ x : 1, y : 0});
-            rookFairy.addVector({ x : 0, y : -1});
-            rookFairy.addVector({ x : -1, y : 0});
-            rookFairy.addVector({ x : 0, y : 1});
+            rookFairy.addVector(new FileRank(1, 0));
+            rookFairy.addVector(new FileRank(0, -1));
+            rookFairy.addVector(new FileRank(-1, 0));
+            rookFairy.addVector(new FileRank(0, 1));
 
             this.captureFairy[SideType.WHITE][PieceType.ROOK] = rookFairy;
             this.captureFairy[SideType.BLACK][PieceType.ROOK] = rookFairy;
@@ -172,15 +172,15 @@ export class ChessEngine extends  AbstractEngine {
         //IMPLEMENT THE QUEEN FAIRY
         {
             let queenFairy = new FairyRider();
-            queenFairy.addVector({x : 1, y : 1});
-            queenFairy.addVector({x : 1, y : -1});
-            queenFairy.addVector({x : -1, y : -1});
-            queenFairy.addVector({x : -1, y : 1});
+            queenFairy.addVector(new FileRank(1, 1));
+            queenFairy.addVector(new FileRank(1, -1));
+            queenFairy.addVector(new FileRank(-1, -1));
+            queenFairy.addVector(new FileRank(-1, 1));
 
-            queenFairy.addVector({x : 1, y : 0});
-            queenFairy.addVector({x : 0, y : -1});
-            queenFairy.addVector({x : -1, y : 0});
-            queenFairy.addVector({x : 0, y : 1});
+            queenFairy.addVector(new FileRank(1, 0));
+            queenFairy.addVector(new FileRank(0, -1));
+            queenFairy.addVector(new FileRank(-1, 0));
+            queenFairy.addVector(new FileRank(0, 1));
 
             this.captureFairy[SideType.WHITE][PieceType.QUEEN] = queenFairy;
             this.captureFairy[SideType.BLACK][PieceType.QUEEN] = queenFairy;
@@ -193,15 +193,15 @@ export class ChessEngine extends  AbstractEngine {
         //IMPLEMENT THE KING FAIRY
         {
             let kingFairy = new FairyLeaper();
-            kingFairy.addVector({x : 1, y : 1});
-            kingFairy.addVector({x : 1, y : -1});
-            kingFairy.addVector({x : -1, y : -1});
-            kingFairy.addVector({x : -1, y : 1});
+            kingFairy.addVector(new FileRank(1, 1));
+            kingFairy.addVector(new FileRank(1, -1));
+            kingFairy.addVector(new FileRank(-1, -1));
+            kingFairy.addVector(new FileRank(-1, 1));
 
-            kingFairy.addVector({x : 1, y : 0});
-            kingFairy.addVector({x : 0, y : -1});
-            kingFairy.addVector({x : -1, y : 0});
-            kingFairy.addVector({x : 0, y : 1});
+            kingFairy.addVector(new FileRank(1, 0));
+            kingFairy.addVector(new FileRank(0, -1));
+            kingFairy.addVector(new FileRank(-1, 0));
+            kingFairy.addVector(new FileRank(0, 1));
 
             this.captureFairy[SideType.WHITE][PieceType.KING] = kingFairy;
             this.captureFairy[SideType.BLACK][PieceType.KING] = kingFairy;
@@ -216,13 +216,13 @@ export class ChessEngine extends  AbstractEngine {
             this.pawn2MoveFairy = {};
 
             let whiteFairyStupid = new FairyStupid();
-            whiteFairyStupid.addVector({ "vec" : {x : 0, y : 2}, "emptyVec" : [{x : 0, y : 1}]});
+            whiteFairyStupid.addVector({ "vec" : new FileRank(0, 2) , "emptyVec" : [new FileRank(0, 1)]});
 
             this.pawn2MoveFairy[SideType.WHITE] = whiteFairyStupid;
 
 
             let blackFairyStupid = new FairyStupid();
-            blackFairyStupid.addVector( {"vec" : {x : 0, y : -2}, "emptyVec" : [{x : 0, y : -1}]});
+            blackFairyStupid.addVector( {"vec" : new FileRank(0, -2), "emptyVec" : [new FileRank(0, -1)]});
 
             this.pawn2MoveFairy[SideType.BLACK] = blackFairyStupid;
         }
@@ -292,8 +292,8 @@ export class ChessEngine extends  AbstractEngine {
 
 
     public static getColorTypeForFileRank(fileRank : FileRank):SideType{
-        let fileNumber = fileRank["fileNumber"];
-        let rank = fileRank["rank"];
+        let fileNumber = fileRank.x;
+        let rank = fileRank.y;
 
         let colorType: SideType;
         if ((fileNumber + rank) % 2 == 0) {
@@ -330,14 +330,14 @@ export class ChessEngine extends  AbstractEngine {
 
 
                 let bishop1Square : number = getRandFileNumber();
-                let bishop1ColorType = ChessEngine.getColorTypeForFileRank({fileNumber : bishop1Square, rank : 1});
+                let bishop1ColorType = ChessEngine.getColorTypeForFileRank(new FileRank(bishop1Square, 1));
                 beginArray[bishop1Square] = PieceType.BISHOP;
 
                 let bishop2Square : number;
                 let bishop2ColorType : SideType;
                 do {
                     bishop2Square = getRandFileNumber();
-                    bishop2ColorType = ChessEngine.getColorTypeForFileRank({fileNumber : bishop2Square, rank : 1});
+                    bishop2ColorType = ChessEngine.getColorTypeForFileRank(new FileRank(bishop2Square, 1));
                 }while(bishop1ColorType == bishop2ColorType);
                 beginArray[bishop2Square] = PieceType.BISHOP;
 
@@ -431,7 +431,7 @@ export class ChessEngine extends  AbstractEngine {
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
             let squares = this.getSquaresBySideTypePieceType(sideType, PieceType.KING);
             if(squares.length == 1){
-                this.fenStrKingOriginFileNumber[sideType] = squares[0].fileNumber;
+                this.fenStrKingOriginFileNumber[sideType] = squares[0].x;
             }
         }
 
@@ -498,14 +498,14 @@ export class ChessEngine extends  AbstractEngine {
                         let fileNumber : number | null = null;
                         for(let i = 0; i < rookSquares.length; i++){
                             let rookSquare : FileRank = rookSquares[i];
-                            if(rookSquare.rank == this.getRookOriginRank(sideType)){
+                            if(rookSquare.y == this.getRookOriginRank(sideType)){
                                 if(fileNumber == null){
-                                    fileNumber = rookSquares[i].fileNumber;
+                                    fileNumber = rookSquares[i].x;
                                 }else {
                                     if(castleType == CastleType.QUEEN_SIDE){
-                                        fileNumber = Math.min(fileNumber, rookSquares[i].fileNumber);
+                                        fileNumber = Math.min(fileNumber, rookSquares[i].x);
                                     }else if(castleType == CastleType.KING_SIDE){
-                                        fileNumber = Math.max(fileNumber, rookSquares[i].fileNumber);
+                                        fileNumber = Math.max(fileNumber, rookSquares[i].x);
                                     }
                                 }
                             }
@@ -530,7 +530,7 @@ export class ChessEngine extends  AbstractEngine {
                 let fileNumber = <number>ChessEngine.convertFileToFileNumber(file);
 
                 let rank = parseInt(splitFenString[3][1]);
-                this.fenStrEnPassant = {fileNumber: fileNumber, rank:rank};
+                this.fenStrEnPassant = new FileRank(fileNumber, rank)
             }
         }
 
@@ -805,11 +805,11 @@ export class ChessEngine extends  AbstractEngine {
                 ret["isTwoPawnMove"] = true;
                 ret["isTwoPawnMove"] = ret["isTwoPawnMove"] && (pieceFrom.getPieceType() === PieceType.PAWN);
                 ret["isTwoPawnMove"] = ret["isTwoPawnMove"] && PieceModel.isEqualTo(pieceFrom, pieceTo);
-                ret["isTwoPawnMove"] = ret["isTwoPawnMove"] && (fileRankFrom["fileNumber"] === fileRankTo["fileNumber"]);
-                ret["isTwoPawnMove"] = ret["isTwoPawnMove"] && (Math.abs(fileRankFrom.rank - fileRankTo.rank) === 2);
+                ret["isTwoPawnMove"] = ret["isTwoPawnMove"] && (fileRankFrom.x === fileRankTo.x);
+                ret["isTwoPawnMove"] = ret["isTwoPawnMove"] && (Math.abs(fileRankFrom.y - fileRankTo.y) === 2);
 
                 if(ret["isTwoPawnMove"]){
-                    ret["enPassantSquare"] = { "fileNumber" : fileRankFrom["fileNumber"], "rank" : (fileRankFrom["rank"] + fileRankTo["rank"]) / 2};
+                    ret["enPassantSquare"] = new FileRank(fileRankFrom.x, (fileRankFrom.y + fileRankTo.y) / 2);
                 }
             }
         }
@@ -1316,12 +1316,12 @@ export class ChessEngine extends  AbstractEngine {
         let kingDestFileRank = this.getKingDestCastle(sideType, castleType);
 
         if(castleType === CastleType.KING_SIDE){
-            ret["fileNumber"] = kingDestFileRank["fileNumber"] - 1;
+            ret.x = kingDestFileRank.x - 1;
         }else if(castleType === CastleType.QUEEN_SIDE){
-            ret["fileNumber"] = kingDestFileRank["fileNumber"] + 1;
+            ret.x = kingDestFileRank.x + 1;
         }
 
-        ret["rank"] = kingDestFileRank["rank"];
+        ret.y = kingDestFileRank.y;
 
         return ret;
     }
@@ -1398,7 +1398,6 @@ export class ChessEngine extends  AbstractEngine {
 
         let isInFakeCheck = false;
         super.doMove(moveClass);
-
         this.setMoveTurn(ChessEngine.getOppositeSideType(this.getMoveTurn()));
 
         let royalSquares = this.getRoyalPieceSquares(ChessEngine.getOppositeSideType(this.getMoveTurn()));
@@ -1635,9 +1634,9 @@ export class ChessEngine extends  AbstractEngine {
 
 
         if(originPiece.getPieceType() == PieceType.PAWN){
-            if(originPiece.getSideType() == SideType.WHITE && (originFileRank.rank == 2)){
+            if(originPiece.getSideType() == SideType.WHITE && (originFileRank.y == 2)){
                 this.getVectorMovesForFairy(originFileRank, destFileRank, this.pawn2MoveFairy[SideType.WHITE], moveClasses)
-            }else if(originPiece.getSideType() == SideType.BLACK && (originFileRank.rank == this.getNumOfRanks() - 2 + 1)){
+            }else if(originPiece.getSideType() == SideType.BLACK && (originFileRank.y == this.getNumOfRanks() - 2 + 1)){
                 this.getVectorMovesForFairy(originFileRank, destFileRank, this.pawn2MoveFairy[SideType.BLACK], moveClasses)
             }
         }
@@ -1646,9 +1645,9 @@ export class ChessEngine extends  AbstractEngine {
     }
 
     public dealWithTwoMove(moveClasses : MoveClass[], originPiece : PieceModel, originFileRank : FileRank, destFileRank : FileRank | null){
-        if((originPiece.getSideType() === SideType.WHITE) && (originFileRank["rank"] === 2)){
+        if((originPiece.getSideType() === SideType.WHITE) && (originFileRank.y === 2)){
             this.getNormalMovesForFairy(originFileRank, destFileRank, this.pawn2MoveFairy[SideType.WHITE], moveClasses);
-        }else if((originPiece.getSideType() === SideType.BLACK) && (originFileRank["rank"] === this.getNumOfRanks() - 2 + 1)){
+        }else if((originPiece.getSideType() === SideType.BLACK) && (originFileRank.y === this.getNumOfRanks() - 2 + 1)){
             this.getNormalMovesForFairy(originFileRank, destFileRank, this.pawn2MoveFairy[SideType.BLACK], moveClasses);
         }
     }
@@ -1677,7 +1676,7 @@ export class ChessEngine extends  AbstractEngine {
         for(let i = 0; i < enPassantFileRanks.length; i++){
             let enPassantFileRank = enPassantFileRanks[i];
 
-            let enPassantCaptureFileRank = {fileNumber : enPassantFileRank["fileNumber"], rank : originFileRank["rank"]};
+            let enPassantCaptureFileRank = new FileRank(enPassantFileRank.x, originFileRank.y);
 
             let enPassantCapturePiece = this.getPieceForFileRank(enPassantCaptureFileRank);
 
@@ -1846,7 +1845,7 @@ export class ChessEngine extends  AbstractEngine {
                 for(let i = 0; i < bishopSquares.length; i++){
                     let bishopSquare = bishopSquares[i];
 
-                    let squareMod = (bishopSquare["fileNumber"] + bishopSquare["rank"]) % 2;
+                    let squareMod = (bishopSquare.x + bishopSquare.y) % 2;
 
                     if(squareMod === 1){
                         isModOne = true;
@@ -2002,13 +2001,13 @@ export class ChessEngine extends  AbstractEngine {
                 let insertNewSquare = true;
 
                 if(originFileNumber != null){
-                    if(originFileNumber != squarePiece.fileNumber){
+                    if(originFileNumber != squarePiece.x){
                         insertNewSquare = false;
                     }
                 }
 
                 if(originRank != null){
-                    if(originRank != squarePiece.rank){
+                    if(originRank != squarePiece.y){
                         insertNewSquare = false;
                     }
                 }
@@ -2058,7 +2057,6 @@ export class ChessEngine extends  AbstractEngine {
 
         return ret;
     }
-
     public getSANMoveForCurrentBoardAndMoveClass(moveClass : MoveClass):string{
         super.doMove(moveClass);
         this.setMoveTurn(ChessEngine.getOppositeSideType(this.getMoveTurn()));
@@ -2111,10 +2109,10 @@ export class ChessEngine extends  AbstractEngine {
                     if(this.hasLegalMoves(pSquare, destFileRank, false)){
                         isAmbiguous = true;
 
-                        if(pSquare.fileNumber == originFileRank.fileNumber){
+                        if(pSquare.x == originFileRank.x){
                             numOfFileAmbiguous++;
                         }
-                        if(pSquare.rank == originFileRank.rank){
+                        if(pSquare.y == originFileRank.y){
                             numOfRankAmbiguous++;
                         }
                     }
@@ -2170,7 +2168,14 @@ export class ChessEngine extends  AbstractEngine {
 
 
 
+    public getUCIMovesForMoveClasses(moveClasses : MoveClass[]):string[]{
+        let ret :string[] = [];
+        for(let i = 0; i < moveClasses.length; i++){
+            ret.push(this.getUCIMoveForMoveClass(moveClasses[i]));
+        }
 
+        return ret;
+    }
     public getUCIMoveForMoveClass(moveClass : MoveClass):string{
         let uciMove = "";
 
@@ -2365,9 +2370,9 @@ export class ChessEngine extends  AbstractEngine {
                     for(let i = 0; i < rookSquares.length; i++){
                         let rookSquare = rookSquares[i];
                         if(rookOriginSquare != null){
-                            if(rookSquare.rank == rookOriginSquare.rank){
-                                if(cmpFunction(castleType, rookSquare.fileNumber, rookOriginSquare.fileNumber)){
-                                    char = <string>ChessEngine.convertFileNumberToFile(rookOriginSquare.fileNumber);
+                            if(rookSquare.y == rookOriginSquare.y){
+                                if(cmpFunction(castleType, rookSquare.x, rookOriginSquare.x)){
+                                    char = <string>ChessEngine.convertFileNumberToFile(rookOriginSquare.x);
                                     if(sideType == SideType.WHITE){
                                         char = char.toUpperCase();
                                     }
@@ -2394,9 +2399,9 @@ export class ChessEngine extends  AbstractEngine {
         if(this.enPassantSquare == null){
             fenStr += "-"
         }else if(this.enPassantSquare != null){
-            let fileNumber = this.enPassantSquare["fileNumber"];
+            let fileNumber = this.enPassantSquare.x;
             let file = <string>ChessEngine.convertFileNumberToFile(fileNumber);
-            let rank = this.enPassantSquare["rank"];
+            let rank = this.enPassantSquare.y;
 
             fenStr += file.toString() + rank.toString();
         }

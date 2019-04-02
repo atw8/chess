@@ -145,11 +145,11 @@ export class AbstractEngine {
 
 
     public isFileRankLegal(pos : FileRank) : boolean{
-        return ! ( pos["fileNumber"] < 1 || pos["fileNumber"] > this.getNumOfFiles() || pos["rank"] < 1 || pos["rank"] > this.getNumOfRanks() );
+        return ! ( pos.x < 1 || pos.x > this.getNumOfFiles() || pos.y < 1 || pos.y > this.getNumOfRanks() );
     };
 
     public static fileRankEqual(fileRank1 : FileRank, fileRank2 : FileRank) : boolean{
-        return fileRank1["fileNumber"] == fileRank2["fileNumber"] && fileRank1["rank"] == fileRank2["rank"];
+        return fileRank1.x == fileRank2.x && fileRank1.y == fileRank2.y;
     };
 
     public static fileRankNotEqual(fileRank1 : FileRank, fileRank2 : FileRank) : boolean{
@@ -220,7 +220,7 @@ export class AbstractEngine {
     public getPieceForFileRank( pos : FileRank):PieceModel|null{
         let ret = null;
         if(this.isFileRankLegal(pos)){
-            ret = this.fileRankPieces[pos["fileNumber"]][pos["rank"]];
+            ret = this.fileRankPieces[pos.x][pos.y];
         }else {
             ret = null;
         }
@@ -229,7 +229,7 @@ export class AbstractEngine {
     };
 
     public setPieceForFileRank(pos : FileRank, piece : PieceModel | null){
-        let oldPiece = this.fileRankPieces[pos["fileNumber"]][pos["rank"]];
+        let oldPiece = this.fileRankPieces[pos.x][pos.y];
         if(oldPiece !== null){
             let sideType = oldPiece.getSideType();
             let pieceType = oldPiece.getPieceType();
@@ -240,7 +240,7 @@ export class AbstractEngine {
             for(let i = 0; i < squareArray.length; i++){
                 let square = squareArray[i];
 
-                if(square["fileNumber"] === pos["fileNumber"] && square["rank"] === pos["rank"]){
+                if(square.x === pos.x && square.y === pos.y){
                     squareArrayIndex = i;
                 }
             }
@@ -258,7 +258,7 @@ export class AbstractEngine {
             this.pieceToSquareMap[sideType][pieceType].push(pos);
         }
 
-        this.fileRankPieces[pos["fileNumber"]][pos["rank"]] = piece;
+        this.fileRankPieces[pos.x][pos.y] = piece;
     };
 
 
@@ -282,20 +282,20 @@ export class AbstractEngine {
 
 
     //Helper functions to deal with the different fairies
-    public fileRankSubMoveVector(oldFileRank : FileRank, moveVector : {x : number, y : number}):FileRank{
-        let newFileRank = new FileRank(oldFileRank["fileNumber"] - moveVector["x"], oldFileRank["rank"] - moveVector["y"]);
+    public fileRankSubMoveVector(oldFileRank : FileRank, moveVector : FileRank):FileRank{
+        let newFileRank = new FileRank(oldFileRank.x - moveVector["x"], oldFileRank.y - moveVector["y"]);
 
         return newFileRank;
     };
 
-    public fileRankAddMoveVector(oldFileRank : FileRank, moveVector :  {x : number, y : number}) :FileRank{
-        let newFileRank = new FileRank(oldFileRank["fileNumber"] + moveVector["x"], oldFileRank["rank"] + moveVector["y"]);
+    public fileRankAddMoveVector(oldFileRank : FileRank, moveVector :  FileRank) :FileRank{
+        let newFileRank = new FileRank(oldFileRank.x + moveVector["x"], oldFileRank.y + moveVector["y"]);
 
         return newFileRank;
     };
 
 
-    public getDestFileRankFromOriginFileRankMoveVector(oldFileRank : FileRank, moveVectors : {x : number, y : number}[]) :FileRank[]{
+    public getDestFileRankFromOriginFileRankMoveVector(oldFileRank : FileRank, moveVectors : FileRank[]) :FileRank[]{
         let newFileRanks = [];
 
         for(let i = 0; i < moveVectors.length; i++){
@@ -307,12 +307,12 @@ export class AbstractEngine {
     };
 
 
-    public isRay = function(origin : FileRank, dest : FileRank, vector : {x : number, y : number}) : boolean{
-        let originX = origin["fileNumber"];
-        let originY = origin["rank"];
+    public isRay(origin : FileRank, dest : FileRank, vector : {x : number, y : number}) : boolean{
+        let originX = origin.x;
+        let originY = origin.y;
 
-        let destX = dest["fileNumber"];
-        let destY = dest["rank"];
+        let destX = dest.x;
+        let destY = dest.y;
 
         let vecX = vector["x"];
         let vecY = vector["y"];
@@ -371,7 +371,7 @@ export class AbstractEngine {
         normalMovePruneFunctions.push(this.isFileRankLegal.bind(this));
         normalMovePruneFunctions.push(this.notLandOnPiece.bind(this));
 
-        let getFromMoveVector = (moveVector : {x : number, y : number}) =>{
+        let getFromMoveVector = (moveVector : FileRank) =>{
             if(destFileRank !== null){
                 if(! this.isRay(originFileRank, destFileRank, moveVector)){
                     return;
@@ -488,7 +488,7 @@ export class AbstractEngine {
 
 
 
-        let getFromMoveVector = (moveVector : {x : number, y : number}) => {
+        let getFromMoveVector = (moveVector : FileRank) => {
             if(destFileRank !== null){
                 if(! this.isRay(originFileRank, destFileRank, moveVector)){
                     return;
@@ -619,7 +619,7 @@ export class AbstractEngine {
         captureMovePruneFunctions.push(this.landOnPiece.bind(this));
         captureMovePruneFunctions.push(this.notLandOnSideType.bind(this, originPiece.getSideType()));
 
-        let getFromMoveVector = (moveVector : { x: number, y : number}) =>{
+        let getFromMoveVector = (moveVector : FileRank) =>{
             if(destFileRank !== null){
                 if(! this.isRay(originFileRank, destFileRank, moveVector)){
                     return;
@@ -755,7 +755,7 @@ export class AbstractEngine {
         let normalMovePruneFunctions : ( ( x: FileRank) => boolean )[] = [];
         normalMovePruneFunctions.push(this.isFileRankLegal.bind(this));
 
-        let getFromMoveVector = (moveVector  : { x: number, y : number}) => {
+        let getFromMoveVector = (moveVector  : FileRank) => {
             if(destFileRank != null){
                 if(!this.isRay(originFileRank, destFileRank, moveVector)){
                     return;
@@ -836,8 +836,8 @@ export class AbstractEngine {
 
 
     public getFileRankList(pos1 : FileRank, pos2 : FileRank, leftInclusive : boolean, rightInclusive : boolean) : FileRank[]{
-        let diffVec = { x : pos2["fileNumber"] - pos1["fileNumber"], y : pos2["rank"] - pos1["rank"]};
-
+        //let diffVec = { x : pos2.x - pos1.x, y : pos2.y - pos1.y};
+        let diffVec = this.fileRankSubMoveVector(pos2, pos1);
 
         if(diffVec["x"] !== diffVec["y"]){
             if(diffVec["x"] !== 0 && diffVec["y"] !== 0){
@@ -845,8 +845,8 @@ export class AbstractEngine {
             }
         }
 
-        function getGradVec(diffVec : { x : number, y : number}) : {x : number, y : number}{
-            let gradVec = { x : 0, y : 0};
+        function getGradVec(diffVec : FileRank) : FileRank{
+            let gradVec = new FileRank(0, 0);
             if(diffVec["x"] === 0){
                 gradVec["x"] = 0;
             }else {
@@ -868,18 +868,18 @@ export class AbstractEngine {
 
 
 
-        let startPos = {fileNumber : pos1["fileNumber"], rank : pos1["rank"]};
+        let startPos = new FileRank(pos1.x, pos1.y);
         if(!leftInclusive){
             startPos = this.fileRankAddMoveVector(startPos, gradVec);
         }
 
-        let endPos = {fileNumber : pos2["fileNumber"], rank : pos2["rank"]};
+        let endPos = new FileRank(pos2.x, pos2.y);
         if(!rightInclusive){
             endPos = this.fileRankSubMoveVector(endPos, gradVec);
         }
 
         {
-            let tmpDiffVec = { x : endPos["fileNumber"] - startPos["fileNumber"], y : endPos["rank"] - startPos["rank"]};
+            let tmpDiffVec = this.fileRankSubMoveVector(endPos, startPos);
 
             let tmpGradVec = getGradVec(tmpDiffVec);
 
@@ -1022,49 +1022,9 @@ export class AbstractEngine {
 
 
     public getHashForFileRank(fileRank : FileRank){
-        let hash = (fileRank["rank"] - 1) * this.getNumOfFiles() + (fileRank["fileNumber"] - 1);
+        let hash = (fileRank.y - 1) * this.getNumOfFiles() + (fileRank.x - 1);
 
         return hash;
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

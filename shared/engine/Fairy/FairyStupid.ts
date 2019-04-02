@@ -1,19 +1,20 @@
 import {Fairy} from "./Fairy";
 import {FairyType} from "./FairyType";
+import {FileRank} from "../FileRank";
 
 export class FairyStupid extends  Fairy{
-    private vectors : {vec : {x : number, y : number}, emptyVec : {x : number, y : number}[]} [];
+    private vectors : {vec : FileRank, emptyVec : FileRank[]} [];
 
     constructor(){
         super(FairyType.STUPID);
         this.vectors = [];
     }
 
-    public addVector(vector : {vec : {x : number, y : number}, emptyVec : {x : number, y : number}[]} ){
+    public addVector(vector : {vec : FileRank, emptyVec : FileRank[]} ){
         this.vectors.push(vector);
     }
 
-    public getVectors(): {vec : {x : number, y : number}, emptyVec : {x : number, y : number}[]} [] {
+    public getVectors(): {vec : FileRank, emptyVec : FileRank[]} [] {
         return this.vectors;
     }
 
