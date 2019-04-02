@@ -8,6 +8,9 @@ class FileRank {
     clone() {
         return new FileRank(this.x, this.y);
     }
+    static addFileRank(fileRank1, fileRank2) {
+        return new FileRank(fileRank1.x + fileRank2.x, fileRank1.y + fileRank2.y);
+    }
 }
 exports.FileRank = FileRank;
 //# sourceMappingURL=FileRank.js.map

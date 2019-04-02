@@ -288,11 +288,6 @@ export class AbstractEngine {
         return newFileRank;
     };
 
-    public fileRankAddMoveVector(oldFileRank : FileRank, moveVector :  FileRank) :FileRank{
-        let newFileRank = new FileRank(oldFileRank.x + moveVector["x"], oldFileRank.y + moveVector["y"]);
-
-        return newFileRank;
-    };
 
 
     public getDestFileRankFromOriginFileRankMoveVector(oldFileRank : FileRank, moveVectors : FileRank[]) :FileRank[]{
@@ -300,7 +295,7 @@ export class AbstractEngine {
 
         for(let i = 0; i < moveVectors.length; i++){
             let moveVector = moveVectors[i];
-            newFileRanks.push(this.fileRankAddMoveVector(oldFileRank, moveVector));
+            newFileRanks.push(FileRank.addFileRank(oldFileRank, moveVector));
         }
 
         return newFileRanks;
@@ -378,7 +373,7 @@ export class AbstractEngine {
                 }
             }
 
-            let normalMoveFileRank = this.fileRankAddMoveVector(originFileRank, moveVector);
+            let normalMoveFileRank = FileRank.addFileRank(originFileRank, moveVector);
             while(this.pruneFileRankHelper(normalMoveFileRank, normalMovePruneFunctions)){
                 if(destFileRank === null){
                     destFileRanks.push(normalMoveFileRank);
@@ -388,7 +383,7 @@ export class AbstractEngine {
                     }
                 }
 
-                normalMoveFileRank = this.fileRankAddMoveVector(normalMoveFileRank, moveVector);
+                normalMoveFileRank = FileRank.addFileRank(normalMoveFileRank, moveVector);
             }
         };
 
@@ -429,7 +424,7 @@ export class AbstractEngine {
         for(let i = 0; i < moveVectors.length; i++){
             let moveVector = moveVectors[i];
 
-            let _destFileRank = this.fileRankAddMoveVector(originFileRank, moveVector["vec"]);
+            let _destFileRank = FileRank.addFileRank(originFileRank, moveVector["vec"]);
 
             let pruneFunctions = [];
             if(destFileRank !== null){
@@ -440,7 +435,7 @@ export class AbstractEngine {
             for(let j = 0; j < moveVector["emptyVec"].length; j++){
                 let empPos = moveVector["emptyVec"][j];
 
-                let pos = this.fileRankAddMoveVector(originFileRank, empPos);
+                let pos = FileRank.addFileRank(originFileRank, empPos);
                 if(this.getPieceForFileRank(pos) !== null){
                     pruneFunctions.push(function(){ return false;});
                 }
@@ -495,9 +490,9 @@ export class AbstractEngine {
                 }
             }
 
-            let normalMoveFileRank = this.fileRankAddMoveVector(originFileRank, moveVector);
+            let normalMoveFileRank = FileRank.addFileRank(originFileRank, moveVector);
             while(this.pruneFileRankHelper(normalMoveFileRank, normalMovePruneFunctions)){
-                normalMoveFileRank = this.fileRankAddMoveVector(normalMoveFileRank, moveVector);
+                normalMoveFileRank = FileRank.addFileRank(normalMoveFileRank, moveVector);
             }
 
             let captureMoveFileRank = normalMoveFileRank;
@@ -555,7 +550,7 @@ export class AbstractEngine {
         for(let i = 0; i < moveVectors.length; i++){
             let moveVector = moveVectors[i];
 
-            let _destFileRank = this.fileRankAddMoveVector(originFileRank, moveVector["vec"]);
+            let _destFileRank = FileRank.addFileRank(originFileRank, moveVector["vec"]);
 
             let pruneFunctions : ( ( x: FileRank) => boolean )[] = [];
             if(destFileRank !== null){
@@ -566,7 +561,7 @@ export class AbstractEngine {
             for(let j = 0; j < moveVector["emptyVec"].length; j++){
                 let empPos = moveVector["emptyVec"][j];
 
-                let pos = this.fileRankAddMoveVector(originFileRank, empPos);
+                let pos = FileRank.addFileRank(originFileRank, empPos);
                 if(this.getPieceForFileRank(pos) !== null){
                     pruneFunctions.push(function(){ return false;});
                 }
@@ -626,7 +621,7 @@ export class AbstractEngine {
                 }
             }
 
-            let normalMoveFileRank = this.fileRankAddMoveVector(originFileRank, moveVector);
+            let normalMoveFileRank = FileRank.addFileRank(originFileRank, moveVector);
             while(this.pruneFileRankHelper(normalMoveFileRank, normalMovePruneFunctions)){
                 if(destFileRank === null){
                     destFileRanks.push(normalMoveFileRank);
@@ -636,7 +631,7 @@ export class AbstractEngine {
                     }
                 }
 
-                normalMoveFileRank = this.fileRankAddMoveVector(normalMoveFileRank, moveVector);
+                normalMoveFileRank = FileRank.addFileRank(normalMoveFileRank, moveVector);
             }
 
             let captureMoveFileRank = normalMoveFileRank;
@@ -696,7 +691,7 @@ export class AbstractEngine {
         for(let i = 0; i < moveVectors.length; i++){
             let moveVector = moveVectors[i];
 
-            let _destFileRank = this.fileRankAddMoveVector(originFileRank, moveVector["vec"]);
+            let _destFileRank = FileRank.addFileRank(originFileRank, moveVector["vec"]);
 
             let pruneFunctions : ( ( x: FileRank) => boolean )[] = [];
             if(destFileRank !== null){
@@ -707,7 +702,7 @@ export class AbstractEngine {
             for(let j = 0; j < moveVector["emptyVec"].length; j++){
                 let empPos = moveVector["emptyVec"][j];
 
-                let pos = this.fileRankAddMoveVector(originFileRank, empPos);
+                let pos = FileRank.addFileRank(originFileRank, empPos);
                 if(this.getPieceForFileRank(pos) !== null){
                     pruneFunctions.push(function(){ return false;});
                 }
@@ -762,7 +757,7 @@ export class AbstractEngine {
                 }
             }
 
-            let normalMoveFileRank = this.fileRankAddMoveVector(originFileRank, moveVector);
+            let normalMoveFileRank = FileRank.addFileRank(originFileRank, moveVector);
 
             while(this.pruneFileRankHelper(normalMoveFileRank, normalMovePruneFunctions)){
                 if(destFileRank == null){
@@ -773,7 +768,7 @@ export class AbstractEngine {
                     }
                 }
 
-                normalMoveFileRank = this.fileRankAddMoveVector(normalMoveFileRank, moveVector);
+                normalMoveFileRank = FileRank.addFileRank(normalMoveFileRank, moveVector);
             }
         };
 
@@ -813,7 +808,7 @@ export class AbstractEngine {
         let destFileRanks = [];
         for(let i = 0; i < moveVectors.length; i++) {
             let moveVector = moveVectors[i];
-            let _destFileRank = this.fileRankAddMoveVector(originFileRank, moveVector.vec);
+            let _destFileRank = FileRank.addFileRank(originFileRank, moveVector.vec);
 
             let pruneFunctions : ( ( x: FileRank) => boolean )[] = [];
             if (destFileRank != null) {
@@ -870,7 +865,7 @@ export class AbstractEngine {
 
         let startPos = new FileRank(pos1.x, pos1.y);
         if(!leftInclusive){
-            startPos = this.fileRankAddMoveVector(startPos, gradVec);
+            startPos = FileRank.addFileRank(startPos, gradVec);
         }
 
         let endPos = new FileRank(pos2.x, pos2.y);
@@ -892,7 +887,7 @@ export class AbstractEngine {
         let ret = [];
         while(AbstractEngine.fileRankNotEqual(startPos, endPos)){
             ret.push(startPos);
-            startPos = this.fileRankAddMoveVector(startPos, gradVec);
+            startPos = FileRank.addFileRank(startPos, gradVec);
         }
         ret.push(startPos);
 
