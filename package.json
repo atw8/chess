@@ -1,0 +1,44 @@
+{
+  "name": "untitled",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "run": "node ./server/www",
+    "webpack_debug": "npx webpack --config webpack.debug.config.js",
+    "webpack_release": "npx webpack --config webpack.release.config.js"
+  },
+  "dependencies": {
+    "@types/cookie-parser": "^1.4.1",
+    "@types/debug": "0.0.30",
+    "@types/express": "^4.16.0",
+    "@types/morgan": "^1.7.35",
+    "@types/serve-favicon": "^2.2.30",
+    "@types/socket.io": "^1.4.35",
+    "@types/socket.io-client": "^1.4.32",
+    "@types/uuid": "^3.4.3",
+    "body-parser": "~1.18.2",
+    "cookie-parser": "~1.4.3",
+    "debug": "~2.6.9",
+    "express": "~4.15.5",
+    "jade": "~1.11.0",
+    "jsonschema": "^1.2.4",
+    "morgan": "~1.9.0",
+    "npm": "^6.8.0",
+    "phaser": "^3.16.2",
+    "phaser-ce": "^2.10.6",
+    "phaser-list-view": "^1.5.2",
+    "phaser3-project-template": "^1.0.9",
+    "serve-favicon": "~2.4.5",
+    "socket.io": "^2.1.1",
+    "socket.io-client": "^2.1.1",
+    "uuid": "^3.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^10.3.2",
+    "@types/webpack": "^4.4.0",
+    "expose-loader": "^0.7.5",
+    "typescript": "^2.9.1",
+    "webpack": "^4.12.0",
+    "webpack-cli": "^3.0.3"
+  }
+}
