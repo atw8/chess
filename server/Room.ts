@@ -12,8 +12,10 @@ export class Room {
 
     private roomInitConfig : RoomInitConfig;
     private roomStateConfig : RoomStateConfig;
-    //private roomVoteConfig : RoomVoteConfig;
 
+
+    private sanMoves : string[];
+    private sanMovesSet : { [key : string] : boolean};
 
     private chessEngine : ChessEngine;
 
@@ -28,8 +30,7 @@ export class Room {
 
         this.roomStateConfig = new RoomStateConfig();
 
-
-        this.startGame();
+        this.updateRoomStateConfig();
     }
 
     public getRoomInitConfig():RoomInitConfig{
@@ -58,10 +59,15 @@ export class Room {
 
 
         this.roomStateConfig.voteConfig = {};
+
+        let sanMoves = this.chessEngine.getSANMovesForCurrentBoardAndMoveClasses(this.chessEngine.getAllLegalMoves(null, false));
+        for(let i = 0; i < sanMoves.length; i++){
+            let sanMove = sanMoves[i];
+            this.roomStateConfig.voteConfig[sanMove] = 0;
+        }
     }
 
     public voteMove(token : string, sanMove : string): void {
-
     }
 
 

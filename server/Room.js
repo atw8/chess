@@ -17,7 +17,7 @@ class Room {
         this.roomInitConfig = roomInitConfig;
         this.chessEngine = new ChessEngine_1.ChessEngine(this.roomInitConfig);
         this.roomStateConfig = new MessageTypes_1.RoomStateConfig();
-        this.startGame();
+        this.updateRoomStateConfig();
     }
     getRoomInitConfig() {
         return this.roomInitConfig;
@@ -39,6 +39,11 @@ class Room {
         this.roomStateConfig.currentFenStr = this.chessEngine.getLastFenStr();
         this.roomStateConfig.sanMoves = this.chessEngine.getSanMoves();
         this.roomStateConfig.voteConfig = {};
+        let sanMoves = this.chessEngine.getSANMovesForCurrentBoardAndMoveClasses(this.chessEngine.getAllLegalMoves(null, false));
+        for (let i = 0; i < sanMoves.length; i++) {
+            let sanMove = sanMoves[i];
+            this.roomStateConfig.voteConfig[sanMove] = 0;
+        }
     }
     voteMove(token, sanMove) {
     }
