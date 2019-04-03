@@ -22,6 +22,9 @@ class FileRank {
         this.x -= fileRank2.x;
         this.y -= fileRank2.y;
     }
+    static isEqual(fileRank1, fileRank2) {
+        return fileRank1.x == fileRank2.x && fileRank1.y == fileRank2.y;
+    }
 }
 exports.FileRank = FileRank;
 //# sourceMappingURL=FileRank.js.map

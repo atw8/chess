@@ -101,67 +101,6 @@ class AbstractEngine {
         return !(pos.x < 1 || pos.x > this.getNumOfFiles() || pos.y < 1 || pos.y > this.getNumOfRanks());
     }
     ;
-    static fileRankEqual(fileRank1, fileRank2) {
-        return fileRank1.x == fileRank2.x && fileRank1.y == fileRank2.y;
-    }
-    ;
-    static fileRankNotEqual(fileRank1, fileRank2) {
-        return !AbstractEngine.fileRankEqual(fileRank1, fileRank2);
-    }
-    ;
-    notLandOnPiece(destFileRank) {
-        return this.getPieceForFileRank(destFileRank) === null;
-    }
-    ;
-    landOnPiece(destFileRank) {
-        return !this.notLandOnPiece(destFileRank);
-    }
-    ;
-    landOnSideType(sideType, destFileRank) {
-        let piece = this.getPieceForFileRank(destFileRank);
-        let ret;
-        if (piece !== null) {
-            ret = piece.getSideType() === sideType;
-        }
-        else {
-            ret = false;
-        }
-        return ret;
-    }
-    ;
-    notLandOnSideType(sideType, destFileRank) {
-        return !this.landOnSideType(sideType, destFileRank);
-    }
-    ;
-    orFunctionHelper(pruneFunctions1, pruneFunctions2, destFileRank) {
-        return this.pruneFileRankHelper(destFileRank, pruneFunctions1) || this.pruneFileRankHelper(destFileRank, pruneFunctions2);
-    }
-    ;
-    andFunctionHelper(pruneFunctions1, pruneFunctions2, destFileRank) {
-        return this.pruneFileRankHelper(destFileRank, pruneFunctions1) && this.pruneFileRankHelper(destFileRank, pruneFunctions2);
-    }
-    ;
-    pruneFileRankHelper(destFileRank, pruneFunctions) {
-        for (let i = 0; i < pruneFunctions.length; i++) {
-            let pruneFunction = pruneFunctions[i];
-            if (!pruneFunction(destFileRank)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    ;
-    pruneFileRanksHelper(destFileRanks, pruneFunctions) {
-        let newDestFileRanks = [];
-        for (let i = 0; i < destFileRanks.length; i++) {
-            let destFileRank = destFileRanks[i];
-            if (this.pruneFileRankHelper(destFileRank, pruneFunctions)) {
-                newDestFileRanks.push(destFileRank);
-            }
-        }
-        return newDestFileRanks;
-    }
-    ;
     getPieceForFileRank(pos) {
         let ret = null;
         if (this.isFileRankLegal(pos)) {
@@ -262,7 +201,7 @@ class AbstractEngine {
     ;
     pruneFileRankNormal(destFileRank, fileRank) {
         if (destFileRank != null) {
-            if (AbstractEngine.fileRankNotEqual(destFileRank, fileRank)) {
+            if (!FileRank_1.FileRank.isEqual(destFileRank, fileRank)) {
                 return false;
             }
         }
@@ -273,7 +212,7 @@ class AbstractEngine {
     }
     pruneFileRankCapture(mySideType, destFileRank, fileRank) {
         if (destFileRank != null) {
-            if (AbstractEngine.fileRankNotEqual(destFileRank, fileRank)) {
+            if (!FileRank_1.FileRank.isEqual(destFileRank, fileRank)) {
                 return false;
             }
         }
@@ -285,7 +224,7 @@ class AbstractEngine {
     }
     pruneFileRankCaptureOrNormal(mySideType, destFileRank, fileRank) {
         if (destFileRank != null) {
-            if (AbstractEngine.fileRankNotEqual(destFileRank, fileRank)) {
+            if (!FileRank_1.FileRank.isEqual(destFileRank, fileRank)) {
                 return false;
             }
         }
@@ -297,7 +236,7 @@ class AbstractEngine {
     }
     pruneFileRankVector(destFileRank, fileRank) {
         if (destFileRank != null) {
-            if (AbstractEngine.fileRankNotEqual(destFileRank, fileRank)) {
+            if (!FileRank_1.FileRank.isEqual(destFileRank, fileRank)) {
                 return false;
             }
         }
@@ -378,7 +317,7 @@ class AbstractEngine {
                     if (destFileRank == null) {
                         destFileRanks.push(normalMoveFileRank);
                     }
-                    else if (AbstractEngine.fileRankEqual(normalMoveFileRank, destFileRank)) {
+                    else if (FileRank_1.FileRank.isEqual(normalMoveFileRank, destFileRank)) {
                         destFileRanks.push(normalMoveFileRank);
                     }
                 }
@@ -416,7 +355,7 @@ class AbstractEngine {
                 if (destFileRank == null) {
                     destFileRanks.push(normalMoveFileRank);
                 }
-                else if (AbstractEngine.fileRankEqual(normalMoveFileRank, destFileRank)) {
+                else if (FileRank_1.FileRank.isEqual(normalMoveFileRank, destFileRank)) {
                     destFileRanks.push(normalMoveFileRank);
                 }
                 normalMoveFileRank.addFileRank(moveVector);
@@ -550,7 +489,7 @@ class AbstractEngine {
             }
         }
         let ret = [];
-        while (AbstractEngine.fileRankNotEqual(startPos, endPos)) {
+        while (!FileRank_1.FileRank.isEqual(startPos, endPos)) {
             ret.push(startPos);
             startPos.addFileRank(gradVec);
         }

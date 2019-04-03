@@ -867,7 +867,7 @@ export class ChessEngine extends  AbstractEngine {
                     for(let sType = SideType.FIRST_SIDE; sType <= SideType.LAST_SIDE; sType++){
                         let kingOriginCastle = this.getKingOriginCastle(sType);
                         if(kingOriginCastle != null){
-                            if(AbstractEngine.fileRankEqual(kingOriginCastle, change1FileRank)){
+                            if(FileRank.isEqual(kingOriginCastle, change1FileRank)){
                                 sideType = sType;
                             }
                         }
@@ -877,7 +877,7 @@ export class ChessEngine extends  AbstractEngine {
                         for(let cType = CastleType.FIRST_CASTLE; cType <= CastleType.LAST_CASTLE; cType++){
                             let rookOriginFileRank = this.getRookOriginCastle(sideType, cType);
                             if(rookOriginFileRank != null){
-                                if(AbstractEngine.fileRankEqual(rookOriginFileRank, change3FileRank)){
+                                if(FileRank.isEqual(rookOriginFileRank, change3FileRank)){
                                     castleType = cType;
                                 }
                             }
@@ -1653,25 +1653,38 @@ export class ChessEngine extends  AbstractEngine {
     }
 
     public dealWithEnPassant(moveClasses : MoveClass[], originPiece : PieceModel, originFileRank : FileRank, destFileRank : FileRank | null){
-        if(this.enPassantSquare === null){
+        if(this.enPassantSquare == null){
             return;
         }
 
 
-        let fairy = <FairyLeaper>this.captureFairy[originPiece.getSideType()][originPiece.getPieceType()];
+        let pruneFileRankEnPassant : (fileRank : FileRank) => boolean = (fileRank :FileRank) =>{
+            if(destFileRank != null){
+                if(!FileRank.isEqual(destFileRank, fileRank)){
+                    return false;
+                }
+            }
 
-        let enPassantMoveVectors = fairy.getVectors();
-        let enPassantFileRanks = this.getDestFileRankFromOriginFileRankMoveVector(originFileRank, enPassantMoveVectors);
+            if(!FileRank.isEqual(<FileRank>this.enPassantSquare, fileRank)){
+                return false;
+            }
 
-        let pruneFunctions = [];
-        if(destFileRank !== null){
-            pruneFunctions.push(AbstractEngine.fileRankEqual.bind(this, destFileRank));
+            if(!this.isFileRankLegal(fileRank)){
+                return false;
+            }
+
+            return this.getPieceForFileRank(fileRank) == null;
+        };
+
+
+        let enPassantMoveVectors = (<FairyLeaper>this.captureFairy[originPiece.getSideType()][originPiece.getPieceType()]).getVectors();
+        let enPassantFileRanks : FileRank[] = [];
+        for(let i = 0; i < enPassantMoveVectors.length; i++){
+            let enPassantFileRank = FileRank.addFileRank(originFileRank, enPassantMoveVectors[i]);
+            if(pruneFileRankEnPassant(enPassantFileRank)){
+                enPassantFileRanks.push(enPassantFileRank);
+            }
         }
-
-        pruneFunctions.push(AbstractEngine.fileRankEqual.bind(this, this.enPassantSquare));
-        pruneFunctions.push(this.notLandOnPiece.bind(this));
-
-        enPassantFileRanks = this.pruneFileRanksHelper(enPassantFileRanks, pruneFunctions);
 
         for(let i = 0; i < enPassantFileRanks.length; i++){
             let enPassantFileRank = enPassantFileRanks[i];
@@ -1704,9 +1717,9 @@ export class ChessEngine extends  AbstractEngine {
 
                 if(destPiece !== null){
                     if(destPiece.getPieceType() === PieceType.PAWN){
-                        if(destPiece.getSideType() === SideType.WHITE && fileRank["rank"] === this.getNumOfRanks()){
+                        if(destPiece.getSideType() === SideType.WHITE && fileRank.y === this.getNumOfRanks()){
                             addPromoteType = true;
-                        }else if(destPiece.getSideType() === SideType.BLACK && fileRank["rank"] === 1){
+                        }else if(destPiece.getSideType() === SideType.BLACK && fileRank.y === 1){
                             addPromoteType = true;
                         }
                     }
@@ -1763,9 +1776,9 @@ export class ChessEngine extends  AbstractEngine {
 
                 if(destFileRank !== null){
                     if(this.initParam.isChess960){
-                        canAddCastleMove = canAddCastleMove && (AbstractEngine.fileRankEqual(destFileRank, rookOriginFileRank));
+                        canAddCastleMove = canAddCastleMove && (FileRank.isEqual(destFileRank, rookOriginFileRank));
                     }else {
-                        canAddCastleMove = canAddCastleMove && (AbstractEngine.fileRankEqual(destFileRank, kingDestFileRank));
+                        canAddCastleMove = canAddCastleMove && (FileRank.isEqual(destFileRank, kingDestFileRank));
                     }
 
                 }
@@ -1796,11 +1809,11 @@ export class ChessEngine extends  AbstractEngine {
                     castleMove.pushChange(kingDestFileRank, this.getPieceForFileRank(kingDestFileRank), kingPiece);
                     castleMove.pushChange(rookDestFileRank, this.getPieceForFileRank(rookDestFileRank), rookPiece);
 
-                    if(!(AbstractEngine.fileRankEqual(kingOriginFileRank, kingDestFileRank) || AbstractEngine.fileRankEqual(kingOriginFileRank, rookDestFileRank))){
+                    if(!(FileRank.isEqual(kingOriginFileRank, kingDestFileRank) || FileRank.isEqual(kingOriginFileRank, rookDestFileRank))){
                         castleMove.pushChange(kingOriginFileRank, kingPiece, null);
                     }
 
-                    if(!(AbstractEngine.fileRankEqual(rookOriginFileRank, kingDestFileRank) || AbstractEngine.fileRankEqual(rookOriginFileRank, rookDestFileRank))){
+                    if(!(FileRank.isEqual(rookOriginFileRank, kingDestFileRank) || FileRank.isEqual(rookOriginFileRank, rookDestFileRank))){
                         castleMove.pushChange(rookOriginFileRank, rookPiece, null);
                     }
 
@@ -2105,7 +2118,7 @@ export class ChessEngine extends  AbstractEngine {
 
             for(let i = 0; i < pieceSquares.length; i++){
                 let pSquare = pieceSquares[i];
-                if(AbstractEngine.fileRankNotEqual(pSquare, originFileRank)){
+                if(!FileRank.isEqual(pSquare, originFileRank)){
                     if(this.hasLegalMoves(pSquare, destFileRank, false)){
                         isAmbiguous = true;
 
@@ -2129,12 +2142,12 @@ export class ChessEngine extends  AbstractEngine {
 
             if(isAmbiguous){
                 if(numOfFileAmbiguous == 0){
-                    str = str + ChessEngine.convertFileNumberToFile(originFileRank.fileNumber);
+                    str = str + ChessEngine.convertFileNumberToFile(originFileRank.x);
                 }else if(numOfRankAmbiguous == 0){
-                    str = str + String(originFileRank.rank);
+                    str = str + String(originFileRank.y);
                 }else {
-                    str = str + ChessEngine.convertFileNumberToFile(originFileRank.fileNumber);
-                    str = str + String(originFileRank.rank);
+                    str = str + ChessEngine.convertFileNumberToFile(originFileRank.x);
+                    str = str + String(originFileRank.y);
                 }
             }
 
@@ -2142,8 +2155,8 @@ export class ChessEngine extends  AbstractEngine {
                 str = str + "x";
             }
 
-            str = str + ChessEngine.convertFileNumberToFile(destFileRank.fileNumber);
-            str = str + String(destFileRank.rank);
+            str = str + ChessEngine.convertFileNumberToFile(destFileRank.x);
+            str = str + String(destFileRank.y);
 
             let isPromotionMove = this.isPromotionMove(moveClass);
             if(isPromotionMove["isPromotionMove"]){
@@ -2180,14 +2193,14 @@ export class ChessEngine extends  AbstractEngine {
         let uciMove = "";
 
         let originFileRank = moveClass.originFileRank;
-        let originFileNumber = originFileRank.fileNumber;
+        let originFileNumber = originFileRank.x;
         let originFile = ChessEngine.convertFileNumberToFile(originFileNumber);
-        let originRank = originFileRank.rank;
+        let originRank = originFileRank.y;
 
         let destFileRank = moveClass.destFileRank;
-        let destFileNumber = destFileRank.fileNumber;
+        let destFileNumber = destFileRank.x;
         let destFile = ChessEngine.convertFileNumberToFile(destFileNumber);
-        let destRank = destFileRank.rank;
+        let destRank = destFileRank.y;
 
         uciMove = originFile + originRank.toString() + destFile + destRank.toString();
 

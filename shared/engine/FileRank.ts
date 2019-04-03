@@ -29,6 +29,10 @@ export class FileRank {
         this.y -= fileRank2.y;
     }
 
+    public static isEqual(fileRank1 : FileRank, fileRank2 : FileRank):boolean{
+        return fileRank1.x == fileRank2.x && fileRank1.y == fileRank2.y;
+    }
+
 
 
 }

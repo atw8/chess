@@ -147,76 +147,6 @@ export class AbstractEngine {
     public isFileRankLegal(pos : FileRank) : boolean{
         return ! ( pos.x < 1 || pos.x > this.getNumOfFiles() || pos.y < 1 || pos.y > this.getNumOfRanks() );
     };
-
-    public static fileRankEqual(fileRank1 : FileRank, fileRank2 : FileRank) : boolean{
-        return fileRank1.x == fileRank2.x && fileRank1.y == fileRank2.y;
-    };
-
-    public static fileRankNotEqual(fileRank1 : FileRank, fileRank2 : FileRank) : boolean{
-        return !AbstractEngine.fileRankEqual(fileRank1, fileRank2);
-    };
-
-    public notLandOnPiece(destFileRank : FileRank) :boolean{
-        return this.getPieceForFileRank(destFileRank) === null;
-    };
-
-    public landOnPiece(destFileRank : FileRank) : boolean{
-        return !this.notLandOnPiece(destFileRank);
-    };
-
-    public landOnSideType(sideType : SideType, destFileRank : FileRank) : boolean{
-        let piece = this.getPieceForFileRank(destFileRank);
-
-        let ret;
-        if(piece !== null){
-            ret = piece.getSideType() === sideType;
-        }else {
-            ret = false;
-        }
-
-        return ret;
-    };
-
-    public notLandOnSideType(sideType : SideType, destFileRank : FileRank):boolean{
-        return !this.landOnSideType(sideType, destFileRank);
-    };
-
-    public orFunctionHelper(pruneFunctions1:( (x : FileRank) => boolean )[], pruneFunctions2 : ( (x : FileRank) => boolean )[], destFileRank : FileRank):boolean{
-        return this.pruneFileRankHelper(destFileRank, pruneFunctions1) || this.pruneFileRankHelper(destFileRank, pruneFunctions2);
-    };
-
-
-    public andFunctionHelper(pruneFunctions1:( (x : FileRank) => boolean )[], pruneFunctions2:( (x : FileRank) => boolean )[], destFileRank : FileRank):boolean{
-        return this.pruneFileRankHelper(destFileRank, pruneFunctions1) && this.pruneFileRankHelper(destFileRank, pruneFunctions2);
-    };
-
-
-    public pruneFileRankHelper(destFileRank : FileRank, pruneFunctions:( (x : FileRank) => boolean )[]):boolean{
-        for(let i = 0; i < pruneFunctions.length; i++){
-            let pruneFunction = pruneFunctions[i];
-            if(!pruneFunction(destFileRank)){
-                return false;
-            }
-        }
-
-        return true;
-    };
-    public pruneFileRanksHelper(destFileRanks : FileRank[], pruneFunctions:( (x : FileRank) => boolean )[]):FileRank[]{
-        let newDestFileRanks = [];
-        for(let i = 0; i < destFileRanks.length; i++){
-            let destFileRank = destFileRanks[i];
-            if(this.pruneFileRankHelper(destFileRank, pruneFunctions)){
-                newDestFileRanks.push(destFileRank);
-            }
-        }
-
-        return newDestFileRanks;
-    };
-
-
-
-
-
     public getPieceForFileRank( pos : FileRank):PieceModel|null{
         let ret = null;
         if(this.isFileRankLegal(pos)){
@@ -340,7 +270,7 @@ export class AbstractEngine {
 
     public pruneFileRankNormal(destFileRank : FileRank | null, fileRank : FileRank): boolean{
         if(destFileRank != null){
-            if(AbstractEngine.fileRankNotEqual(destFileRank, fileRank)){
+            if(!FileRank.isEqual(destFileRank, fileRank)){
                 return false;
             }
         }
@@ -354,7 +284,7 @@ export class AbstractEngine {
 
     public pruneFileRankCapture(mySideType : SideType, destFileRank : FileRank | null, fileRank : FileRank): boolean{
         if(destFileRank != null){
-            if(AbstractEngine.fileRankNotEqual(destFileRank, fileRank)){
+            if(!FileRank.isEqual(destFileRank, fileRank)){
                 return false;
             }
         }
@@ -369,7 +299,7 @@ export class AbstractEngine {
 
     public pruneFileRankCaptureOrNormal(mySideType : SideType, destFileRank : FileRank | null, fileRank : FileRank): boolean{
         if(destFileRank != null){
-            if(AbstractEngine.fileRankNotEqual(destFileRank, fileRank)){
+            if(!FileRank.isEqual(destFileRank, fileRank)){
                 return false;
             }
         }
@@ -384,7 +314,7 @@ export class AbstractEngine {
 
     public pruneFileRankVector(destFileRank : FileRank | null, fileRank : FileRank): boolean {
         if(destFileRank != null){
-            if(AbstractEngine.fileRankNotEqual(destFileRank, fileRank)){
+            if(!FileRank.isEqual(destFileRank, fileRank)){
                 return false;
             }
         }
@@ -465,9 +395,9 @@ export class AbstractEngine {
 
             while(this.pruneFileRankNormal(null, normalMoveFileRank)){
                 if(isNormal){
-                    if(destFileRank == null){
+                    if(destFileRank == null) {
                         destFileRanks.push(normalMoveFileRank);
-                    }else if(AbstractEngine.fileRankEqual(normalMoveFileRank, destFileRank)){
+                    }else if(FileRank.isEqual(normalMoveFileRank, destFileRank)){
                         destFileRanks.push(normalMoveFileRank)
                     }
                 }
@@ -514,9 +444,9 @@ export class AbstractEngine {
             let normalMoveFileRank = FileRank.addFileRank(originFileRank, moveVector);
 
             while(this.pruneFileRankVector(null, normalMoveFileRank)){
-                if(destFileRank == null){
+                if(destFileRank == null) {
                     destFileRanks.push(normalMoveFileRank);
-                }else if(AbstractEngine.fileRankEqual(normalMoveFileRank, destFileRank)){
+                }else if(FileRank.isEqual(normalMoveFileRank, destFileRank)){
                     destFileRanks.push(normalMoveFileRank);
                 }
 
@@ -531,7 +461,7 @@ export class AbstractEngine {
 
 
 
-    public getMovesForFairyLeaperHelper(originFileRank : FileRank, destFileRank : FileRank | null, fairyLeaper : FairyLeaper, moveClasses : MoveClass[], func : (FileRank) => boolean):void{
+    public getMovesForFairyLeaperHelper(originFileRank : FileRank, destFileRank : FileRank | null, fairyLeaper : FairyLeaper, moveClasses : MoveClass[], func : (fileRank : FileRank) => boolean):void{
         if(destFileRank != null){
             let diffVec = FileRank.subFileRank(destFileRank, originFileRank);
             if(Math.abs(diffVec.x) > fairyLeaper.getMaxX() || Math.abs(diffVec.y) > fairyLeaper.getMaxY()){
@@ -702,7 +632,7 @@ export class AbstractEngine {
 
 
         let ret = [];
-        while(AbstractEngine.fileRankNotEqual(startPos, endPos)){
+        while(!FileRank.isEqual(startPos, endPos)){
             ret.push(startPos);
             startPos.addFileRank(gradVec);
         }
