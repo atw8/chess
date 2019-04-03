@@ -1149,22 +1149,25 @@ class ChessEngine extends AbstractEngine_1.AbstractEngine {
         return !(isCastlingIllegal || isInFakeCheck);
     }
     hasAllLegalMoves(destFileRank, isCheckGameState) {
-        let possibleMoves = this.getAllPossibleMoves(destFileRank);
-        for (let i = 0; i < possibleMoves.length; i++) {
-            let possibleMove = possibleMoves[i];
-            if (this.isMoveLegal(possibleMove, isCheckGameState)) {
-                return true;
+        let moveTurn = this.getMoveTurn();
+        for (let pieceType = PieceType_1.PieceType.FIRST_PIECE; pieceType <= PieceType_1.PieceType.LAST_PIECE; pieceType++) {
+            let squares = this.getSquaresBySideTypePieceType(moveTurn, pieceType);
+            for (let j = 0; j < squares.length; j++) {
+                if (this.hasLegalMoves(squares[j], destFileRank, isCheckGameState)) {
+                    return true;
+                }
             }
         }
         return false;
     }
     getAllLegalMoves(destFileRank, isCheckGameState) {
+        let moveTurn = this.getMoveTurn();
         let ret = [];
-        let possibleMoves = this.getAllPossibleMoves(destFileRank);
-        for (let i = 0; i < possibleMoves.length; i++) {
-            let possibleMove = possibleMoves[i];
-            if (this.isMoveLegal(possibleMove, isCheckGameState)) {
-                ret.push(possibleMove);
+        let sideType = this.getMoveTurn();
+        for (let pieceType = PieceType_1.PieceType.FIRST_PIECE; pieceType <= PieceType_1.PieceType.LAST_PIECE; pieceType++) {
+            let squares = this.getSquaresByPieceType(pieceType);
+            for (let j = 0; j < squares.length; j++) {
+                ret.concat(this.getLegalMoves(squares[j], destFileRank, isCheckGameState));
             }
         }
         return ret;
