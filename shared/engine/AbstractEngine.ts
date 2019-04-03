@@ -336,6 +336,63 @@ export class AbstractEngine {
 
 
 
+
+
+    public pruneFileRankNormal(destFileRank : FileRank | null, fileRank : FileRank): boolean{
+        if(destFileRank != null){
+            if(AbstractEngine.fileRankNotEqual(destFileRank, fileRank)){
+                return false;
+            }
+        }
+
+        if(! this.isFileRankLegal(fileRank)){
+            return false;
+        }
+
+        return this.getPieceForFileRank(fileRank) == null;
+    }
+
+    public pruneFileRankCapture(mySideType : SideType, destFileRank : FileRank | null, fileRank : FileRank): boolean{
+        if(destFileRank != null){
+            if(AbstractEngine.fileRankNotEqual(destFileRank, fileRank)){
+                return false;
+            }
+        }
+
+        let piece = this.getPieceForFileRank(fileRank);
+        if(piece == null){
+            return false;
+        }
+
+        return piece.getSideType() != mySideType;
+    }
+
+    public pruneFileRankCaptureOrNormal(mySideType : SideType, destFileRank : FileRank | null, fileRank : FileRank): boolean{
+        if(destFileRank != null){
+            if(AbstractEngine.fileRankNotEqual(destFileRank, fileRank)){
+                return false;
+            }
+        }
+
+        let piece = this.getPieceForFileRank(fileRank);
+        if(piece == null){
+            return true;
+        }
+
+        return piece.getSideType() != mySideType;
+    }
+
+    public pruneFileRankVector(destFileRank : FileRank | null, fileRank : FileRank): boolean {
+        if(destFileRank != null){
+            if(AbstractEngine.fileRankNotEqual(destFileRank, fileRank)){
+                return false;
+            }
+        }
+
+        return this.isFileRankLegal(fileRank);
+    }
+
+
     //The function that deal with normal fairy moves
     public getNormalMovesForFairy(originFileRank : FileRank, destFileRank : FileRank | null , fairy : Fairy, moveClasses : MoveClass[]){
         let fairyType = fairy.getFairyType();
@@ -346,105 +403,7 @@ export class AbstractEngine {
         }else if(fairyType === FairyType.STUPID){
             this.getNormalMovesForFairyStupid(originFileRank, destFileRank, <FairyStupid>fairy, moveClasses);
         }
-    };
-
-    public getNormalMovesForFairyRider(originFileRank : FileRank, destFileRank :FileRank | null, fairyRider : FairyRider, moveClasses : MoveClass[]){
-        let moveVectors = fairyRider.getVectors();
-        let originPiece = this.getPieceForFileRank(originFileRank);
-
-        let destFileRanks : FileRank[] = [];
-
-        let normalMovePruneFunctions : ( ( x: FileRank) => boolean )[] = [];
-        normalMovePruneFunctions.push(this.isFileRankLegal.bind(this));
-        normalMovePruneFunctions.push(this.notLandOnPiece.bind(this));
-
-        let getFromMoveVector = (moveVector : FileRank) =>{
-            if(destFileRank !== null){
-                if(! this.isRay(originFileRank, destFileRank, moveVector)){
-                    return;
-                }
-            }
-
-            let normalMoveFileRank = FileRank.addFileRank(originFileRank, moveVector);
-            while(this.pruneFileRankHelper(normalMoveFileRank, normalMovePruneFunctions)){
-                if(destFileRank === null){
-                    destFileRanks.push(normalMoveFileRank);
-                }else {
-                    if(AbstractEngine.fileRankEqual(normalMoveFileRank, destFileRank)){
-                        destFileRanks.push(normalMoveFileRank);
-                    }
-                }
-
-                normalMoveFileRank.addFileRank(moveVector);
-            }
-        };
-
-
-        for(let i = 0; i < moveVectors.length; i++){
-            let moveVector = moveVectors[i];
-
-            getFromMoveVector(moveVector);
-        }
-
-        return this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
-    };
-
-    public getNormalMovesForFairyLeaper(originFileRank : FileRank, destFileRank : FileRank | null, fairyLeaper : FairyLeaper, moveClasses : MoveClass[]){
-        let moveVectors = fairyLeaper.getVectors();
-        let destFileRanks = this.getDestFileRankFromOriginFileRankMoveVector(originFileRank, moveVectors);
-
-        let pruneFunctions : ( (x : FileRank) => boolean)[]= [];
-        if(destFileRank !== null){
-            pruneFunctions.push(AbstractEngine.fileRankEqual.bind(this, destFileRank));
-        }
-
-        pruneFunctions.push(this.isFileRankLegal.bind(this));
-
-        pruneFunctions.push(this.notLandOnPiece.bind(this));
-
-        destFileRanks = this.pruneFileRanksHelper(destFileRanks, pruneFunctions);
-
-        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
-    };
-
-    public getNormalMovesForFairyStupid(originFileRank : FileRank, destFileRank : FileRank | null, fairyStupid : FairyStupid , moveClasses : MoveClass[]){
-        let moveVectors = fairyStupid.getVectors();
-        let originPiece = this.getPieceForFileRank(originFileRank);
-
-        let destFileRanks = [];
-
-        for(let i = 0; i < moveVectors.length; i++){
-            let moveVector = moveVectors[i];
-
-            let _destFileRank = FileRank.addFileRank(originFileRank, moveVector["vec"]);
-
-            let pruneFunctions = [];
-            if(destFileRank !== null){
-                pruneFunctions.push(AbstractEngine.fileRankEqual.bind(this, destFileRank));
-            }
-
-            pruneFunctions.push(this.isFileRankLegal.bind(this));
-            for(let j = 0; j < moveVector["emptyVec"].length; j++){
-                let empPos = moveVector["emptyVec"][j];
-
-                let pos = FileRank.addFileRank(originFileRank, empPos);
-                if(this.getPieceForFileRank(pos) !== null){
-                    pruneFunctions.push(function(){ return false;});
-                }
-
-                pruneFunctions.push(this.notLandOnPiece.bind(this));
-
-                if(this.pruneFileRankHelper(_destFileRank, pruneFunctions)){
-                    destFileRanks.push(_destFileRank);
-                }
-            }
-        }
-
-
-        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
-    };
-
-
+    }
     //The functions that deal with capture fairy moves
     public getCaptureMovesForFairy(originFileRank : FileRank, destFileRank : FileRank | null, fairy : Fairy, moveClasses : MoveClass[]){
         let fairyType = fairy.getFairyType();
@@ -455,126 +414,8 @@ export class AbstractEngine {
         }else if(fairyType === FairyType.STUPID){
             this.getCaptureMovesForFairyStupid(originFileRank, destFileRank, <FairyStupid>fairy, moveClasses);
         }
-    };
-
-
-    public getCaptureMovesForFairyRider(originFileRank : FileRank, destFileRank : FileRank | null, fairyRider : FairyRider, moveClasses : MoveClass[]){
-        let moveVectors = fairyRider.getVectors();
-        let originPiece = <PieceModel>this.getPieceForFileRank(originFileRank);
-
-        let destFileRanks : FileRank[] = [];
-
-        let normalMovePruneFunctions : ( ( x: FileRank) => boolean )[] = [];
-        normalMovePruneFunctions.push(this.isFileRankLegal.bind(this));
-        normalMovePruneFunctions.push(this.notLandOnPiece.bind(this));
-
-        let captureMovePruneFunctions :( ( x: FileRank) => boolean )[] = [];
-        captureMovePruneFunctions.push(this.isFileRankLegal.bind(this));
-        captureMovePruneFunctions.push(this.landOnPiece.bind(this));
-        captureMovePruneFunctions.push(this.notLandOnSideType.bind(this, originPiece.getSideType()));
-
-
-
-        let getFromMoveVector = (moveVector : FileRank) => {
-            if(destFileRank !== null){
-                if(! this.isRay(originFileRank, destFileRank, moveVector)){
-                    return;
-                }
-            }
-
-            let normalMoveFileRank = FileRank.addFileRank(originFileRank, moveVector);
-            while(this.pruneFileRankHelper(normalMoveFileRank, normalMovePruneFunctions)){
-                normalMoveFileRank.addFileRank(moveVector);
-            }
-
-            let captureMoveFileRank = normalMoveFileRank;
-
-            if(destFileRank !== null){
-                if(AbstractEngine.fileRankNotEqual(captureMoveFileRank, destFileRank)){
-                    return;
-                }
-            }
-
-            if(this.pruneFileRankHelper(captureMoveFileRank, captureMovePruneFunctions)){
-                destFileRanks.push((captureMoveFileRank));
-            }
-        };
-
-
-        for(let i = 0; i < moveVectors.length; i++){
-            let moveVector = moveVectors[i];
-
-            getFromMoveVector(moveVector);
-        }
-
-        return this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
-    };
-
-    public getCaptureMovesForFairyLeaper(originFileRank : FileRank, destFileRank : FileRank | null, fairyLeaper : FairyLeaper, moveClasses : MoveClass[]){
-        let moveVectors = fairyLeaper.getVectors();
-        let destFileRanks = this.getDestFileRankFromOriginFileRankMoveVector(originFileRank, moveVectors);
-        let originPiece = <PieceModel>this.getPieceForFileRank(originFileRank);
-
-
-        let pruneFunctions : ( ( x: FileRank) => boolean )[] = [];
-        if(destFileRank !== null){
-            pruneFunctions.push(AbstractEngine.fileRankEqual.bind(this, destFileRank));
-        }
-
-        pruneFunctions.push(this.isFileRankLegal.bind(this));
-
-
-        pruneFunctions.push(this.landOnPiece.bind(this));
-        pruneFunctions.push(this.notLandOnSideType.bind(this, originPiece.getSideType()));
-
-
-        destFileRanks = this.pruneFileRanksHelper(destFileRanks, pruneFunctions);
-
-        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
-    };
-
-    public getCaptureMovesForFairyStupid(originFileRank : FileRank, destFileRank : FileRank | null, fairyStupid : FairyStupid, moveClasses : MoveClass[]){
-        let moveVectors = fairyStupid.getVectors();
-        let originPiece = <PieceModel>this.getPieceForFileRank(originFileRank);
-
-        let destFileRanks = [];
-
-        for(let i = 0; i < moveVectors.length; i++){
-            let moveVector = moveVectors[i];
-
-            let _destFileRank = FileRank.addFileRank(originFileRank, moveVector["vec"]);
-
-            let pruneFunctions : ( ( x: FileRank) => boolean )[] = [];
-            if(destFileRank !== null){
-                pruneFunctions.push(AbstractEngine.fileRankEqual.bind(this, destFileRank));
-            }
-
-            pruneFunctions.push(this.isFileRankLegal);
-            for(let j = 0; j < moveVector["emptyVec"].length; j++){
-                let empPos = moveVector["emptyVec"][j];
-
-                let pos = FileRank.addFileRank(originFileRank, empPos);
-                if(this.getPieceForFileRank(pos) !== null){
-                    pruneFunctions.push(function(){ return false;});
-                }
-
-                pruneFunctions.push(this.landOnPiece.bind(this));
-                pruneFunctions.push(this.notLandOnSideType.bind(this, originPiece.getSideType()));
-
-
-                if(this.pruneFileRankHelper(_destFileRank, pruneFunctions)){
-                    destFileRanks.push(_destFileRank);
-                }
-            }
-        }
-
-
-        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
-    };
-
-
-
-
+    }
+    //The functions that deal with capture/normal fairy moves
     public getCaptureNormalMovesForFairy(originFileRank : FileRank, destFileRank : FileRank | null, fairyCapture : Fairy, fairyNormal : Fairy, moveClasses : MoveClass[]){
         if(fairyNormal !== fairyCapture){
             this.getNormalMovesForFairy(originFileRank, destFileRank, fairyNormal, moveClasses);
@@ -589,137 +430,7 @@ export class AbstractEngine {
                 this.getCaptureNormalMovesForFairyStupid(originFileRank, destFileRank, <FairyStupid>fairyNormal, moveClasses);
             }
         }
-    };
-
-    public getCaptureNormalMovesForFairyRider(originFileRank : FileRank, destFileRank : FileRank | null, fairyRider : FairyRider, moveClasses : MoveClass[]){
-        let moveVectors = fairyRider.getVectors();
-        let originPiece = <PieceModel>this.getPieceForFileRank(originFileRank);
-
-        let destFileRanks : FileRank[] = [];
-
-        let normalMovePruneFunctions: ( ( x: FileRank) => boolean )[] = [];
-        normalMovePruneFunctions.push(this.isFileRankLegal.bind(this));
-        normalMovePruneFunctions.push(this.notLandOnPiece.bind(this));
-
-        let captureMovePruneFunctions: ( ( x: FileRank) => boolean )[] = [];
-        captureMovePruneFunctions.push(this.isFileRankLegal.bind(this));
-        captureMovePruneFunctions.push(this.landOnPiece.bind(this));
-        captureMovePruneFunctions.push(this.notLandOnSideType.bind(this, originPiece.getSideType()));
-
-        let getFromMoveVector = (moveVector : FileRank) =>{
-            if(destFileRank !== null){
-                if(! this.isRay(originFileRank, destFileRank, moveVector)){
-                    return;
-                }
-            }
-
-            let normalMoveFileRank = FileRank.addFileRank(originFileRank, moveVector);
-            while(this.pruneFileRankHelper(normalMoveFileRank, normalMovePruneFunctions)){
-                if(destFileRank === null){
-                    destFileRanks.push(normalMoveFileRank);
-                }else {
-                    if(AbstractEngine.fileRankEqual(normalMoveFileRank, destFileRank)){
-                        destFileRanks.push(normalMoveFileRank);
-                    }
-                }
-
-                normalMoveFileRank.addFileRank(moveVector);
-            }
-
-            let captureMoveFileRank = normalMoveFileRank;
-
-            if(destFileRank !== null){
-                if(AbstractEngine.fileRankNotEqual(captureMoveFileRank, destFileRank)){
-                    return;
-                }
-            }
-
-            if(this.pruneFileRankHelper(captureMoveFileRank, captureMovePruneFunctions)){
-                destFileRanks.push((captureMoveFileRank));
-            }
-        };
-
-
-        for(let i = 0; i < moveVectors.length; i++){
-            let moveVector = moveVectors[i];
-
-            getFromMoveVector(moveVector);
-        }
-
-        return this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
-    };
-
-    public getCaptureNormalMovesForFairyLeaper(originFileRank : FileRank, destFileRank : FileRank | null, fairyLeaper : FairyLeaper, moveClasses : MoveClass[]){
-        let moveVectors = fairyLeaper.getVectors();
-        let destFileRanks = this.getDestFileRankFromOriginFileRankMoveVector(originFileRank, moveVectors);
-        let originPiece = <PieceModel>this.getPieceForFileRank(originFileRank);
-
-        let pruneFunctions : ( ( x: FileRank) => boolean )[] = [];
-        if(destFileRank !== null){
-            pruneFunctions.push(AbstractEngine.fileRankEqual.bind(this, destFileRank));
-        }
-
-        pruneFunctions.push(this.isFileRankLegal.bind(this));
-
-        let pruneFunctionsNormal = [];
-        pruneFunctionsNormal.push(this.notLandOnPiece.bind(this));
-
-        let pruneFunctionsCapture = [];
-        pruneFunctionsCapture.push(this.landOnPiece.bind(this));
-        pruneFunctionsCapture.push(this.notLandOnSideType.bind(this, originPiece.getSideType()));
-
-        pruneFunctions.push(this.orFunctionHelper.bind(this, pruneFunctionsNormal, pruneFunctionsCapture));
-
-        destFileRanks = this.pruneFileRanksHelper(destFileRanks, pruneFunctions);
-
-        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
-    };
-    public getCaptureNormalMovesForFairyStupid(originFileRank : FileRank, destFileRank : FileRank | null, fairyStupid : FairyStupid, moveClasses : MoveClass[]){
-        let moveVectors = fairyStupid.getVectors();
-        let originPiece = <PieceModel>this.getPieceForFileRank(originFileRank);
-
-        let destFileRanks = [];
-
-        for(let i = 0; i < moveVectors.length; i++){
-            let moveVector = moveVectors[i];
-
-            let _destFileRank = FileRank.addFileRank(originFileRank, moveVector["vec"]);
-
-            let pruneFunctions : ( ( x: FileRank) => boolean )[] = [];
-            if(destFileRank !== null){
-                pruneFunctions.push(AbstractEngine.fileRankEqual.bind(this, destFileRank));
-            }
-
-            pruneFunctions.push(this.isFileRankLegal.bind(this));
-            for(let j = 0; j < moveVector["emptyVec"].length; j++){
-                let empPos = moveVector["emptyVec"][j];
-
-                let pos = FileRank.addFileRank(originFileRank, empPos);
-                if(this.getPieceForFileRank(pos) !== null){
-                    pruneFunctions.push(function(){ return false;});
-                }
-
-                let pruneFunctionsNormal = [];
-                pruneFunctionsNormal.push(this.notLandOnPiece.bind(this));
-
-                let pruneFunctionsCapture = [];
-                pruneFunctionsCapture.push(this.landOnPiece.bind(this));
-                pruneFunctionsCapture.push(this.notLandOnSideType.bind(this, originPiece.getSideType()));
-
-                pruneFunctions.push(this.orFunctionHelper.bind(this, pruneFunctionsNormal, pruneFunctionsCapture));
-
-                if(this.pruneFileRankHelper(_destFileRank, pruneFunctions)){
-                    destFileRanks.push(_destFileRank);
-                }
-            }
-        }
-
-
-        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
-    };
-
-
-
+    }
     //Functions that have to do with calculating vector moves
     public getVectorMovesForFairy(originFileRank : FileRank, destFileRank : FileRank | null, fairy : Fairy, moveClasses : MoveClass[]){
         let fairyType = fairy.getFairyType();
@@ -732,89 +443,202 @@ export class AbstractEngine {
         }
     }
 
-    public getVectorMovesForFairyRider(originFileRank : FileRank, destFileRank : FileRank | null, fairyRider : FairyRider, moveClasses : MoveClass[]){
-        let moveVectors = fairyRider.getVectors();
-        let originPiece = this.getPieceForFileRank(originFileRank);
 
+
+    public getMovesForFairyRiderHelper(originFileRank : FileRank, destFileRank : FileRank | null, fairyRider : FairyRider, moveClasses : MoveClass[], isNormal : boolean, isCapture : boolean){
+        let moveVectors = fairyRider.getVectors();
+        let originPiece = <PieceModel>this.getPieceForFileRank(originFileRank);
 
         let destFileRanks : FileRank[] = [];
 
-        let normalMovePruneFunctions : ( ( x: FileRank) => boolean )[] = [];
-        normalMovePruneFunctions.push(this.isFileRankLegal.bind(this));
 
-        let getFromMoveVector = (moveVector  : FileRank) => {
+        for(let i = 0; i < moveVectors.length; i++){
+            let moveVector = moveVectors[i];
+
             if(destFileRank != null){
                 if(!this.isRay(originFileRank, destFileRank, moveVector)){
-                    return;
+                    continue
                 }
             }
 
             let normalMoveFileRank = FileRank.addFileRank(originFileRank, moveVector);
 
-            while(this.pruneFileRankHelper(normalMoveFileRank, normalMovePruneFunctions)){
-                if(destFileRank == null){
-                    destFileRanks.push(normalMoveFileRank);
-                } else {
-                    if(AbstractEngine.fileRankEqual(normalMoveFileRank, destFileRank)){
+            while(this.pruneFileRankNormal(null, normalMoveFileRank)){
+                if(isNormal){
+                    if(destFileRank == null){
                         destFileRanks.push(normalMoveFileRank);
+                    }else if(AbstractEngine.fileRankEqual(normalMoveFileRank, destFileRank)){
+                        destFileRanks.push(normalMoveFileRank)
                     }
                 }
 
                 normalMoveFileRank.addFileRank(moveVector);
             }
-        };
 
+            let captureMoveFileRank = normalMoveFileRank;
 
-        for(let i = 0; i < moveVectors.length; i++){
-            getFromMoveVector(moveVectors[i]);
+            if(isCapture && this.pruneFileRankCapture(originPiece.getSideType(), destFileRank, captureMoveFileRank)){
+                destFileRanks.push(captureMoveFileRank);
+            }
         }
 
-
-        return this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
+        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
     }
 
-    public getVectorMovesForFairyLeaper(originFileRank : FileRank, destFileRank : FileRank | null, fairyLeaper : FairyLeaper, moveClasses : MoveClass[]){
-        let moveVectors = fairyLeaper.getVectors();
-        let destFileRanks = this.getDestFileRankFromOriginFileRankMoveVector(originFileRank, moveVectors);
-        let originPiece = this.getPieceForFileRank(originFileRank);
 
-        let pruneFunctions : ( ( x: FileRank) => boolean )[] = [];
+    public getNormalMovesForFairyRider(originFileRank : FileRank, destFileRank :FileRank | null, fairyRider : FairyRider, moveClasses : MoveClass[]){
+        this.getMovesForFairyRiderHelper(originFileRank, destFileRank, fairyRider, moveClasses, true, false);
+    }
+    public getCaptureMovesForFairyRider(originFileRank : FileRank, destFileRank : FileRank | null, fairyRider : FairyRider, moveClasses : MoveClass[]){
+        this.getMovesForFairyRiderHelper(originFileRank, destFileRank, fairyRider, moveClasses, false, true);
+    }
+    public getCaptureNormalMovesForFairyRider(originFileRank : FileRank, destFileRank : FileRank | null, fairyRider : FairyRider, moveClasses : MoveClass[]){
+        this.getMovesForFairyRiderHelper(originFileRank, destFileRank, fairyRider, moveClasses, true, true);
+    }
+    public getVectorMovesForFairyRider(originFileRank : FileRank, destFileRank : FileRank | null, fairyRider : FairyRider, moveClasses : MoveClass[]){
+        let moveVectors = fairyRider.getVectors();
+        let originPiece = <PieceModel>this.getPieceForFileRank(originFileRank);
 
-        if(destFileRank != null){
-            pruneFunctions.push(AbstractEngine.fileRankEqual.bind(this, destFileRank));
+        let destFileRanks : FileRank[] = [];
+
+
+        for(let i = 1;i < moveVectors.length; i++){
+            let moveVector = moveVectors[i];
+
+            if(destFileRank != null){
+                if(!this.isRay(originFileRank, destFileRank, moveVector)){
+                    continue;
+                }
+            }
+
+            let normalMoveFileRank = FileRank.addFileRank(originFileRank, moveVector);
+
+            while(this.pruneFileRankVector(null, normalMoveFileRank)){
+                if(destFileRank == null){
+                    destFileRanks.push(normalMoveFileRank);
+                }else if(AbstractEngine.fileRankEqual(normalMoveFileRank, destFileRank)){
+                    destFileRanks.push(normalMoveFileRank);
+                }
+
+                normalMoveFileRank.addFileRank(moveVector);
+            }
         }
-        pruneFunctions.push(this.isFileRankLegal.bind(this));
 
-
-        destFileRanks = this.pruneFileRanksHelper(destFileRanks, pruneFunctions);
 
         this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
     }
 
 
 
-    public getVectorMovesForFairyStupid(originFileRank : FileRank, destFileRank : FileRank | null, fairyStupid : FairyStupid, moveClasses : MoveClass[]){
-        let moveVectors = fairyStupid.getVectors();
-        let originPiece = this.getPieceForFileRank(originFileRank);
 
-        let destFileRanks = [];
-        for(let i = 0; i < moveVectors.length; i++) {
-            let moveVector = moveVectors[i];
-            let _destFileRank = FileRank.addFileRank(originFileRank, moveVector.vec);
-
-            let pruneFunctions : ( ( x: FileRank) => boolean )[] = [];
-            if (destFileRank != null) {
-                pruneFunctions.push(AbstractEngine.fileRankEqual.bind(this, destFileRank));
-            }
-
-            pruneFunctions.push(this.isFileRankLegal.bind(this));
-            if (this.pruneFileRankHelper(_destFileRank, pruneFunctions)) {
-                destFileRanks.push(_destFileRank);
+    public getMovesForFairyLeaperHelper(originFileRank : FileRank, destFileRank : FileRank | null, fairyLeaper : FairyLeaper, moveClasses : MoveClass[], func : (FileRank) => boolean):void{
+        if(destFileRank != null){
+            let diffVec = FileRank.subFileRank(destFileRank, originFileRank);
+            if(Math.abs(diffVec.x) > fairyLeaper.getMaxX() || Math.abs(diffVec.y) > fairyLeaper.getMaxY()){
+                return;
             }
         }
 
+        let destFileRanks : FileRank[] = [];
 
-        return this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
+        let moveVectors = fairyLeaper.getVectors();
+        for(let i = 0; i < moveVectors.length; i++){
+            let fileRank = FileRank.addFileRank(originFileRank, moveVectors[i]);
+
+            if(func(fileRank)){
+                destFileRanks.push(fileRank)
+            }
+        }
+
+        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses)
+    }
+    public getNormalMovesForFairyLeaper(originFileRank : FileRank, destFileRank : FileRank | null, fairyLeaper : FairyLeaper, moveClasses : MoveClass[]){
+        let func : (fileRank : FileRank) => boolean = this.pruneFileRankNormal.bind(this, destFileRank);
+
+        this.getMovesForFairyLeaperHelper(originFileRank, destFileRank, fairyLeaper, moveClasses, func);
+    }
+    public getCaptureMovesForFairyLeaper(originFileRank : FileRank, destFileRank : FileRank | null, fairyLeaper : FairyLeaper, moveClasses : MoveClass[]){
+        let originPiece = <PieceModel> this.getPieceForFileRank(originFileRank);
+        let mySideType = originPiece.getSideType();
+        let func : (fileRank : FileRank) => boolean = this.pruneFileRankCapture.bind(this, mySideType, destFileRank);
+
+        this.getMovesForFairyLeaperHelper(originFileRank, destFileRank, fairyLeaper, moveClasses, func);
+    }
+    public getCaptureNormalMovesForFairyLeaper(originFileRank : FileRank, destFileRank : FileRank | null, fairyLeaper : FairyLeaper, moveClasses : MoveClass[]){
+        let originPiece = <PieceModel> this.getPieceForFileRank(originFileRank);
+        let mySideType = originPiece.getSideType();
+        let func : (fileRank : FileRank) => boolean = this.pruneFileRankCaptureOrNormal.bind(this, mySideType, destFileRank);
+
+        this.getMovesForFairyLeaperHelper(originFileRank, destFileRank, fairyLeaper, moveClasses, func);
+    }
+    public getVectorMovesForFairyLeaper(originFileRank : FileRank, destFileRank : FileRank | null, fairyLeaper : FairyLeaper, moveClasses : MoveClass[]){
+        let func : (fileRank : FileRank) => boolean = this.pruneFileRankVector.bind(this, destFileRank);
+
+        this.getMovesForFairyLeaperHelper(originFileRank, destFileRank, fairyLeaper, moveClasses, func);
+    }
+
+
+
+
+    public getMovesForFairyStupidHelper(originFileRank : FileRank, destFileRank : FileRank | null, fairyStupid : FairyStupid, moveClasses : MoveClass[], func : (fileRank : FileRank) => boolean){
+        if(destFileRank != null){
+            let diffVec = FileRank.subFileRank(destFileRank, originFileRank);
+            if(Math.abs(diffVec.x) > fairyStupid.getMaxX() || Math.max(diffVec.y) > fairyStupid.getMaxY()){
+                return;
+            }
+        }
+
+        let moveVectors = fairyStupid.getVectors();
+
+        let destFileRanks :FileRank[] = [];
+        for(let i = 0; i < moveVectors.length; i++){
+            let moveVector = moveVectors[i];
+
+            let isEmpty = true;
+            for(let j = 0; j <= moveVector.emptyVec.length; i++){
+                let empPos = moveVector.emptyVec[j];
+
+                let pos = FileRank.addFileRank(originFileRank, moveVector.emptyVec[i]);
+
+                if(this.getPieceForFileRank(pos) != null){
+                    isEmpty = false;
+                }
+            }
+
+            if(isEmpty){
+                let destFileRank = FileRank.addFileRank(originFileRank, moveVector["vec"]);
+                if(func(destFileRank)){
+                    destFileRanks.push(destFileRank);
+                }
+            }
+        }
+
+        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
+    }
+
+    public getNormalMovesForFairyStupid(originFileRank : FileRank, destFileRank : FileRank | null, fairyStupid : FairyStupid , moveClasses : MoveClass[]){
+        let func : (fileRank : FileRank) => boolean = this.pruneFileRankNormal.bind(this, destFileRank);
+
+        this.getMovesForFairyStupidHelper(originFileRank, destFileRank, fairyStupid, moveClasses, func);
+    }
+    public getCaptureMovesForFairyStupid(originFileRank : FileRank, destFileRank : FileRank | null, fairyStupid : FairyStupid, moveClasses : MoveClass[]){
+        let originPiece = <PieceModel> this.getPieceForFileRank(originFileRank);
+        let mySideType = originPiece.getSideType();
+        let func : (fileRank : FileRank) => boolean = this.pruneFileRankCapture.bind(this, mySideType, destFileRank);
+
+        this.getMovesForFairyStupidHelper(originFileRank, destFileRank, fairyStupid, moveClasses, func);
+    }
+    public getCaptureNormalMovesForFairyStupid(originFileRank : FileRank, destFileRank : FileRank | null, fairyStupid : FairyStupid, moveClasses : MoveClass[]){
+        let originPiece = <PieceModel> this.getPieceForFileRank(originFileRank);
+        let mySideType = originPiece.getSideType();
+        let func : (fileRank : FileRank) => boolean = this.pruneFileRankCaptureOrNormal.bind(this, mySideType, destFileRank);
+
+        this.getMovesForFairyStupidHelper(originFileRank, destFileRank, fairyStupid, moveClasses, func);
+    }
+    public getVectorMovesForFairyStupid(originFileRank : FileRank, destFileRank : FileRank | null, fairyStupid : FairyStupid, moveClasses : MoveClass[]){
+        let func : (fileRank : FileRank) => boolean = this.pruneFileRankVector.bind(this, destFileRank);
+
+        this.getMovesForFairyStupidHelper(originFileRank, destFileRank, fairyStupid, moveClasses, func);
     }
 
 

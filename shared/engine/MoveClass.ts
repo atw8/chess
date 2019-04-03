@@ -1,4 +1,5 @@
 import {PieceModel} from "./PieceModel";
+import {FileRank} from "./FileRank";
 
 export class MoveClass{
 
@@ -36,9 +37,9 @@ export class MoveClass{
         }
 
         return ret;
-    };
+    }
 
-};
+}
 
 
 

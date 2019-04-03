@@ -27,8 +27,6 @@ class MoveClass {
         }
         return ret;
     }
-    ;
 }
 exports.MoveClass = MoveClass;
-;
 //# sourceMappingURL=MoveClass.js.map
