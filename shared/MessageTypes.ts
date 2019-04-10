@@ -78,44 +78,36 @@ export class RoomInitConfig {
             "properties" : {
                 "roomId" : {
                     "type" : "integer",
-                    "required" : true,
                 },
 
                 "gameTimeTypeWhite" : {
                     "type" : "integer",
-                    "required": true,
                 },
                 "gameTimeTotalTimeWhite" : {
                     "type" : "number",
-                    "required" : false,
                 },
                 "gameTimeIncrTimeWhite" : {
                     "type" : "number",
-                    "required" : false,
                 },
 
                 "gameTimeTypeBlack" : {
                     "type" : "integer",
-                    "required" : true,
                 },
                 "gameTimeTotalTimeBlack" : {
                     "type" : "number",
-                    "required" : false,
                 },
                 "gameTimeIncrTimeBlack" : {
                     "type" : "number",
-                    "required" : false,
                 },
 
                 "isChess960" : {
                     "type" : "boolean",
-                    "required" : false,
                 },
                 "beginFenStr" : {
                     "type" : "string",
-                    "required" : false,
                 }
-            }
+            },
+            "required" : ["roomId", "gameTimeTypeWhite", "gameTimeTypeBlack"]
         };
 
         let validatorResult : ValidatorResult = validator.validate(json, schema);
@@ -186,7 +178,6 @@ export class RoomStateConfig {
             "properties" : {
                 "players" : {
                     "type" : "integer",
-                    "required" : true,
                 },
                 "voteConfig" : {
                     "type" : "object",
@@ -198,23 +189,21 @@ export class RoomStateConfig {
                 },
                 "currentFenStr" : {
                     "type" : "string",
-                    "required" : true,
                 },
                 "sanMoves" : {
                     "type" : "array",
                     "items" : {
                         "type" : "string"
                     },
-                    "required" : true
                 },
                 "timeStamps" : {
                     "type" : "array",
                     "items" : {
                         "type" : "integer",
                     },
-                    "required" : true
                 }
-            }
+            },
+            "required" : ["players", "currentFenStr", "sanMoves", "timeStamps"]
         };
 
         let validatorResult : ValidatorResult = validator.validate(json, schema);
@@ -286,13 +275,12 @@ export class ClientServerMessage {
                 "messageType" : {
                     "type" : "string",
                     "format" : "MessageType",
-                    "required": true,
                 },
                 "requestId" : {
                     "type" : "integer",
-                    "required": true,
                 }
-            }
+            },
+            "required" : ["messageType", "requestId"]
         };
 
         let validatorResult : ValidatorResult = validator.validate(json, schema);
@@ -357,22 +345,19 @@ export class ServerClientMessage {
                 "messageType" : {
                     "type" : "string",
                     "format" : "MessageType",
-                    "required" : true
                 },
                 "errorCode" : {
                     "type" : "integer",
                     "format" : "ErrorCode",
-                    "required" : true
                 },
                 "requestId" : {
                     "type" : "integer",
-                    "required" : true
                 },
                 "timeStamp" : {
                     "type" : "integer",
-                    "required" : true
                 }
-            }
+            },
+            "required" : ["messageType", "errorCode", "requestId", "timeStamp"]
         };
 
 
@@ -482,9 +467,9 @@ export class OnLoginGuestMessage extends ServerClientMessage {
             "properties" : {
                 "token" : {
                     "type" : "string",
-                    "required" : true,
                 }
-            }
+            },
+            "required" : ["token"]
         };
 
         let validatorResult : ValidatorResult = validator.validate(json, schema);
@@ -575,10 +560,10 @@ export class OnGetRoomsListMessage extends ServerClientMessage {
                     "type" : "array",
                     "items" : {
                         "type" : "integer"
-                    },
-                    "required" : true
+                    }
                 }
-            }
+            },
+            "required" : ["roomIds"]
         };
 
 
@@ -635,9 +620,9 @@ export class OpJoinRoomMessage extends ClientServerMessage {
             "properties" : {
                 "roomId" : {
                     "type" : "integer",
-                    "required" : false
                 }
-            }
+            },
+            "required" : []
         };
 
 
@@ -690,26 +675,20 @@ export class OnJoinRoomMessage extends ServerClientMessage {
         }
 
         let schema : Schema = {
-            "id" : "/OpJoinRoomMessage",
+            "id" : "/OnJoinRoomMessage",
             "type" : "object",
             "properties" : {
-                "isSuccess" : {
-                    "type" : "boolean",
-                    "required" : true,
-                },
                 "roomId" : {
                     "type" : "integer",
-                    "required" : false
                 },
                 "roomInitConfig" : {
                     "type" : "object",
-                    "required" : false
                 },
                 "roomStateConfig" : {
                     "type" : "object",
-                    "required" : false
                 }
-            }
+            },
+            "required" : []
         };
 
         let validatorResult : ValidatorResult = validator.validate(json, schema);
