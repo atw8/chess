@@ -1,5 +1,3 @@
-/// <reference path="../../node_modules/phaser-ce/typescript/phaser.d.ts" />
-
 import {FileRank} from "../../shared/engine/FileRank";
 import {PieceModel} from "../../shared/engine/PieceModel";
 import {SideType} from "../../shared/engine/SideType";
@@ -18,24 +16,17 @@ import {POINT_COLORS} from "./PointColorCons";
 import {Controller} from "./../controller/Controller";
 
 
-import {AbstractViewInterfaceType} from "./viewInterface/AbstractViewInterface";
-import {AbstractViewInterface} from "./viewInterface/AbstractViewInterface";
-import {PredictViewInterface} from "./viewInterface/PredictViewInterface";
-import {PieceViewInterface} from "./viewInterface/PieceViewInterface";
-
 
 import {PositionManager} from "./PositionControl/PositionManager";
 import {PositionConstantSpeed} from "./PositionControl/PositionConstantSpeed";
 import {PositionMovePiece} from "./PositionControl/PositionMovePiece";
 
+import {SimpleGame} from "../app";
 
-import 'p2';
-import 'pixi';
-import 'phaser';
-import {ImageTag} from "../ImageTag";
+import {getNameForImageTag, ImageTag} from "../ImageTag";
+import {text} from "body-parser";
 
 
-const Global = require("./../Global");
 
 
 interface AddStruct {
@@ -79,20 +70,20 @@ enum ActionMovingTypes {
 
 
 
-export class BoardView extends Phaser.Graphics {
+export class BoardView extends PIXI.Graphics {
 
     private boardFacing: SideType;
 
-    private pieceViewInterface: PieceViewInterface;
-    private uiBoardFiles: { [key: number]: Phaser.Text };
-    private uiBoardRanks: { [key: number]: Phaser.Text };
+    private fileRankPieceSprites : { [key : number] : { [key : number] : PieceView | null } };
+    private uiBoardFiles: { [key: number]: PIXI.Text };
+    private uiBoardRanks: { [key: number]: PIXI.Text };
 
     private uiSquares: { [key: number]: { [key: number]: SquareColorNode } };
     private uiPoints: { [key: number]: { [key: number]: PointColorNode } };
 
-    private uiSelectLightSprite: Phaser.Sprite;
+    private uiSelectLightSprite: PIXI.Sprite;
 
-    private uiOptionCycleSprite: Phaser.Sprite;
+    private uiOptionCycleSprite: PIXI.Sprite;
     private uiOptionCycleFileRank: FileRank | null;
 
     private originFileRank: FileRank | null;
@@ -100,8 +91,8 @@ export class BoardView extends Phaser.Graphics {
 
     private touchType = TouchTypes.NO_TOUCH;
 
-    private originTouchLocation: Phaser.Point| null;
-    private currentTouchLocation: Phaser.Point | null;
+    private originTouchLocation: PIXI.Point| null;
+    private currentTouchLocation: PIXI.Point | null;
 
     private positionManager : PositionManager;
     public getPositionManager():PositionManager {
@@ -120,19 +111,16 @@ export class BoardView extends Phaser.Graphics {
         return this.m_height;
     }
 
-    private fileRankNumberGroup : Phaser.Group;
-    private pointGroup: Phaser.Group;
-    private squareGroup : Phaser.Group;
-    private bottomGroup : Phaser.Group;
+    private fileRankNumberGroup : PIXI.Container;
+    private pointGroup: PIXI.Container;
+    private squareGroup : PIXI.Container;
+    private bottomGroup : PIXI.Container;
 
-    private predictSpriteGroup : Phaser.Group;
-
-    private predictMoves : { [key : string] : PredictViewInterface };
+    private pieceSpriteGroup : PIXI.Container;
 
 
     constructor(width: number, height: number, controller: Controller) {
-        super(Global.game);
-
+        super();
         this.m_width = width;
         this.m_height = height;
         this.controller = controller;
@@ -167,32 +155,26 @@ export class BoardView extends Phaser.Graphics {
         }
 
 
-        this.predictSpriteGroup = new Phaser.Group(Global.game);
-        this.addChild(this.predictSpriteGroup);
-
-
-        this.pointGroup = new Phaser.Group(Global.game);
+        this.pointGroup = new PIXI.Container();
         this.addChild(this.pointGroup);
 
-        this.squareGroup = new Phaser.Group(Global.game);
+        this.squareGroup = new PIXI.Container();
         this.addChild(this.squareGroup);
 
-        this.bottomGroup = new Phaser.Group(Global.game);
+        this.bottomGroup = new PIXI.Container();
         this.addChild(this.bottomGroup);
 
 
-        let pieceSpriteGroup = new Phaser.Group(Global.game);
-        this.addChild(pieceSpriteGroup);
+        this.pieceSpriteGroup = new PIXI.Container();
+        this.addChild(this.pieceSpriteGroup);
 
 
-        this.fileRankNumberGroup = new Phaser.Group(Global.game);
+        this.fileRankNumberGroup = new PIXI.Container();
         this.addChild(this.fileRankNumberGroup);
 
 
 
 
-        this.pieceViewInterface = new PieceViewInterface(this.controller, pieceSpriteGroup, this.getSquareWidth(), this.getSquareHeight());
-        this.predictMoves = {};
 
 
         this.uiBoardFiles = {};
@@ -202,17 +184,18 @@ export class BoardView extends Phaser.Graphics {
 
 
         //The select light of the board
-        this.uiSelectLightSprite = new Phaser.Sprite(Global.game, 0, 0, ImageTag.select_light);
-        this.bottomGroup.add(this.uiSelectLightSprite);
+        this.uiSelectLightSprite = PIXI.Sprite.from(getNameForImageTag(ImageTag.select_light));
+        this.bottomGroup.addChild(this.uiSelectLightSprite);
         this.uiSelectLightSprite.scale.set(this.m_width / 700, this.m_height / 700);
         this.uiSelectLightSprite.anchor.set(0.5, 0.5);
         this.hideSelectLightSprite();
 
         //The option cycle sprite
-        this.uiOptionCycleSprite = new Phaser.Sprite(Global.game, 0, 0, ImageTag.option_light);
-        this.bottomGroup.add(this.uiOptionCycleSprite);
+        this.uiOptionCycleSprite = PIXI.Sprite.from(getNameForImageTag(ImageTag.option_light));
+        this.bottomGroup.addChild(this.uiOptionCycleSprite);
         this.uiOptionCycleSprite.scale.set(this.m_width / 700, this.m_height / 700);
         this.uiOptionCycleSprite.anchor.set(0.5, 0.5);
+        this.uiOptionCycleSprite.alpha = 0.3;
         this.uiOptionCycleFileRank = null;
         this.hideOptionCycleSprite();
 
@@ -222,12 +205,20 @@ export class BoardView extends Phaser.Graphics {
             this.uiSquares[squareColor] = {};
         }
 
-
+        //the points
         this.uiPoints = {};
         for (let pointColor = POINT_COLORS.FIRST_COLOR; pointColor <= POINT_COLORS.LAST_COLOR; pointColor++) {
             this.uiPoints[pointColor] = {};
         }
 
+        //the filerank pieces
+        this.fileRankPieceSprites = {};
+        for (let fileNumber = 1; fileNumber <= ChessEngine.getNumOfFiles(); fileNumber++) {
+            this.fileRankPieceSprites[fileNumber] = {};
+            for (let rank = 1; rank <= ChessEngine.getNumOfRanks(); rank++) {
+                this.fileRankPieceSprites[fileNumber][rank] = null;
+            }
+        }
 
         //The code related to the touchtype
         this.originFileRank = null;
@@ -236,6 +227,22 @@ export class BoardView extends Phaser.Graphics {
         this.originSprite = null;
         this.originTouchLocation = null;
         this.currentTouchLocation = null;
+    }
+
+    public getPieceSpriteForFileRank(fileRank : FileRank):PieceView | null{
+        return this.fileRankPieceSprites[fileRank.x][fileRank.y];
+    }
+    public setPieceSpriteForFileRank(fileRank : FileRank, pieceView : PieceView | null){
+        this.fileRankPieceSprites[fileRank.x][fileRank.y] = pieceView;
+    }
+    public createPieceView(sideType : SideType, pieceType : PieceType):PieceView{
+        let pieceSprite = new PieceView(sideType, pieceType, this.getSquareWidth(), this.getSquareHeight());
+        this.pieceSpriteGroup.addChild(pieceSprite);
+
+        return pieceSprite;
+    }
+    public removePieceView(pieceView : PieceView){
+        this.pieceSpriteGroup.removeChild(pieceView);
     }
 
 
@@ -282,15 +289,15 @@ export class BoardView extends Phaser.Graphics {
     }
 
 
-        public onTouchBegan(worldLocation: Phaser.Point, chessEngine: ChessEngine) {
+        public onTouchBegan(worldLocation: PIXI.Point, chessEngine: ChessEngine) {
         this.currentTouchLocation = worldLocation;
         this._onTouchBegan(worldLocation, chessEngine);
     }
 
-    public _onTouchBegan(worldLocation: Phaser.Point, chessEngine: ChessEngine) {
+    public _onTouchBegan(worldLocation: PIXI.Point, chessEngine: ChessEngine) {
         let fileRank = this.getFileRankForWorldLocation(worldLocation);
         if (this.touchType === TouchTypes.NO_TOUCH) {
-            if (chessEngine.getPieceForFileRank(fileRank) !== null && this.pieceViewInterface.getPieceSpriteForFileRank(fileRank) !== null) {
+            if (chessEngine.getPieceForFileRank(fileRank) !== null && this.getPieceSpriteForFileRank(fileRank) !== null) {
                 let possibleMoves = chessEngine.getPossibleMoves(fileRank, null);
                 for (let i = 0; i < possibleMoves.length; i++) {
                     let possibleMove = possibleMoves[i];
@@ -318,11 +325,11 @@ export class BoardView extends Phaser.Graphics {
                 this.showSelectLightSprite(fileRank);
 
                 this.originFileRank = fileRank;
-                this.originSprite = <PieceView>this.pieceViewInterface.getPieceSpriteForFileRank(this.originFileRank);
+                this.originSprite = <PieceView>this.getPieceSpriteForFileRank(this.originFileRank);
                 this.originTouchLocation = worldLocation;
 
 
-                Global.game.time.events.add(200, () => {
+                setTimeout(() => {
                     if (this.currentTouchLocation === null || this.originTouchLocation === null || this.originSprite == null) {
                         return;
                     }
@@ -332,12 +339,12 @@ export class BoardView extends Phaser.Graphics {
 
                     this.originSprite.setMoving();
                     this._onTouchMoved(this.currentTouchLocation, chessEngine);
-                });
+                }, 200);
 
                 while(this.positionManager.isMovingSprite(this.originSprite)){
                     this.positionManager.updateMovingSprites(60 * 60 * 1000, this.originSprite);
                 }
-                this.originSprite.bringToTop();
+                //this.originSprite.bringToTop();
                 this.touchType = TouchTypes.ONE_TOUCH;
             } else {
                 this.touchType = TouchTypes.NO_TOUCH;
@@ -347,13 +354,13 @@ export class BoardView extends Phaser.Graphics {
         }
     }
 
-    public onTouchMoved(worldLocation: Phaser.Point, chessEngine: ChessEngine) {
+    public onTouchMoved(worldLocation: PIXI.Point, chessEngine: ChessEngine) {
         this.currentTouchLocation = worldLocation;
 
         this._onTouchMoved(worldLocation, chessEngine);
     }
 
-    public _onTouchMoved(worldLocation: Phaser.Point, chessEngine: ChessEngine) {
+    public _onTouchMoved(worldLocation: PIXI.Point, chessEngine: ChessEngine) {
         let fileRank = this.getFileRankForWorldLocation(worldLocation);
 
         if (this.touchType === TouchTypes.DRAG_TOUCH) {
@@ -363,13 +370,13 @@ export class BoardView extends Phaser.Graphics {
         }
     }
 
-    public onTouchEnded(worldLocation: Phaser.Point, chessEngine: ChessEngine | null) {
+    public onTouchEnded(worldLocation: PIXI.Point, chessEngine: ChessEngine | null) {
         this.currentTouchLocation = null;
 
         this._onTouchEnded(worldLocation, chessEngine);
     }
 
-    public _onTouchEnded(worldLocation: Phaser.Point, chessEngine: ChessEngine | null) {
+    public _onTouchEnded(worldLocation: PIXI.Point, chessEngine: ChessEngine | null) {
         if (this.touchType === TouchTypes.NO_TOUCH) {
             return;
         }
@@ -378,7 +385,7 @@ export class BoardView extends Phaser.Graphics {
         this.onTouchHelper(worldLocation, fileRank, chessEngine);
     }
 
-    public onTouchHelper(worldLocation: Phaser.Point, fileRank: FileRank, chessEngine: ChessEngine | null) {
+    public onTouchHelper(worldLocation: PIXI.Point, fileRank: FileRank, chessEngine: ChessEngine | null) {
         this.removeAllPoints();
         this.hideSelectLightSprite();
         this.hideOptionCycleSprite();
@@ -394,18 +401,19 @@ export class BoardView extends Phaser.Graphics {
 
         let isIllegalMove : boolean = false;
 
+
         if (legalMoves.length === 0) {
             isIllegalMove = true;
         }else if(legalMoves.length >= 1) {
             if (legalMoves.length == 1) {
-                isIllegalMove = this.controller.notifyMove(legalMoves[0], false);
+                isIllegalMove = this.controller.notifyMove(legalMoves[0]);
             } else {
-                //this.normalizeMoveClass(legalMoves);
+                this.normalizeMoveClass(legalMoves);
             }
         }
 
         if(isIllegalMove){
-            let positionFrom : Phaser.Point;
+            let positionFrom : PIXI.Point;
             if(this.positionManager.isMovingSprite(<PieceView>this.originSprite)){
                 positionFrom = this.getPositionForFileRank(<FileRank>this.originFileRank);
             } else {
@@ -433,6 +441,8 @@ export class BoardView extends Phaser.Graphics {
         }
     }
 
+
+
     public flipBoardFacing(){
         this.setBoardFacing(ChessEngine.getOppositeSideType(this.boardFacing));
     }
@@ -451,10 +461,10 @@ export class BoardView extends Phaser.Graphics {
                 let fileRank = new FileRank(fileNumber, rank);
 
 
-                let sprite = this.pieceViewInterface.getPieceSpriteForFileRank(fileRank);
+                let sprite = this.getPieceSpriteForFileRank(fileRank);
                 if(sprite != null) {
-                    let positionFrom: Phaser.Point;
-                    let positionTo: Phaser.Point;
+                    let positionFrom: PIXI.Point;
+                    let positionTo: PIXI.Point;
 
                     this.boardFacing = oldBoardFacing;
                     positionFrom = this.getPositionForFileRank(fileRank);
@@ -480,12 +490,12 @@ export class BoardView extends Phaser.Graphics {
         for(let fileNumber = 1; fileNumber <= ChessEngine.getNumOfFiles(); fileNumber++){
             let file = <string>ChessEngine.convertFileNumberToFile(fileNumber);
 
-            let fileUi = new Phaser.Text(Global.game, 0, 0, file);
+            let fileUi = new PIXI.Text(file);
             this.uiBoardFiles[fileNumber] = fileUi;
 
             fileUi.anchor.set(0.0, 0.0);
 
-            this.fileRankNumberGroup.add(fileUi);
+            this.fileRankNumberGroup.addChild(fileUi);
 
             let scaleX = this.m_width/800;
             let scaleY = this.m_height/800;
@@ -494,13 +504,13 @@ export class BoardView extends Phaser.Graphics {
         }
         for(let rank = 1; rank <= ChessEngine.getNumOfRanks(); rank++){
 
-            let rankUi = new Phaser.Text(Global.game, 0, 0, String(rank));
+            let rankUi = new PIXI.Text(String(rank));
             this.uiBoardRanks[rank] = rankUi;
 
             rankUi.anchor.set(1.0, 1.0);
 
 
-            this.fileRankNumberGroup.add(rankUi);
+            this.fileRankNumberGroup.addChild(rankUi);
 
             let scaleX = this.m_width/800;
             let scaleY = this.m_height/800;
@@ -536,13 +546,15 @@ export class BoardView extends Phaser.Graphics {
             fileUi.position = fileUiPosition;
 
 
-            let phaserTextStyle : Phaser.PhaserTextStyle = {};
+            let textStyleOptions : PIXI.TextStyleOptions = {};
 
             let colorType = ChessEngine.getColorTypeForFileRank(fileRank);
             colorType = ChessEngine.getOppositeSideType(colorType);
+            textStyleOptions.fill = this.getColorForColorType_inString(colorType);
 
-            phaserTextStyle["fill"] = this.getColorForColorType_inString(colorType);
-            fileUi.setStyle(phaserTextStyle, false);
+            fileUi.style = new PIXI.TextStyle(textStyleOptions);
+
+
         }
 
         for(let rank = 1; rank <= ChessEngine.getNumOfRanks(); rank++){
@@ -567,20 +579,18 @@ export class BoardView extends Phaser.Graphics {
             rankUi.position = rankUiPosition;
 
 
-            let phaserTextStyle : Phaser.PhaserTextStyle = {};
-            phaserTextStyle["fill"] = this.getColorForFileRank_inString(fileRank);
-
+            let textStyleOptions : PIXI.TextStyleOptions = {};
             let colorType = ChessEngine.getColorTypeForFileRank(fileRank);
             colorType = ChessEngine.getOppositeSideType(colorType);
+            textStyleOptions.fill = this.getColorForColorType_inString(colorType);
 
-            phaserTextStyle["fill"] = this.getColorForColorType_inString(colorType);
-            rankUi.setStyle(phaserTextStyle, true);
+            rankUi.style = new PIXI.TextStyle(textStyleOptions);
         }
     }
 
 
 
-    public getPositionForFileRank(fileRank: FileRank): Phaser.Point {
+    public getPositionForFileRank(fileRank: FileRank): PIXI.Point {
         let x: number = 0;
         let y: number = 0;
 
@@ -599,19 +609,19 @@ export class BoardView extends Phaser.Graphics {
 
         switch(this.boardFacing){
             case SideType.WHITE:
-                x = minX + (maxX - minX) * (fileRank.fileNumber - 1) / (ChessEngine.getNumOfFiles() - 1);
-                y = minY + (maxY - minY) * (ChessEngine.getNumOfRanks() - fileRank.rank) / (ChessEngine.getNumOfRanks() - 1);
+                x = minX + (maxX - minX) * (fileRank.x - 1) / (ChessEngine.getNumOfFiles() - 1);
+                y = minY + (maxY - minY) * (ChessEngine.getNumOfRanks() - fileRank.y) / (ChessEngine.getNumOfRanks() - 1);
                 break;
             case SideType.BLACK:
-                x = minX + (maxX - minX) * (ChessEngine.getNumOfFiles() - fileRank.fileNumber) / (ChessEngine.getNumOfFiles() - 1);
-                y = minY + (maxY - minY) * (fileRank.rank - 1) / (ChessEngine.getNumOfRanks() - 1);
+                x = minX + (maxX - minX) * (ChessEngine.getNumOfFiles() - fileRank.x) / (ChessEngine.getNumOfFiles() - 1);
+                y = minY + (maxY - minY) * (fileRank.y - 1) / (ChessEngine.getNumOfRanks() - 1);
                 break;
         }
 
-        return new Phaser.Point(x, y);
+        return new PIXI.Point(x, y);
     }
 
-    public getFileRankForPosition(position: Phaser.Point): FileRank {
+    public getFileRankForPosition(position: PIXI.Point): FileRank {
         position.x += this.m_width / 2;
         position.y += this.m_height / 2;
 
@@ -635,15 +645,15 @@ export class BoardView extends Phaser.Graphics {
         return new FileRank(fileNumber, rank);
     }
 
-    public getPositionForWorldLocation(worldLocation: Phaser.Point): Phaser.Point {
-        let position = new Phaser.Point();
-        this.worldTransform.applyInverse(new Phaser.Point(worldLocation.x, worldLocation.y), position);
+    public getPositionForWorldLocation(worldLocation: PIXI.Point): PIXI.Point {
+        let position = new PIXI.Point();
+        this.worldTransform.applyInverse(new PIXI.Point(worldLocation.x, worldLocation.y), position);
 
 
         return position;
     }
 
-    public getFileRankForWorldLocation(worldLocation: Phaser.Point): FileRank {
+    public getFileRankForWorldLocation(worldLocation: PIXI.Point): FileRank {
         return this.getFileRankForPosition(this.getPositionForWorldLocation(worldLocation));
     }
 
@@ -653,13 +663,13 @@ export class BoardView extends Phaser.Graphics {
 
 
 
-    public addMovingSprite(sprite: PieceView, positionFrom: Phaser.Point, positionTo: Phaser.Point, actionMovingType: ActionMovingTypes, finishCallback: (() => void) | null) {
+    public addMovingSprite(sprite: PieceView, positionFrom: PIXI.Point, positionTo: PIXI.Point, actionMovingType: ActionMovingTypes, finishCallback: (() => void) | null) {
         let action = null;
 
         switch(actionMovingType){
             case ActionMovingTypes.MOVE:
             {
-                let moveSpeed = Math.max(this.m_width, this.m_height)/700;
+                let moveSpeed = Math.max(this.m_width, this.m_height)/3200;
                 action = new PositionMovePiece(sprite, positionFrom, positionTo, moveSpeed, 300 / ChessEngine.getNumOfFiles());
             }
                 break;
@@ -670,20 +680,20 @@ export class BoardView extends Phaser.Graphics {
                 break;
             case ActionMovingTypes.ILLEGAL:
             {
-                let invalidSpeed = Math.max(this.m_width, this.m_height)/400;
+                let invalidSpeed = Math.max(this.m_width, this.m_height)/3200;
 
                 action = new PositionConstantSpeed(sprite, positionFrom, positionTo, invalidSpeed);
             }
                 break;
             case ActionMovingTypes.FLIP_BOARD:
             {
-                let moveSpeed = Math.max(this.m_width, this.m_height)/700;
+                let moveSpeed = Math.max(this.m_width, this.m_height)/3200;
                 action = new PositionMovePiece(sprite, positionFrom, positionTo, moveSpeed, 300 / ChessEngine.getNumOfFiles());
             }
                 break;
             case ActionMovingTypes.PREDICT:
             {
-                let moveSpeed = Math.max(this.m_width, this.m_height)/2100;
+                let moveSpeed = Math.max(this.m_width, this.m_height)/3200;
                 action = new PositionMovePiece(sprite, positionFrom, positionTo, moveSpeed, 300 / ChessEngine.getNumOfFiles());
             }
             break;
@@ -715,11 +725,11 @@ export class BoardView extends Phaser.Graphics {
             for (let rank = 1; rank < ChessEngine.getNumOfRanks(); rank++) {
                 let fileRank = new FileRank(fileNumber, rank);
 
-                let pieceSprite = this.pieceViewInterface.getPieceSpriteForFileRank(fileRank);
+                let pieceSprite = this.getPieceSpriteForFileRank(fileRank);
 
                 if (pieceSprite != null) {
-                    this.pieceViewInterface.setPieceSpriteForFileRank(fileRank, null);
-                    this.pieceViewInterface.removePieceView(pieceSprite);
+                    this.setPieceSpriteForFileRank(fileRank, null);
+                    this.removePieceView(pieceSprite);
                 }
             }
         }
@@ -736,10 +746,10 @@ export class BoardView extends Phaser.Graphics {
                 for (let i = 0; i < positions.length; i++) {
                     let fileRank = positions[i];
 
-                    let pieceSprite = this.pieceViewInterface.createPieceView(sideType, pieceType);
+                    let pieceSprite = this.createPieceView(sideType, pieceType);
 
                     pieceSprite.position = this.getPositionForFileRank(fileRank);
-                    this.pieceViewInterface.setPieceSpriteForFileRank(fileRank, pieceSprite);
+                    this.setPieceSpriteForFileRank(fileRank, pieceSprite);
                 }
             }
         }
@@ -770,7 +780,7 @@ export class BoardView extends Phaser.Graphics {
 
         if (this.uiPoints[pointColor][hash] == undefined) {
             let uiPoint = new PointColorNode(pointColor, this.getSquareWidth(), this.getSquareHeight());
-            this.pointGroup.add(uiPoint);
+            this.pointGroup.addChild(uiPoint);
 
             uiPoint.position = this.getPositionForFileRank(fileRank);
 
@@ -821,7 +831,7 @@ export class BoardView extends Phaser.Graphics {
 
             this.uiSquares[squareColor][hash] = uiSquare;
 
-            this.squareGroup.add(uiSquare);
+            this.squareGroup.addChild(uiSquare);
         }
     }
 
@@ -832,7 +842,7 @@ export class BoardView extends Phaser.Graphics {
 
             let uiSquare = this.uiSquares[squareColor][hash];
 
-            this.squareGroup.remove(uiSquare);
+            this.squareGroup.removeChild(uiSquare);
         }
 
 
@@ -864,7 +874,7 @@ export class BoardView extends Phaser.Graphics {
 
     public showOptionCycleSprite(fileRank: FileRank) {
         if (this.uiOptionCycleFileRank != null) {
-            if (ChessEngine.fileRankEqual(fileRank, this.uiOptionCycleFileRank)) {
+            if(FileRank.isEqual(fileRank, this.uiOptionCycleFileRank)){
                 return;
             }
         }
@@ -897,8 +907,6 @@ export class BoardView extends Phaser.Graphics {
     public getRemoveAddMoveStructs(moveClass : MoveClass):{removeStructs : RemoveStruct[], addStructs : AddStruct[], moveStructs : MoveStruct[]} {
         //move class is a board centric structure
         //we need to change it into a piece centric structure
-
-
 
         let originHashPieces : { hash : number, piece : PieceModel | null}[] = [];
         let destHashPieces : { hash : number, piece : PieceModel | null}[] = [];
@@ -1041,21 +1049,67 @@ export class BoardView extends Phaser.Graphics {
         return {removeStructs : removeStructs, addStructs : addStructs, moveStructs : moveStructs};
     }
 
+    private normalizeMoveClass(legalMoves : MoveClass[]){
+        let removeAddMoveStructs = this.getRemoveAddMoveStructs(legalMoves[0]);
+
+    }
+    /*
+    local removeStructs = {}
+    local addStructs = {}
+    local moveStructs = {}
+    removeStructs, addStructs, moveStructs = self:getRemoveAddMoveStructs(legalMoves[1])
+
+
+    local function normalizePromote()
+    local function choosePieceCallBack(moveClass)
+    self:moveGame(moveClass)
+    end
+
+    local sideType = self.model:getPieceForFileRank(legalMoves[1].originFileRank):getSideType()
+
+    self.promotePieceCallback(legalMoves, choosePieceCallBack, sideType, self.model)
+    end
+
+    if #moveStructs == 0 then
+    normalizePromote()
+    else
+    local moveStruct = moveStructs[1]
+    local removeStruct = moveStruct.removeStruct
+    local addStruct = moveStruct.addStruct
+    local piece = addStruct.piece
+
+
+    local pieceSprite = self:getPieceSpriteForFileRank(removeStruct.fileRank)
+
+    local positionFrom = nil
+    local positionTo = nil
+    if self:isMovingSprite(pieceSprite) then
+    positionFrom = cc.p(self:getPositionForFileRank(removeStruct.fileRank))
+    else
+    positionFrom = cc.p(pieceSprite:getPosition())
+    end
+
+    positionTo = cc.p(self:getPositionForFileRank(addStruct.fileRank))
+    local actionMovingType = ActionMovingTypes.MOVE
+
+
+    self:addMovingSprite(pieceSprite, positionFrom, positionTo, actionMovingType, normalizePromote)
+    end
+
+    end
+    */
+
 
     public doMove(moveClass : MoveClass){
-        this.doMoveAnimation(moveClass, false, this.pieceViewInterface);
+        this.doMoveAnimation(moveClass, false);
         this.addLastMoveSquares(moveClass);
     }
 
-    public doMoveAnimation(moveClass : MoveClass, isUndoMove : boolean, abstractViewInterface : AbstractViewInterface){
-        abstractViewInterface.startAnimation(moveClass, isUndoMove);
-
-        if(abstractViewInterface.getViewInterfaceType() == AbstractViewInterfaceType.PIECE_VIEW){
-            if (this.touchType != TouchTypes.NO_TOUCH) {
-                this.onTouchEnded(new Phaser.Point(this.m_width * 100, this.m_height * 100), null);
-            }
-            this.removeAllSquares();
+    public doMoveAnimation(moveClass : MoveClass, isUndoMove : boolean){
+        if(this.touchType != TouchTypes.NO_TOUCH) {
+            this.onTouchEnded(new PIXI.Point(this.m_width * 100, this.m_height * 100), null);
         }
+        this.removeAllSquares();
 
 
 
@@ -1072,20 +1126,20 @@ export class BoardView extends Phaser.Graphics {
             let piece = removeStruct.piece;
 
             {
-                let pieceSprite = abstractViewInterface.getPieceSpriteForFileRank(fileRank);
+                let pieceSprite = this.getPieceSpriteForFileRank(fileRank);
                 if(pieceSprite == null){
-                    pieceSprite = abstractViewInterface.createPieceView(piece.getSideType(), piece.getPieceType());
+                    pieceSprite = this.createPieceView(piece.getSideType(), piece.getPieceType());
                     pieceSprite.position = this.getPositionForFileRank(fileRank)
-                    abstractViewInterface.setPieceSpriteForFileRank(fileRank, pieceSprite);
+                    this.setPieceSpriteForFileRank(fileRank, pieceSprite);
                 }
             }
 
 
-            let pieceSprite = <PieceView>abstractViewInterface.getPieceSpriteForFileRank(fileRank);
+            let pieceSprite = <PieceView>this.getPieceSpriteForFileRank(fileRank);
             pieceSprite.setPiece(piece.getSideType(), piece.getPieceType());
             removeStruct.sprite = pieceSprite;
 
-            abstractViewInterface.setPieceSpriteForFileRank(fileRank, null);
+            this.setPieceSpriteForFileRank(fileRank, null);
         }
 
         for(let i = 0; i < moveStructs.length; i++){
@@ -1097,18 +1151,18 @@ export class BoardView extends Phaser.Graphics {
             let originPiece = moveStruct.originPiece;
             let destPiece = moveStruct.destPiece;
 
-            let pieceSprite = abstractViewInterface.getPieceSpriteForFileRank(originFileRank);
+            let pieceSprite = this.getPieceSpriteForFileRank(originFileRank);
             if(pieceSprite == null){
-                pieceSprite = abstractViewInterface.createPieceView(originPiece.getSideType(), originPiece.getPieceType());
+                pieceSprite = this.createPieceView(originPiece.getSideType(), originPiece.getPieceType());
                 pieceSprite.position = this.getPositionForFileRank(originFileRank);
-                abstractViewInterface.setPieceSpriteForFileRank(originFileRank, pieceSprite);
+                this.setPieceSpriteForFileRank(originFileRank, pieceSprite);
             }
 
             pieceSprite.setPiece(originPiece.getSideType(), originPiece.getPieceType());
 
             moveStruct.sprite = pieceSprite;
 
-            abstractViewInterface.setPieceSpriteForFileRank(originFileRank, null);
+            this.setPieceSpriteForFileRank(originFileRank, null);
         }
         for(let i = 0; i < moveStructs.length; i++){
             let moveStruct = moveStructs[i];
@@ -1120,14 +1174,14 @@ export class BoardView extends Phaser.Graphics {
             let destPiece = moveStruct.destPiece;
 
             {
-                let pieceSprite = abstractViewInterface.getPieceSpriteForFileRank(destFileRank);
+                let pieceSprite = this.getPieceSpriteForFileRank(destFileRank);
                 if(pieceSprite != null){
-                    abstractViewInterface.removePieceView(pieceSprite);
-                    abstractViewInterface.setPieceSpriteForFileRank(destFileRank, null);
+                    this.removePieceView(pieceSprite);
+                    this.setPieceSpriteForFileRank(destFileRank, null);
                 }
             }
 
-            abstractViewInterface.setPieceSpriteForFileRank(destFileRank, moveStruct.sprite);
+            this.setPieceSpriteForFileRank(destFileRank, moveStruct.sprite);
         }
 
 
@@ -1139,23 +1193,23 @@ export class BoardView extends Phaser.Graphics {
 
 
             {
-                let pieceSprite = abstractViewInterface.getPieceSpriteForFileRank(fileRank);
+                let pieceSprite = this.getPieceSpriteForFileRank(fileRank);
                 if(pieceSprite != null){
-                    abstractViewInterface.removePieceView(pieceSprite);
-                    abstractViewInterface.setPieceSpriteForFileRank(fileRank, null);
+                    this.removePieceView(pieceSprite);
+                    this.setPieceSpriteForFileRank(fileRank, null);
                 }
             }
 
 
 
-            let pieceSprite = abstractViewInterface.createPieceView(piece.getSideType(), piece.getPieceType());
+            let pieceSprite = this.createPieceView(piece.getSideType(), piece.getPieceType());
             pieceSprite.position = this.getPositionForFileRank(fileRank);
 
             pieceSprite.visible = false;
 
             addStruct.sprite = pieceSprite;
 
-            abstractViewInterface.setPieceSpriteForFileRank(fileRank, pieceSprite);
+            this.setPieceSpriteForFileRank(fileRank, pieceSprite);
         }
 
 
@@ -1178,7 +1232,7 @@ export class BoardView extends Phaser.Graphics {
             for(let i = 0; i < removeStructs.length; i++) {
                 let removeStruct = removeStructs[i];
 
-                abstractViewInterface.removePieceView(<PieceView>removeStruct.sprite);
+                this.removePieceView(<PieceView>removeStruct.sprite);
             }
 
             for(let i = 0; i < addStructs.length; i++) {
@@ -1187,7 +1241,7 @@ export class BoardView extends Phaser.Graphics {
                 (<PieceView>addStruct.sprite).visible = true;
             }
 
-            abstractViewInterface.endAnimation(moveClass, isUndoMove);
+            //this.endAnimation(moveClass, isUndoMove);
         };
 
         for(let i = 0; i < moveStructs.length; i++){
@@ -1198,8 +1252,8 @@ export class BoardView extends Phaser.Graphics {
 
             let sprite = <PieceView>moveStruct.sprite;
 
-            let positionFrom : Phaser.Point;
-            let positionTo : Phaser.Point;
+            let positionFrom : PIXI.Point;
+            let positionTo : PIXI.Point;
 
             if (this.positionManager.isMovingSprite(sprite)) {
                 positionFrom = this.getPositionForFileRank(originFileRank);
@@ -1211,17 +1265,10 @@ export class BoardView extends Phaser.Graphics {
 
 
             let actionMovingType : ActionMovingTypes = ActionMovingTypes.PREDICT;
-            switch(abstractViewInterface.getViewInterfaceType()){
-                case AbstractViewInterfaceType.PIECE_VIEW:
-                    if(isUndoMove){
-                        actionMovingType = ActionMovingTypes.UNMOVE;
-                    }else {
-                        actionMovingType = ActionMovingTypes.MOVE;
-                    }
-                    break;
-                case AbstractViewInterfaceType.PREDICT_VIEW:
-                    actionMovingType = ActionMovingTypes.PREDICT;
-                    break;
+            if(isUndoMove){
+                actionMovingType = ActionMovingTypes.UNMOVE;
+            }else {
+                actionMovingType = ActionMovingTypes.MOVE;
             }
 
             let localMoveCallback : ( () => void ) | null = () => {
@@ -1240,85 +1287,8 @@ export class BoardView extends Phaser.Graphics {
             globalMoveCallback(null);
         }
     }
-
-
-    public showPredictMove(identifier : string, moveClass : MoveClass){
-        if(this.isPredictMove(identifier)){
-            return;
-        }
-
-        this.predictMoves[identifier] = new PredictViewInterface(moveClass, 0.7, this, this.predictSpriteGroup, this.getSquareWidth(), this.getSquareHeight());
-    }
-
-    public hidePredictMove(identifier : string){
-        if(!this.isPredictMove(identifier)){
-            return;
-        }
-
-        let predictMove = this.predictMoves[identifier];
-        predictMove.destroy();
-        delete this.predictMoves[identifier];
-    }
-
-
-
-    public isPredictMove(identifier : string):boolean{
-        return this.predictMoves[identifier] != undefined;
-    }
-
-
-
 }
 
 
 
 
-/*
-function BoardView:normalizeMoveClass(legalMoves)
-local removeStructs = {}
-local addStructs = {}
-local moveStructs = {}
-removeStructs, addStructs, moveStructs = self:getRemoveAddMoveStructs(legalMoves[1])
-
-
-local function normalizePromote()
-local function choosePieceCallBack(moveClass)
-self:moveGame(moveClass)
-end
-
-local sideType = self.model:getPieceForFileRank(legalMoves[1].originFileRank):getSideType()
-
-self.promotePieceCallback(legalMoves, choosePieceCallBack, sideType, self.model)
-end
-
-if #moveStructs == 0 then
-normalizePromote()
-else
-local moveStruct = moveStructs[1]
-local removeStruct = moveStruct.removeStruct
-local addStruct = moveStruct.addStruct
-local piece = addStruct.piece
-
-
-local pieceSprite = self:getPieceSpriteForFileRank(removeStruct.fileRank)
-
-local positionFrom = nil
-local positionTo = nil
-if self:isMovingSprite(pieceSprite) then
-positionFrom = cc.p(self:getPositionForFileRank(removeStruct.fileRank))
-else
-positionFrom = cc.p(pieceSprite:getPosition())
-end
-
-positionTo = cc.p(self:getPositionForFileRank(addStruct.fileRank))
-local actionMovingType = ActionMovingTypes.MOVE
-
-
-self:addMovingSprite(pieceSprite, positionFrom, positionTo, actionMovingType, normalizePromote)
-end
-
-end
-
-
-return BoardView
-*/
