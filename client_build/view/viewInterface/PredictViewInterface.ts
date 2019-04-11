@@ -1,3 +1,4 @@
+/*
 import {PieceView} from "../PieceView";
 import {MoveClass} from "../../../shared/engine/MoveClass";
 import {BoardView} from "../BoardView";
@@ -10,13 +11,13 @@ import {ChessEngine} from "../../../shared/engine/ChessEngine";
 
 import {AbstractViewInterface} from "./AbstractViewInterface";
 import {AbstractViewInterfaceType} from "./AbstractViewInterface";
+import {SimpleGame} from "../../app";
 
 
-const Global = require("./../../Global");
 
 export class PredictViewInterface extends AbstractViewInterface{
 
-    private group : Phaser.Group;
+    private group : PIXI.Container;
     private squareWidth : number;
     private squareHeight : number;
 
@@ -29,7 +30,7 @@ export class PredictViewInterface extends AbstractViewInterface{
 
     private isDestroy : boolean;
 
-    constructor(moveClass : MoveClass, alpha : number, boardView : BoardView, group : Phaser.Group, squareWidth : number, squareHeight : number){
+    constructor(moveClass : MoveClass, alpha : number, boardView : BoardView, group : PIXI.Container, squareWidth : number, squareHeight : number){
         super();
 
         this.group = group;
@@ -126,15 +127,15 @@ export class PredictViewInterface extends AbstractViewInterface{
 
 
     private startAutomata(delay : number){
-        Global.game.time.events.add(delay, () => {
+        setTimeout(() => {
             if(!this.isDestroy){
                 this.boardView.doMoveAnimation(this.moveClass, false, this);
             }
-        });
-
+        }, delay);
     }
 
 
 
 
 }
+*/

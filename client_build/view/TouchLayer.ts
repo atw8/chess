@@ -1,84 +1,78 @@
 import {Controller} from "./../controller/Controller";
-
-import 'p2';
-import 'pixi';
-import 'phaser';
-
-
-const Global = require("./../Global");
+import {SimpleGame} from "../app";
+import InteractionData = PIXI.interaction.InteractionData;
+import InteractionEvent = PIXI.interaction.InteractionEvent;
 
 export class TouchLayer{
     private controller : Controller;
 
-    private isEnabled : boolean;
-
-    private isDown = false;
+    private identifier : number | null = null;
 
     constructor(controller : Controller){
         this.controller = controller;
 
-        this.isEnabled = false;
 
-        this.isDown = false;
-
-
-        let delay = (1.0 / 60.0) * 1000;
-        let updateLoop = Global.game.time.create(false);
-        updateLoop.loop(delay, this.update.bind(this, delay));
-        updateLoop.start();
+        SimpleGame.getInstance().stage.interactive = true;
+        SimpleGame.getInstance().stage.on("pointerdown", this.onTouchBegan.bind(this));
+        SimpleGame.getInstance().stage.on("pointermove", this.onTouchMoved.bind(this));
+        SimpleGame.getInstance().stage.on("pointerup", this.onTouchEnded.bind(this));
+        SimpleGame.getInstance().stage.on("pointerupoutside", this.onTouchEnded.bind(this));
+        SimpleGame.getInstance().stage.on("pointercancel", this.onTouchEnded.bind(this));
     }
 
 
-    public update(dt : number){
-        let gameIsDown = Global.game.input.activePointer.isDown;
+    /*
+    public pointerDown(interactionEvent : InteractionEvent){
+        console.log("pointerDown");
+        this.pointerHelper(interactionEvent);
+    }
+    public pointerup(interactionEvent : InteractionEvent){
+        console.log("pointerup");
+        this.pointerHelper(interactionEvent)
+    }
+    public pointerupoutside(interactionEvent : InteractionEvent){
+        console.log("pointerupoutside");
+    }
+    public pointerover(interactionEvent : InteractionEvent){
+        console.log("pointerover");
+    }
+    public pointerout(interactionEvent : InteractionEvent){
+        console.log("pointerout");
+    }
+    public pointerHelper(interactionEvent : InteractionEvent){
 
-        let worldX = Global.game.input.activePointer.worldX;
-        let worldY = Global.game.input.activePointer.worldY;
+    }
+    */
 
-        let worldLocation = new Phaser.Point(worldX, worldY);
 
-        if(this.isDown){
-            if(gameIsDown){
-                this.onTouchMoved(worldLocation);
-            }else {
-                this.onTouchEnded(worldLocation);
-            }
-        }else {
-            if(gameIsDown){
-                this.onTouchBegan(worldLocation);
-            }
+
+    public onTouchBegan(interactionEvent : InteractionEvent){
+        if(this.identifier != null){
+            return;
         }
+        this.identifier = interactionEvent.data.identifier;
 
-        this.isDown = gameIsDown;
+        this.controller.onTouchBegan(interactionEvent.data.global);
+
+        //console.log("onTouchBegan ", interactionEvent.data.global.x,", ", interactionEvent.data.global.y);
     }
-
-
-    public setIsEnabled(isEnabled : boolean){
-        this.isEnabled = isEnabled;
-    }
-    public getIsEnabled():boolean{
-        return this.isEnabled;
-    }
-
-
-
-    public onTouchBegan(worldLocation : Phaser.Point){
-        if(!this.isEnabled){
+    public onTouchMoved(interactionEvent : InteractionEvent){
+        if(this.identifier != interactionEvent.data.identifier){
             return;
         }
 
-        this.controller.onTouchBegan(worldLocation);
+        this.controller.onTouchMoved(interactionEvent.data.global);
+
+        //console.log("onTouchMoved ", interactionEvent.data.global.x,", ", interactionEvent.data.global.y);
     }
-    public onTouchMoved(worldLocation : Phaser.Point){
-        if(!this.isEnabled){
+    public onTouchEnded(interactionEvent : InteractionEvent){
+        if(this.identifier != interactionEvent.data.identifier){
             return;
         }
-        this.controller.onTouchMoved(worldLocation);
-    }
-    public onTouchEnded(worldLocation : Phaser.Point){
-        if(!this.isEnabled){
-            return;
-        }
-        this.controller.onTouchEnded(worldLocation);
+        this.identifier = null;
+
+        this.controller.onTouchEnded(interactionEvent.data.global);
+
+        //console.log("onTouchEnded ", interactionEvent.data.global.x,", ", interactionEvent.data.global.y);
     }
 }

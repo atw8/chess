@@ -3,13 +3,13 @@ import {PositionPoints} from "./PositionPoints";
 
 export class PositionMovePiece extends PositionPoints {
 
-    static getTotalDistance(startPosition : Phaser.Point, endPosition : Phaser.Point):number{
-        let deltaPosition = Phaser.Point.subtract(endPosition, startPosition);
+    static getTotalDistance(startPosition : PIXI.Point, endPosition : PIXI.Point):number{
+        let deltaPosition = PositionPoints.subtract(endPosition, startPosition);
 
-        return deltaPosition.getMagnitude();
+        return PositionPoints.getMagnitude(deltaPosition);
     }
 
-    static getNumOfPoints(startPosition : Phaser.Point, endPosition : Phaser.Point, slowDownDistance : number):number{
+    static getNumOfPoints(startPosition : PIXI.Point, endPosition : PIXI.Point, slowDownDistance : number):number{
 
         let totalDistance = this.getTotalDistance(startPosition, endPosition);
 
@@ -23,7 +23,7 @@ export class PositionMovePiece extends PositionPoints {
         return numOfPoints;
     }
 
-    static getPointCumulDistMap(startPosition : Phaser.Point, endPosition : Phaser.Point, slowDownDistance : number) : number[]{
+    static getPointCumulDistMap(startPosition : PIXI.Point, endPosition : PIXI.Point, slowDownDistance : number) : number[]{
         let totalDistance = this.getTotalDistance(startPosition, endPosition);
 
 
@@ -41,7 +41,7 @@ export class PositionMovePiece extends PositionPoints {
         return pointCumulDistMap;
     }
 
-    static getPointSpeedMap(startPosition : Phaser.Point, endPosition : Phaser.Point, slowDownDistance : number, speed : number) : number[]{
+    static getPointSpeedMap(startPosition : PIXI.Point, endPosition : PIXI.Point, slowDownDistance : number, speed : number) : number[]{
         let totalDistance = this.getTotalDistance(startPosition, endPosition);
 
         let pointSpeedMap : number[] = [];
@@ -58,7 +58,7 @@ export class PositionMovePiece extends PositionPoints {
     }
 
 
-    constructor(target : PIXI.DisplayObject, startPosition : Phaser.Point, endPosition : Phaser.Point, speed : number, slowDownDistance : number){
+    constructor(target : PIXI.DisplayObject, startPosition : PIXI.Point, endPosition : PIXI.Point, speed : number, slowDownDistance : number){
         super(target,
             startPosition,
             endPosition,

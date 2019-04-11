@@ -1,14 +1,11 @@
 import {SideType} from "../../shared/engine/SideType";
 import {PieceType} from "../../shared/engine/PieceType";
 
-import 'p2';
-import 'pixi';
-import 'phaser';
-import {ImageTag} from "../ImageTag";
+import {getNameForImageTag, ImageTag} from "../ImageTag";
+import {SimpleGame} from "../app";
 
-const Global = require("./../Global");
 
-export class PieceView extends Phaser.Sprite {
+export class PieceView extends PIXI.Sprite {
 
     private m_squareWidth : number;
     private m_squareHeight : number;
@@ -16,7 +13,7 @@ export class PieceView extends Phaser.Sprite {
     private sideType : SideType;
     private pieceType : PieceType;
 
-    private static getKeyForSideTypePieceType(sideType : SideType, pieceType : PieceType) : ImageTag{
+    private static getKeyForSideTypePieceType(sideType : SideType, pieceType : PieceType) : string{
         let key : ImageTag = ImageTag.null;
         switch(sideType){
             case SideType.WHITE:
@@ -65,11 +62,11 @@ export class PieceView extends Phaser.Sprite {
                 break;
         }
 
-        return key;
+        return getNameForImageTag(key);
     }
 
     constructor(sideType : SideType, pieceType : PieceType, squareWidth : number, squareHeight : number){
-        super(Global.game, 0, 0, PieceView.getKeyForSideTypePieceType(sideType, pieceType));
+        super(PIXI.Texture.from(PieceView.getKeyForSideTypePieceType(sideType, pieceType)));
 
         this.sideType = sideType;
         this.pieceType = pieceType;
@@ -91,7 +88,8 @@ export class PieceView extends Phaser.Sprite {
         this.sideType = sideType;
         this.pieceType = pieceType;
 
-        this.loadTexture(PieceView.getKeyForSideTypePieceType(this.sideType, this.pieceType));
+        this.texture = PIXI.Texture.from(PieceView.getKeyForSideTypePieceType(this.sideType, this.pieceType));
+
     }
 
     public setNormal(){

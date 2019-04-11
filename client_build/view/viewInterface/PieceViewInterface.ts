@@ -1,3 +1,4 @@
+/*
 import {PieceView} from "../PieceView";
 
 import {ChessEngine} from "../../../shared/engine/ChessEngine";
@@ -9,7 +10,8 @@ import {MoveClass} from "../../../shared/engine/MoveClass";
 import {AbstractViewInterface} from "./AbstractViewInterface";
 import {AbstractViewInterfaceType} from "./AbstractViewInterface";
 
-import {Controller} from "./../controller/Controller";
+import {Controller} from "../../controller/Controller";
+
 
 
 export class PieceViewInterface extends AbstractViewInterface{
@@ -17,11 +19,11 @@ export class PieceViewInterface extends AbstractViewInterface{
 
     private controller : Controller;
 
-    private group : Phaser.Group;
+    private group : PIXI.Container;
     private squareWidth : number;
     private squareHeight : number;
 
-    constructor(controller : Controller, group : Phaser.Group, squareWidth : number, squareHeight : number) {
+    constructor(controller : Controller, group : PIXI.Container, squareWidth : number, squareHeight : number) {
         super();
         this.controller = controller;
 
@@ -46,29 +48,30 @@ export class PieceViewInterface extends AbstractViewInterface{
 
     public createPieceView(sideType : SideType, pieceType : PieceType):PieceView{
         let pieceSprite = new PieceView(sideType, pieceType, this.squareWidth, this.squareHeight);
-        this.group.add(pieceSprite);
+        this.group.addChild(pieceSprite);
 
         return pieceSprite;
     }
     public removePieceView(pieceView : PieceView){
-        this.group.remove(pieceView, true);
+        this.group.removeChild(pieceView);
     }
 
 
     public getPieceSpriteForFileRank(fileRank: FileRank): PieceView | null {
-        return this.array[fileRank["fileNumber"]][fileRank["rank"]];
+        return this.array[fileRank.x][fileRank.y];
     }
 
 
     public setPieceSpriteForFileRank(fileRank: FileRank, pieceSprite: PieceView | null) {
-        this.array[fileRank["fileNumber"]][fileRank["rank"]] = pieceSprite;
+        this.array[fileRank.x][fileRank.y] = pieceSprite;
     }
 
 
     public startAnimation(moveClass : MoveClass, isUndoMove :boolean){
-        this.controller.startAnimation(moveClass, isUndoMove);
+        //this.controller.startAnimation(moveClass, isUndoMove);
     }
     public endAnimation(moveClass : MoveClass, isUndoMove : boolean){
-        this.controller.endAnimation(moveClass, isUndoMove);
+        //this.controller.endAnimation(moveClass, isUndoMove);
     }
 }
+*/

@@ -1105,6 +1105,7 @@ export class BoardView extends PIXI.Graphics {
         this.addLastMoveSquares(moveClass);
     }
 
+    
     public doMoveAnimation(moveClass : MoveClass, isUndoMove : boolean){
         if(this.touchType != TouchTypes.NO_TOUCH) {
             this.onTouchEnded(new PIXI.Point(this.m_width * 100, this.m_height * 100), null);

@@ -1,8 +1,16 @@
 
 export class PositionPoints{
+
+    protected static getMagnitude(point : PIXI.Point):number{
+        return Math.sqrt(Math.pow(point.x, 2) + Math.pow(point.y, 2));
+    }
+    protected static subtract(point1 : PIXI.Point, point2 : PIXI.Point):PIXI.Point{
+        return new PIXI.Point(point1.x - point2.x, point1.y - point2.y);
+    }
+
     private m_target : PIXI.DisplayObject;
-    private m_startPosition : Phaser.Point;
-    private m_endPosition : Phaser.Point;
+    private m_startPosition : PIXI.Point;
+    private m_endPosition : PIXI.Point;
 
     private m_numOfPoints : number;
     private m_pointCumulDistMap : number[];
@@ -15,10 +23,10 @@ export class PositionPoints{
 
     private m_timeElapsed : number;
 
-    private m_previousPosition : Phaser.Point;
-    private m_deltaPosition : Phaser.Point;
+    private m_previousPosition : PIXI.Point;
+    private m_deltaPosition : PIXI.Point;
 
-    constructor(target : PIXI.DisplayObject, startPosition : Phaser.Point, endPosition : Phaser.Point, numOfPoints :number, pointCumulDistMap : number[], pointSpeedMap : number[]){
+    constructor(target : PIXI.DisplayObject, startPosition : PIXI.Point, endPosition : PIXI.Point, numOfPoints :number, pointCumulDistMap : number[], pointSpeedMap : number[]){
         this.m_target = target;
         this.m_startPosition = startPosition;
         this.m_endPosition = endPosition;
@@ -30,7 +38,7 @@ export class PositionPoints{
 
         this.m_previousPosition = startPosition;
 
-        this.m_deltaPosition = Phaser.Point.subtract(this.m_endPosition, this.m_startPosition);
+        this.m_deltaPosition = new PIXI.Point(this.m_endPosition.x - this.m_startPosition.x, this.m_endPosition.y - this.m_startPosition.y);
 
 
         this.m_pointDistMap = [];
@@ -95,7 +103,7 @@ export class PositionPoints{
 
 
 
-            let newPosition = new Phaser.Point();
+            let newPosition = new PIXI.Point();
             newPosition["x"] = this.m_startPosition["x"] + this.m_deltaPosition["x"] * delta;
             newPosition["y"] = this.m_startPosition["y"] + this.m_deltaPosition["y"] * delta;
 

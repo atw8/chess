@@ -4,13 +4,10 @@ import {PieceView} from "../view/PieceView";
 import {PieceModel} from "../../shared/engine/PieceModel";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
 
-import 'p2';
-import 'pixi';
-import 'phaser';
+import {SimpleGame} from "../app";
 
-const Global = require("./../Global");
 
-export class SanSprite extends Phaser.Graphics{
+export class SanSprite extends PIXI.Container{
 
     private sanStr : string;
 
@@ -24,7 +21,7 @@ export class SanSprite extends Phaser.Graphics{
 
     private uiPieceView : PieceView | null;
     constructor(sanStr : string, sideType : SideType, width : number, height : number){
-        super(Global.game);
+        super();
 
 
         this.sanStr = sanStr;
@@ -57,7 +54,7 @@ export class SanSprite extends Phaser.Graphics{
         }
 
 
-        this.uiSanText = new Phaser.Text(Global.game, 0, 0, this.sanText);
+        this.uiSanText = new PIXI.Text(this.sanText);
         let uiSanTextScale : number;
         uiSanTextScale = this.m_height/this.uiSanText.height;
         this.uiSanText.scale.set(uiSanTextScale, uiSanTextScale);
@@ -73,7 +70,8 @@ export class SanSprite extends Phaser.Graphics{
 
 
 
-    private uiSanText : Phaser.Text;
+    private uiSanText : PIXI.Text;
 
 
 }
+

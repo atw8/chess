@@ -1,13 +1,10 @@
 import {SideType} from "../../shared/engine/SideType";
 import {SanSprite} from "./SanSprite";
 
-import 'p2';
-import 'pixi';
-import 'phaser';
+import {SimpleGame} from "../app";
 
-const Global = require("./../Global");
 
-export class PredictSanSprite extends Phaser.Button{
+export class PredictSanSprite extends PIXI.Container{
 
     private m_width : number;
     private m_height : number;
@@ -17,16 +14,16 @@ export class PredictSanSprite extends Phaser.Button{
     private m_percentage : number | null = null;
 
     private uiSanSprite : SanSprite | null = null;
-    private uiPercentage : Phaser.Text;
+    private uiPercentage : PIXI.Text;
 
 
-    private uiPressNode : Phaser.Graphics;
+    private uiPressNode : PIXI.Graphics;
 
 
     private pressBtnCallback : (predictSanSprite : PredictSanSprite) => void;
 
     constructor(width : number, height : number, moveTurn : SideType, pressBtnCallback : (predictSanSprite : PredictSanSprite) => void){
-        super(Global.game);
+        super();
         this.m_width = width;
         this.m_height = height;
         this.m_moveTurn = moveTurn;
@@ -34,7 +31,7 @@ export class PredictSanSprite extends Phaser.Button{
         this.pressBtnCallback = pressBtnCallback;
 
         {
-            let alphaNode = new Phaser.Graphics(Global.game);
+            let alphaNode = new PIXI.Graphics();
             alphaNode.beginFill(0xFFFFFF, 0);
             alphaNode.drawRect(-this.m_width/2, -this.m_height/2, this.m_width, this.m_height);
             this.addChild(alphaNode);
@@ -44,14 +41,14 @@ export class PredictSanSprite extends Phaser.Button{
         this.uiSanSprite = null;
 
         //percentage thing
-        this.uiPercentage = new Phaser.Text(Global.game, 0, 0, "");
+        this.uiPercentage = new PIXI.Text("");
         this.uiPercentage.anchor.set(1.0, 0.5);
         this.uiPercentage.position.set(this.m_width / 2, 0.0);
         this.uiPercentage.scale.set(this.m_height / this.uiPercentage.height, this.m_height / this.uiPercentage.height);
         this.addChild(this.uiPercentage);
 
 
-        this.uiPressNode = new Phaser.Graphics(Global.game);
+        this.uiPressNode = new PIXI.Graphics();
         this.uiPressNode.lineStyle(2, 0xA66325, 1);
         this.uiPressNode.drawRoundedRect(-this.m_width/2, -this.m_height/2, this.m_width, this.m_height, 3);
         this.addChild(this.uiPressNode);
@@ -59,7 +56,7 @@ export class PredictSanSprite extends Phaser.Button{
         this.uiPressNode.visible = false;
 
 
-        this.onInputUp.add(this.inputUp.bind(this));
+        //this.onInputUp.add(this.inputUp.bind(this));
     }
 
     public inputUp(){
@@ -123,7 +120,7 @@ export class PredictSanSprite extends Phaser.Button{
         this.m_percentage = percentage;
 
         if(this.m_percentage != null){
-            this.uiPercentage.setText(this.m_percentage.toFixed(1) + "%", true);
+            this.uiPercentage.text = this.m_percentage.toFixed(1) + "%";
             this.uiPercentage.visible = true;
         }else {
             this.uiPercentage.visible = false;

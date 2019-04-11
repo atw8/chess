@@ -1,14 +1,11 @@
 import {SQUARE_COLORS} from "./SquareColorCons";
 
-import 'p2';
-import 'pixi';
-import 'phaser';
-import {ImageTag} from "../ImageTag";
-
-const Global = require("./../Global");
+import {getNameForImageTag, ImageTag} from "../ImageTag";
+import {SimpleGame} from "../app";
 
 
-export class SquareColorNode extends Phaser.Sprite{
+
+export class SquareColorNode extends PIXI.Sprite{
     constructor(squareColor : SQUARE_COLORS, squareWidth : number, squareHeight : number){
         let key : ImageTag = ImageTag.null;
         switch(squareColor){
@@ -22,7 +19,7 @@ export class SquareColorNode extends Phaser.Sprite{
                 key = ImageTag.squareRed;
                 break;
         }
-        super(Global.game, 0, 0, key);
+        super(PIXI.Texture.from(getNameForImageTag(key)));
 
 
         this.anchor.set(0.5, 0.5);

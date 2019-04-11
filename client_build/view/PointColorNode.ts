@@ -1,13 +1,10 @@
 import {POINT_COLORS} from "./PointColorCons";
 
-import 'p2';
-import 'pixi';
-import 'phaser';
-import {ImageTag} from "../ImageTag";
+import {getNameForImageTag, ImageTag} from "../ImageTag";
+import {SimpleGame} from "../app";
 
-const Global = require("./../Global");
 
-export class PointColorNode extends Phaser.Sprite {
+export class PointColorNode extends PIXI.Sprite {
     constructor(pointColor : POINT_COLORS, squareWidth : number, squareHeight : number){
         let key : ImageTag = ImageTag.null;
         switch(pointColor){
@@ -22,7 +19,7 @@ export class PointColorNode extends Phaser.Sprite {
                 break;
         }
 
-        super(Global.game, 0, 0, key);
+        super(PIXI.Texture.from(getNameForImageTag(key)));
 
         let scaleX = (squareWidth/this.width)*0.8;
         let scaleY = (squareHeight/this.height)*0.8;

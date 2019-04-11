@@ -1,6 +1,6 @@
 import {PositionPoints} from "./PositionPoints";
+import {SimpleGame} from "../../app";
 
-const Global = require("./../../Global")
 
 export class PositionManager {
 
@@ -17,10 +17,9 @@ export class PositionManager {
         }
         this.m_delay = delay;
 
-        let updateMovingSpriteLoop = Global.game.time.create(false);
-        updateMovingSpriteLoop.loop(this.m_delay, this.updateMovingSprites.bind(this, this.m_delay, null));
-        updateMovingSpriteLoop.start();
+        //let ticker = PIXI.ticker.shared;
 
+        setTimeout(this.updateMovingSprites.bind(this, this.m_delay, null));
     }
 
     public getLength():number{
@@ -73,6 +72,8 @@ export class PositionManager {
             let finishCallback = finishCallbacks[i];
             finishCallback();
         }
+
+        setTimeout(this.updateMovingSprites.bind(this, this.m_delay, null));
     }
 
 

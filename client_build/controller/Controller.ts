@@ -6,6 +6,11 @@ import {SocketClientInterface} from "./SocketClientInterface";
 import {BoardView} from "../view/BoardView";
 
 import {ChessEngine} from "../../shared/engine/ChessEngine";
+import {MoveClass} from "../../shared/engine/MoveClass";
+import {OnJoinRoomMessage} from "../../shared/MessageTypes";
+import {SimpleGame} from "../app";
+import {MainLayer} from "../MainLayer";
+import {TouchLayer} from "../view/TouchLayer";
 
 export class Controller implements SocketClientInterface{
     private socketClientAgent : SocketClientAgent;
@@ -14,64 +19,54 @@ export class Controller implements SocketClientInterface{
     constructor(){
         this.socketClientAgent = new SocketClientAgent(this);
         this.chessEngine = new ChessEngine();
+
+        let touchLayer = new TouchLayer(this);
     }
 
 
-    private boardView : BoardView;
+    private uiBoardView : BoardView;
+    private uiMainLayer : MainLayer;
     private chessEngine : ChessEngine;
 
 
-    public setBoardView(boardView : BoardView){
-        this.boardView = boardView;
-        this.boardView.updateViewToModel(null);
+    public setParentView(uiMainLayer : MainLayer){
+        this.uiMainLayer = uiMainLayer;
+    }
+    public setBoardView(uiBoardView : BoardView){
+        this.uiBoardView = uiBoardView;
+        this.uiBoardView.updateViewToModel(null);
     }
 
 
+    public notifyMove(moveClass : MoveClass):boolean{
+        if(this.chessEngine.isMoveLegal(moveClass, false)){
+            this.chessEngine.doMove(moveClass);
+            this.uiBoardView.doMove(moveClass);
 
-    private onConnectCallback : (() => void) | null = null;
-    public setOnConnectCallback(onConnectCallback : (() => void) | null){
-        this.onConnectCallback = onConnectCallback;
-    }
-    public OnConnect() : void{
-        if(this.onConnectCallback != null){
-            this.onConnectCallback();
+            return false;
         }
+
+        return true;
     }
 
 
-    private onDisconnectCallback : (() => void) | null = null;
-    public setOnDisconnectCallback(onDisconnectCallback : (() => void | null) | null){
-        this.onDisconnectCallback = onDisconnectCallback;
+    public OnConnect(){
+
     }
-    public OnDisconnect() : void{
-        if(this.onDisconnectCallback != null){
-            this.onDisconnectCallback();
-        }
+    public OnDisconnect(){
+
     }
 
-    private onLoginGuestCallback : ((onLoginGuestMessage :OnLoginGuestMessage) => void) | null = null;
-    public setOnLoginGuestCallback(onLoginGuestCallback : ((onLoginGuestMessage :OnLoginGuestMessage) => void) | null){
-        this.onLoginGuestCallback = onLoginGuestCallback;
+    public OnLoginGuest(onLoginGuestMessage :OnLoginGuestMessage){
+
     }
-    public OnLoginGuest(onLoginGuestMessage :OnLoginGuestMessage) :void{
-        if(this.onLoginGuestCallback != null) {
-            this.onLoginGuestCallback(onLoginGuestMessage);
-        }
+    public OnGetRoomList(onGetRoomListMessage : OnGetRoomsListMessage){
+
     }
-
-    private onGetRoomListCallback : ((onGetRoomListMessage :OnGetRoomsListMessage) => void) | null = null;
-    public setOnGetRoomListCallback(onGetRoomListCallback : ((onGetRoomListMessage : OnGetRoomsListMessage) => void) | null){
-        this.onGetRoomListCallback = onGetRoomListCallback;
+    public OnJoinRoom(onJoinRoomMessage : OnJoinRoomMessage){
+        this.chessEngine.init(onJoinRoomMessage.roomInitConfig);
+        this.uiBoardView.updateViewToModel(this.chessEngine);
     }
-    public OnGetRoomList(onGetRoomListMessage : OnGetRoomsListMessage):void{
-        if(this.onGetRoomListCallback != null){
-            this.onGetRoomListCallback(onGetRoomListMessage);
-        }
-    }
-
-
-
-
 
     /*
     public async OpLoginGuest():MessageOnLogin{
@@ -121,4 +116,15 @@ export class Controller implements SocketClientInterface{
 
     }
     */
+
+
+    public onTouchBegan(worldLocation : PIXI.Point){
+        this.uiBoardView.onTouchBegan(worldLocation, this.chessEngine);
+    }
+    public onTouchMoved(worldLocation : PIXI.Point){
+        this.uiBoardView.onTouchMoved(worldLocation, this.chessEngine);
+    }
+    public onTouchEnded(worldLocation : PIXI.Point){
+        this.uiBoardView.onTouchEnded(worldLocation, this.chessEngine);
+    }
 }

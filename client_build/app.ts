@@ -1,207 +1,30 @@
-/// <reference path="../node_modules/phaser-ce/typescript/phaser.d.ts" />
-
-import {SocketClientAgent} from "./controller/SocketClientAgent";
-import {Controller} from "./controller/Controller";
-
-
-import {BoardView} from "./view/BoardView";
-
-import {TimePanel} from "./otherView/TimePanel";
-import {PredictPanel} from "./otherView/PredictPanel";
-
-import 'p2';
-import 'pixi';
-import 'phaser';
-import {ImageTag} from "./ImageTag";
-import {OnGetRoomsListMessage, OnLoginGuestMessage} from "../shared/MessageTypes";
+import * as PIXI from 'pixi.js';
+import {getNameForImageTag, getLocationForImageTag, ImageTag} from "./ImageTag";
+import {LogoLayer} from "./LogoLayer";
+import {MainLayer} from "./MainLayer";
 
 
-const Global = require("./Global");
+export class SimpleGame extends PIXI.Application{
+    private static gInstance : SimpleGame;
 
-export class SimpleGame {
-    constructor() {
-        let width = 800;
-        let height = 800;
-        let type = Phaser.AUTO;
-        let parent = "content";
-        let state = {
-            "preload" : this.preload.bind(this),
-            "create" : this.create.bind(this),
-            "update" : this.update.bind(this)
-        };
-
-        Global.game = new Phaser.Game(width, height, type, parent, state);
-    }
-
-
-    private controller : Controller;
-    private boardView : BoardView;
-
-
-    private logo : Phaser.Image;
-
-
-    public create() {
-        console.debug("create");
-        this.logo = new Phaser.Image(Global.game, 0, 0, ImageTag.logo);
-        this.logo.anchor.set(0.5, 0.5);
-        this.logo.position.set(Global.game.width/2, Global.game.height/2);
-
-        let logoScaleX = Global.game.width/this.logo.width;
-        let logoScaleY = Global.game.height/this.logo.height;
-        let logoScale = Math.min(logoScaleX, logoScaleY);
-        this.logo.scale.set(logoScale);
-
-        Global.game.world.add(this.logo);
-
-
-
-        this.controller = new Controller();
-        this.controller.setOnConnectCallback(this.onConnectCallback.bind(this));
-        this.controller.setOnDisconnectCallback(this.onDisconnectCallback.bind(this));
-        this.controller.setOnLoginGuestCallback(this.onLoginGuestCallback.bind(this));
-        this.controller.setOnGetRoomListCallback(this.onGetRoomListCallback.bind(this));
-
-
-
-        this.boardView = new BoardView(400, 400, this.controller);
-        this.boardView.position.set(Global.game.width/2, Global.game.height/2);
-        Global.game.world.add(this.boardView);
-
-        this.controller.setBoardView(this.boardView);
-
-
-        let predictPanel = new PredictPanel(190, 400, 10, this.controller);
-        {
-            let xSeparator = (this.boardView.getWidth() + predictPanel.getWidth() ) * 0.01;
-
-            let posX = this.boardView.position.x - this.boardView.getWidth()/2 - predictPanel.getWidth()/2 - xSeparator;
-            let posY = this.boardView.position.y;
-
-            predictPanel.position.set(posX, posY);
-
-            Global.game.world.add(predictPanel);
-        }
-        //this.controller.setPredictPanel(predictPanel);
-
-
-
-        //this.controller.startGame();
-
-
-        let timePanel = new TimePanel(200, 70);
-        timePanel.position.set(Global.game.width/2, Global.game.height/2 - this.boardView.getHeight()/2 - timePanel.getHeight()/2 - 10);
-        Global.game.world.addChild(timePanel);
-
-
-        let flipBoardButton = new Phaser.Button(Global.game, 0, 0,
-            "btnGreen",
-            this.flipBoardFacing, this);
-            //"btnGreen", "btnGreen", "btnGreenPress", "btnGreen");
-        Global.game.world.add(flipBoardButton);
-
-        let flipBoardButtonText = new Phaser.Text(Global.game, 0, 0, "Flip Board");
-        flipBoardButtonText.position.set(flipBoardButton.width/2, flipBoardButton.height/2);
-        flipBoardButtonText.anchor.set(0.5, 0.5);
-        flipBoardButton.addChild(flipBoardButtonText);
-
-
-    }
-
-    public flipBoardFacing(){
-        console.debug("switchOnClick");
-
-        this.boardView.flipBoardFacing();
-    }
-
-
-
-
-    private getLocationForImageTag(imageTag : ImageTag):string {
-        let ret : string = "";
-        switch(imageTag){
-            case ImageTag.logo:
-                ret = "image/img_logo.png";
-                break;
-            case ImageTag.white_pawn:
-                ret = "image/icon_pawn_white.png";
-                break;
-            case ImageTag.black_pawn:
-                ret = "image/icon_pawn_black.png";
-                break;
-            case ImageTag.white_knight:
-                ret = "image/icon_knight_white.png";
-                break;
-            case ImageTag.black_knight:
-                ret = "image/icon_knight_black.png";
-                break;
-            case ImageTag.white_bishop:
-                ret = "image/icon_bishop_white.png";
-                break;
-            case ImageTag.black_bishop:
-                ret = "image/icon_bishop_black.png";
-                break;
-            case ImageTag.white_rook:
-                ret = "image/icon_rook_white.png";
-                break;
-            case ImageTag.black_rook:
-                ret = "image/icon_rook_black.png";
-                break;
-            case ImageTag.white_queen:
-                ret = "image/icon_queen_white.png";
-                break;
-            case ImageTag.black_queen:
-                ret = "image/icon_queen_black.png";
-                break;
-            case ImageTag.white_king:
-                ret = "image/icon_king_white.png";
-                break;
-            case ImageTag.black_king:
-                ret = "image/icon_king_black.png";
-                break;
-            case ImageTag.select_light:
-                ret = "image/selectLightSprite.png";
-                break;
-            case ImageTag.option_light:
-                ret = "image/optionCycleSprite.png";
-                break;
-            case ImageTag.pointGreen:
-                ret = "image/pointGreen.png";
-                break;
-            case ImageTag.pointRed:
-                ret = "image/pointRed.png";
-                break;
-            case ImageTag.pointYellow:
-                ret = "image/pointYellow.png";
-                break;
-            case ImageTag.squareBlue:
-                ret = "image/squareBlue.png";
-                break;
-            case ImageTag.squareGreen:
-                ret = "image/squareGreen.png";
-                break;
-            case ImageTag.squareRed:
-                ret = "image/squareRed.png";
-                break;
-            case ImageTag.btnGreen:
-                ret = "image/btn_play_green_little.png";
-                break;
-            case ImageTag.btnGreenPress:
-                ret = "image/btn_play_green_little_press.png";
-                break;
-            case ImageTag.btnPrompt:
-                ret = "image/btn_prompt.png";
-                break;
-            case ImageTag.btnPromptPress:
-                ret = "image/btn_prompt_press.png";
-                break;
+    public static getInstance():SimpleGame{
+        if(typeof (this.gInstance) == "undefined"){
+            this.gInstance = new SimpleGame();
         }
 
-        return ret;
+        return this.gInstance;
     }
 
-    public preload(){
-        console.debug("preload");
+    public static getWidth():number{
+        return this.getInstance().view.width;
+    }
+    public static getHeight():number{
+        return this.getInstance().view.height;
+    }
+
+    private constructor(){
+        super();
+        document.body.appendChild(this.view);
 
         let imageTags : ImageTag[] = [];
         imageTags.push(ImageTag.logo);
@@ -239,32 +62,26 @@ export class SimpleGame {
 
         for(let i = 0; i < imageTags.length; i++){
             let imageTag = imageTags[i];
-            Global.game.load.image(imageTag, this.getLocationForImageTag(imageTag));
+            PIXI.loader.add(getNameForImageTag(imageTag), getLocationForImageTag(imageTag));
         }
+        PIXI.loader.load(this.onLoad.bind(this));
+    };
+
+    public onLoad(){
+        //let logoLayer = new LogoLayer();
+        //logoLayer.x = this.view.width/2;
+        //logoLayer.y = this.view.height/2;
+        let mainLayer = new MainLayer();
+
+
+        this.stage.addChild(mainLayer);
+
+        console.log("hello world");
     }
 
-    public update(){
-
-    }
-
-
-
-
-
-    public onConnectCallback(){
-        console.log("app.onConnectCallback");
-    }
-    public onDisconnectCallback(){
-        console.log("app.onDisconnectCallback");
-    }
-    public onLoginGuestCallback(onLoginGuestMessage : OnLoginGuestMessage){
-        console.log("app.onLoginGuestCallback");
-    }
-    public onGetRoomListCallback(onGetRoomListMessage : OnGetRoomsListMessage){
-        console.log("app.onGetRoomListCallback");
-    }
 }
 
+
 window.onload = () => {
-    let simpleGame = new SimpleGame();
+    SimpleGame.getInstance();
 };

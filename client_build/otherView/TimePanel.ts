@@ -1,12 +1,12 @@
 import 'p2';
 import 'pixi';
 import 'phaser';
+import {SimpleGame} from "../app";
+import TextStyleOptions = PIXI.TextStyleOptions;
 
-const Global = require("./../Global");
 
 
-
-export class TimePanel extends Phaser.Graphics {
+export class TimePanel extends PIXI.Graphics {
     private m_width : number;
     public getWidth():number{
         return this.m_width;
@@ -16,10 +16,10 @@ export class TimePanel extends Phaser.Graphics {
         return this.m_height;
     }
 
-    private uiText : Phaser.Text;
+    private uiText : PIXI.Text;
 
     constructor(width : number, height : number){
-        super(Global.game);
+        super();
 
         this.m_width = width;
         this.m_height = height;
@@ -28,9 +28,11 @@ export class TimePanel extends Phaser.Graphics {
         this.drawRoundedRect(-this.m_width/2, -this.m_height/2, this.m_width, this.m_height, 3);
 
 
-        this.uiText = new Phaser.Text(Global.game, 0, 0, "Turn");
-        this.uiText.fontSize = 50;
-        this.uiText.font = "Times New Roman";
+        this.uiText = new PIXI.Text("Turn");
+        let textStyleOptions : TextStyleOptions = {};
+        textStyleOptions.fontSize = 50;
+        textStyleOptions.fontFamily = "Times New Roman"
+        this.uiText.style = new PIXI.TextStyle(textStyleOptions);
 
         this.uiText.position.y = 8;
         this.uiText.scale.set(this.m_height/this.uiText.height, this.m_height/this.uiText.height);
@@ -46,10 +48,7 @@ export class TimePanel extends Phaser.Graphics {
         let seconds = minutes * 60 - Math.floor(timeMilli/1000);
 
 
-
-        let str = this.leftPad(minutes, 2) + ":" + this.leftPad(seconds, 2);
-
-        this.uiText.setText(str);
+        this.uiText.text = this.leftPad(minutes, 2) + ":" + this.leftPad(seconds, 2);
     }
 
 
