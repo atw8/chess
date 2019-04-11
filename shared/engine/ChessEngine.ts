@@ -783,12 +783,12 @@ export class ChessEngine extends  AbstractEngine {
             ret["enPassantSquare"] = null;
         }else {
             let moveClass = this.moveClasses[this.moveClasses.length - 1];
-            ret = this.isTwoPawnMove(moveClass);
+            ret = ChessEngine.isTwoPawnMove(moveClass);
         }
 
         return ret;
     }
-    public isTwoPawnMove(moveClass : MoveClass):{ "isTwoPawnMove" : boolean, "enPassantSquare" : FileRank | null}{
+    public static isTwoPawnMove(moveClass : MoveClass):{ "isTwoPawnMove" : boolean, "enPassantSquare" : FileRank | null}{
         let ret :{ "isTwoPawnMove" : boolean, "enPassantSquare" : FileRank | null} = { "isTwoPawnMove" : false, "enPassantSquare" : null};;
 
         if(moveClass.getLength() === 2){
@@ -904,13 +904,13 @@ export class ChessEngine extends  AbstractEngine {
 
         if(this.moveClasses.length !== 0){
             let moveClass = this.moveClasses[this.moveClasses.length - 1];
-            ret = this.isPromotionMove(moveClass);
+            ret = ChessEngine.isPromotionMove(moveClass);
         }
 
         return ret;
     }
 
-    public isPromotionMove(moveClass : MoveClass):{"isPromotionMove": boolean, "promotionPieceTypes": PieceType[], unpromotionPieceTypes : PieceType[]}{
+    public static isPromotionMove(moveClass : MoveClass):{"isPromotionMove": boolean, "promotionPieceTypes": PieceType[], unpromotionPieceTypes : PieceType[]}{
         let ret : {"isPromotionMove": boolean, "promotionPieceTypes": PieceType[], unpromotionPieceTypes : PieceType[]}  = { "isPromotionMove" : false, "promotionPieceTypes" : [], "unpromotionPieceTypes" : []};;
 
         let numCounter : { [key : number] : number} = {};
@@ -967,7 +967,7 @@ export class ChessEngine extends  AbstractEngine {
     }
 
 
-    private captureReverseCaptureHelper(moveClass : MoveClass) : { [key : number] : number } {
+    private static captureReverseCaptureHelper(moveClass : MoveClass) : { [key : number] : number } {
         let wbChanges : { [key : number] : number }  = {};
         wbChanges[SideType.WHITE] = 0;
         wbChanges[SideType.BLACK] = 0;
@@ -988,13 +988,13 @@ export class ChessEngine extends  AbstractEngine {
 
         return wbChanges;
     }
-    public isReverseCaptureMove(moveClass : MoveClass):boolean {
-        let wbChanges = this.captureReverseCaptureHelper(moveClass);
+    public static isReverseCaptureMove(moveClass : MoveClass):boolean {
+        let wbChanges = ChessEngine.captureReverseCaptureHelper(moveClass);
 
         return (wbChanges[SideType.WHITE] > 0) || (wbChanges[SideType.BLACK] > 0);
     }
-    public isCaptureMove(moveClass : MoveClass):boolean{
-        let wbChanges = this.captureReverseCaptureHelper(moveClass);
+    public static isCaptureMove(moveClass : MoveClass):boolean{
+        let wbChanges = ChessEngine.captureReverseCaptureHelper(moveClass);
 
         return (wbChanges[SideType.WHITE] < 0) || (wbChanges[SideType.BLACK] < 0);
     }
@@ -1007,14 +1007,14 @@ export class ChessEngine extends  AbstractEngine {
         if(lastMoveClass == null){
             ret = false;
         }else {
-            ret = this.isMoveWithPieceTypeSideType(lastMoveClass, pieceType, sideType);
+            ret = ChessEngine.isMoveWithPieceTypeSideType(lastMoveClass, pieceType, sideType);
         }
 
 
         return ret;
     }
 
-    public isMoveWithPieceTypeSideType(moveClass : MoveClass, pieceType : PieceType, sideType : SideType):boolean {
+    public static isMoveWithPieceTypeSideType(moveClass : MoveClass, pieceType : PieceType, sideType : SideType):boolean {
         let ret : boolean = false;
         if(moveClass.getLength() > 0) {
             let change = moveClass.get(1);
@@ -1040,13 +1040,13 @@ export class ChessEngine extends  AbstractEngine {
         if(lastMoveClass == null){
             ret = false;
         }else {
-            ret = this.isMoveWithPieceType(lastMoveClass, pieceType);
+            ret = ChessEngine.isMoveWithPieceType(lastMoveClass, pieceType);
         }
 
         return ret;
     }
 
-    public isMoveWithPieceType(moveClass : MoveClass, pieceType : PieceType):boolean {
+    public static isMoveWithPieceType(moveClass : MoveClass, pieceType : PieceType):boolean {
         let ret : boolean = false;
         if(moveClass.getLength() > 0) {
             let change = moveClass.get(1);
@@ -1359,7 +1359,7 @@ export class ChessEngine extends  AbstractEngine {
 
         //Figure out if the half move clock should be reset or incremented
         let resetHalfMoveClock = false;
-        if(this.isCaptureMove(moveClass) || this.isMoveWithPieceType(moveClass, PieceType.PAWN)){
+        if(ChessEngine.isCaptureMove(moveClass) || ChessEngine.isMoveWithPieceType(moveClass, PieceType.PAWN)){
             resetHalfMoveClock = true;
         }
 
@@ -1380,12 +1380,10 @@ export class ChessEngine extends  AbstractEngine {
 
         this.fenStrings.push(this.getFenStrFromCurrentBoard());
 
-        console.debug("the uciMove is " + this.getLastUCIMove());
-        console.debug("the sanMove is " + this.getLastSanMove());
-        console.debug("the fenStr is " + this.getLastFenStr());
+        console.log("the uciMove is " + this.getLastUCIMove());
+        console.log("the sanMove is " + this.getLastSanMove());
+        console.log("the fenStr is " + this.getLastFenStr());
     }
-
-
 
 
 //the logic of moving pieces
@@ -2048,7 +2046,7 @@ export class ChessEngine extends  AbstractEngine {
             }else {
                 for(let i = 0; i < moveClasses.length; i++){
                     let moveClass = moveClasses[i];
-                    let isPromotionMove = this.isPromotionMove(moveClass);
+                    let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
                     if(isPromotionMove["isPromotionMove"]){
                         let promotionPieceTypes = isPromotionMove["promotionPieceTypes"];
                         if(promotionPieceTypes.length == 1){
@@ -2153,14 +2151,14 @@ export class ChessEngine extends  AbstractEngine {
                 }
             }
 
-            if(this.isCaptureMove(moveClass)){
+            if(ChessEngine.isCaptureMove(moveClass)){
                 str = str + "x";
             }
 
             str = str + ChessEngine.convertFileNumberToFile(destFileRank.x);
             str = str + String(destFileRank.y);
 
-            let isPromotionMove = this.isPromotionMove(moveClass);
+            let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
             if(isPromotionMove["isPromotionMove"]){
                 str = str + "=";
                 let promotionPieceTypes = isPromotionMove["promotionPieceTypes"];
@@ -2206,7 +2204,7 @@ export class ChessEngine extends  AbstractEngine {
 
         uciMove = originFile + originRank.toString() + destFile + destRank.toString();
 
-        let isPromotionMove = this.isPromotionMove(moveClass);
+        let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
 
         if(isPromotionMove["isPromotionMove"]){
             let promotionPieceTypes = isPromotionMove["promotionPieceTypes"];
@@ -2287,7 +2285,7 @@ export class ChessEngine extends  AbstractEngine {
                 for(let i = 0; i < legalMoves.length; i++){
                     let legalMove = legalMoves[i];
 
-                    let isPromotionMove = this.isPromotionMove(legalMove);
+                    let isPromotionMove = ChessEngine.isPromotionMove(legalMove);
 
                     if(isPromotionMove["isPromotionMove"]){
                         let promotionPieceTypes = isPromotionMove["promotionPieceTypes"];
