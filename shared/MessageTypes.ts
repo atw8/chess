@@ -699,12 +699,12 @@ export class OnJoinRoomMessage extends ServerClientMessage {
         }
 
         if(json.roomInitConfig != undefined){
-            if(!RoomInitConfig.validateSchema(json)){
+            if(!RoomInitConfig.validateSchema(json.roomInitConfig)){
                 return false;
             }
         }
         if(json.roomStateConfig != undefined){
-            if(!RoomStateConfig.validateSchema(json)){
+            if(!RoomStateConfig.validateSchema(json.roomStateConfig)){
                 return false;
             }
         }
