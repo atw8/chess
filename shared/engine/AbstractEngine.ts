@@ -145,7 +145,7 @@ export class AbstractEngine {
 
 
     public isFileRankLegal(pos : FileRank) : boolean{
-        return ! ( pos.x < 1 || pos.x > this.getNumOfFiles() || pos.y < 1 || pos.y > this.getNumOfRanks() );
+        return ( pos.x >= 1 && pos.x <= this.getNumOfFiles() && pos.y >= 1 && pos.y <= this.getNumOfRanks() );
     };
     public getPieceForFileRank( pos : FileRank):PieceModel|null{
         let ret = null;
@@ -165,27 +165,40 @@ export class AbstractEngine {
             let pieceType = oldPiece.getPieceType();
 
             let squareArray = this.pieceToSquareMap[sideType][pieceType];
-            let squareArrayIndex = null;
+            let squareArrayIndex :number | null = null;
 
-            for(let i = 0; i < squareArray.length; i++){
+            for(let i = 0; i < squareArray.length && squareArrayIndex == null; i++){
                 let square = squareArray[i];
 
-                if(square.x === pos.x && square.y === pos.y){
+                if(FileRank.isEqual(square, pos)){
                     squareArrayIndex = i;
                 }
             }
 
-            if(squareArrayIndex !== null){
-                squareArray.splice(squareArrayIndex, 1);
-            }
-
+            squareArray.splice(<number>squareArrayIndex, 1);
         }
 
         if(piece !== null){
+            let hash = this.getHashForFileRank(pos);
+
+
             let sideType = piece.getSideType();
             let pieceType = piece.getPieceType();
 
-            this.pieceToSquareMap[sideType][pieceType].push(pos);
+            let squareArrayIndex = 0;
+
+            let squareArray = this.pieceToSquareMap[sideType][pieceType];
+            for(let i = 0; i < squareArray.length; i++){
+                let square = squareArray[i];
+
+                if(this.getHashForFileRank(square) < hash){
+                    squareArrayIndex = i + 1;
+                }else {
+                    break;
+                }
+            }
+
+            this.pieceToSquareMap[sideType][pieceType].splice(squareArrayIndex, 0, pos)
         }
 
         this.fileRankPieces[pos.x][pos.y] = piece;
@@ -289,6 +302,10 @@ export class AbstractEngine {
             }
         }
 
+        if(! this.isFileRankLegal(fileRank)){
+            return false;
+        }
+
         let piece = this.getPieceForFileRank(fileRank);
         if(piece == null){
             return false;
@@ -302,6 +319,10 @@ export class AbstractEngine {
             if(!FileRank.isEqual(destFileRank, fileRank)){
                 return false;
             }
+        }
+
+        if(! this.isFileRankLegal(fileRank)){
+            return false;
         }
 
         let piece = this.getPieceForFileRank(fileRank);
@@ -402,7 +423,7 @@ export class AbstractEngine {
                     }
                 }
 
-                normalMoveFileRank.addFileRank(moveVector);
+                normalMoveFileRank = FileRank.addFileRank(normalMoveFileRank, moveVector);
             }
 
             let captureMoveFileRank = normalMoveFileRank;
@@ -450,7 +471,7 @@ export class AbstractEngine {
                     destFileRanks.push(normalMoveFileRank);
                 }
 
-                normalMoveFileRank.addFileRank(moveVector);
+                normalMoveFileRank = FileRank.addFileRank(normalMoveFileRank, moveVector);
             }
         }
 
@@ -525,10 +546,9 @@ export class AbstractEngine {
             let moveVector = moveVectors[i];
 
             let isEmpty = true;
-            for(let j = 0; j <= moveVector.emptyVec.length; i++){
-                let empPos = moveVector.emptyVec[j];
+            for(let j = 0; j < moveVector.emptyVec.length; j++){
 
-                let pos = FileRank.addFileRank(originFileRank, moveVector.emptyVec[i]);
+                let pos = FileRank.addFileRank(originFileRank, moveVector.emptyVec[j]);
 
                 if(this.getPieceForFileRank(pos) != null){
                     isEmpty = false;
