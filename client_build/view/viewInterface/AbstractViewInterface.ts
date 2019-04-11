@@ -1,3 +1,5 @@
+/*
+
 import {SideType} from "../../../shared/engine/SideType";
 import {PieceType} from "../../../shared/engine/PieceType";
 import {PieceView} from "../PieceView";
@@ -24,3 +26,4 @@ export abstract class AbstractViewInterface {
     public abstract getViewInterfaceType():AbstractViewInterfaceType;
 
 }
+*/
