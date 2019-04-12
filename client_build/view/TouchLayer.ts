@@ -8,6 +8,8 @@ export class TouchLayer{
 
     private identifier : number | null = null;
 
+    private isEnabled : boolean;
+
     constructor(controller : Controller){
         this.controller = controller;
 
@@ -18,36 +20,22 @@ export class TouchLayer{
         SimpleGame.getInstance().stage.on("pointerup", this.onTouchEnded.bind(this));
         SimpleGame.getInstance().stage.on("pointerupoutside", this.onTouchEnded.bind(this));
         SimpleGame.getInstance().stage.on("pointercancel", this.onTouchEnded.bind(this));
+
+        this.isEnabled = true;
     }
 
+    public getIsEnabled():boolean{
+        return this.isEnabled;
+    }
+    public setIsEnabled(isEnabled : boolean){
+        this.isEnabled = isEnabled;
+    }
 
-    /*
-    public pointerDown(interactionEvent : InteractionEvent){
-        console.log("pointerDown");
-        this.pointerHelper(interactionEvent);
-    }
-    public pointerup(interactionEvent : InteractionEvent){
-        console.log("pointerup");
-        this.pointerHelper(interactionEvent)
-    }
-    public pointerupoutside(interactionEvent : InteractionEvent){
-        console.log("pointerupoutside");
-    }
-    public pointerover(interactionEvent : InteractionEvent){
-        console.log("pointerover");
-    }
-    public pointerout(interactionEvent : InteractionEvent){
-        console.log("pointerout");
-    }
-    public pointerHelper(interactionEvent : InteractionEvent){
-
-    }
-    */
 
 
 
     public onTouchBegan(interactionEvent : InteractionEvent){
-        if(this.identifier != null){
+        if(this.identifier != null ||!this.isEnabled){
             return;
         }
         this.identifier = interactionEvent.data.identifier;
