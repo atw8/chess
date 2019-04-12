@@ -67,11 +67,8 @@ export class PieceModel {
 
 
 
-    public static isEqualTo(pieceModel1 : PieceModel, pieceModel2 : PieceModel) : boolean {
-        return pieceModel1.getPieceType() == pieceModel2.getPieceType() && pieceModel1.getSideType() == pieceModel2.getSideType();
-    };
-
-
-
-};
+    public static isEqualTo(pieceModel1 : any, pieceModel2 : any) : boolean {
+        return pieceModel1.pieceType == pieceModel2.pieceType && pieceModel1.sideType == pieceModel2.sideType;
+    }
+}
 

@@ -1,3 +1,5 @@
+import {FairyType} from "./FairyType";
+
 export class Fairy {
     private fairyType : FairyType;
 

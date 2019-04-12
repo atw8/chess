@@ -15,12 +15,14 @@ import {TouchLayer} from "../view/TouchLayer";
 export class Controller implements SocketClientInterface{
     private socketClientAgent : SocketClientAgent;
 
+    private uiTouchLayer : TouchLayer;
 
     constructor(){
         this.socketClientAgent = new SocketClientAgent(this);
         this.chessEngine = new ChessEngine();
 
-        let touchLayer = new TouchLayer(this);
+        this.uiTouchLayer = new TouchLayer(this);
+        this.uiTouchLayer.setIsEnabled(false);
     }
 
 
@@ -31,10 +33,19 @@ export class Controller implements SocketClientInterface{
 
     public setParentView(uiMainLayer : MainLayer){
         this.uiMainLayer = uiMainLayer;
+
+        this.synchronizeTouchLayer();
     }
     public setBoardView(uiBoardView : BoardView){
         this.uiBoardView = uiBoardView;
         this.uiBoardView.updateViewToModel(null);
+
+        this.synchronizeTouchLayer();
+    }
+    public synchronizeTouchLayer(){
+        if(this.uiMainLayer != undefined && this.uiBoardView != undefined){
+            this.uiTouchLayer.setIsEnabled(true);
+        }
     }
 
 
@@ -47,6 +58,16 @@ export class Controller implements SocketClientInterface{
         }
 
         return true;
+    }
+    public notifyPromote(moveClass : MoveClass[]){
+        this.uiTouchLayer.setIsEnabled(false);
+
+        this.uiMainLayer.showPromotePieceLayer(moveClass, (moveClass : MoveClass) => {
+            this.chessEngine.doMove(moveClass);
+            this.uiBoardView.doMove(moveClass);
+
+            this.uiTouchLayer.setIsEnabled(true);
+        });
     }
 
 

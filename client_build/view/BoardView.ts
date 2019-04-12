@@ -237,6 +237,7 @@ export class BoardView extends PIXI.Graphics {
     }
     public createPieceView(sideType : SideType, pieceType : PieceType):PieceView{
         let pieceSprite = new PieceView(sideType, pieceType, this.getSquareWidth(), this.getSquareHeight());
+        pieceSprite.buttonMode = true;
         this.pieceSpriteGroup.addChild(pieceSprite);
 
         return pieceSprite;
@@ -408,7 +409,7 @@ export class BoardView extends PIXI.Graphics {
             if (legalMoves.length == 1) {
                 isIllegalMove = this.controller.notifyMove(legalMoves[0]);
             } else {
-                this.normalizeMoveClass(legalMoves);
+                this.normalizePromote(legalMoves);
             }
         }
 
@@ -1049,10 +1050,7 @@ export class BoardView extends PIXI.Graphics {
         return {removeStructs : removeStructs, addStructs : addStructs, moveStructs : moveStructs};
     }
 
-    private normalizeMoveClass(legalMoves : MoveClass[]){
-        let removeAddMoveStructs = this.getRemoveAddMoveStructs(legalMoves[0]);
 
-    }
     /*
     local removeStructs = {}
     local addStructs = {}
@@ -1100,19 +1098,22 @@ export class BoardView extends PIXI.Graphics {
     */
 
 
+    private normalizePromote(legalMoves : MoveClass[]){
+        let cb = (_ : MoveClass, __ : boolean) => {
+            this.controller.notifyPromote(legalMoves);
+        };
+        this.doMoveAnimation(legalMoves[0], false, false, cb);
+    }
     public doMove(moveClass : MoveClass){
-        this.doMoveAnimation(moveClass, false);
+        this.doMoveAnimation(moveClass, false, true, null);
         this.addLastMoveSquares(moveClass);
     }
 
-    
-    public doMoveAnimation(moveClass : MoveClass, isUndoMove : boolean){
+    public doMoveAnimation(moveClass : MoveClass, isUndoMove : boolean, isStrictMove : boolean, endAnimation : ((moveClass : MoveClass, isUndoMove : boolean) => void) | null){
         if(this.touchType != TouchTypes.NO_TOUCH) {
             this.onTouchEnded(new PIXI.Point(this.m_width * 100, this.m_height * 100), null);
         }
         this.removeAllSquares();
-
-
 
 
         let removeAddMoveStructs = this.getRemoveAddMoveStructs(moveClass);
@@ -1120,98 +1121,107 @@ export class BoardView extends PIXI.Graphics {
         let addStructs = removeAddMoveStructs["addStructs"];
         let moveStructs = removeAddMoveStructs["moveStructs"];
 
-        for(let i = 0; i < removeStructs.length; i++){
-            let removeStruct = removeStructs[i];
 
-            let fileRank = removeStruct.fileRank;
-            let piece = removeStruct.piece;
+        if(isStrictMove){
+            for(let i = 0; i < removeStructs.length; i++){
+                let removeStruct = removeStructs[i];
 
-            {
-                let pieceSprite = this.getPieceSpriteForFileRank(fileRank);
+                let fileRank = removeStruct.fileRank;
+                let piece = removeStruct.piece;
+
+                {
+                    let pieceSprite = this.getPieceSpriteForFileRank(fileRank);
+                    if(pieceSprite == null){
+                        pieceSprite = this.createPieceView(piece.getSideType(), piece.getPieceType());
+                        pieceSprite.position = this.getPositionForFileRank(fileRank)
+                        this.setPieceSpriteForFileRank(fileRank, pieceSprite);
+                    }
+                }
+
+
+                let pieceSprite = <PieceView>this.getPieceSpriteForFileRank(fileRank);
+                pieceSprite.setPiece(piece.getSideType(), piece.getPieceType());
+                removeStruct.sprite = pieceSprite;
+
+                this.setPieceSpriteForFileRank(fileRank, null);
+            }
+
+            for(let i = 0; i < moveStructs.length; i++){
+                let moveStruct = moveStructs[i];
+
+                let originFileRank = moveStruct.originFileRank;
+                let destFileRank = moveStruct.destFileRank;
+
+                let originPiece = moveStruct.originPiece;
+                let destPiece = moveStruct.destPiece;
+
+                let pieceSprite = this.getPieceSpriteForFileRank(originFileRank);
                 if(pieceSprite == null){
-                    pieceSprite = this.createPieceView(piece.getSideType(), piece.getPieceType());
-                    pieceSprite.position = this.getPositionForFileRank(fileRank)
-                    this.setPieceSpriteForFileRank(fileRank, pieceSprite);
+                    pieceSprite = this.createPieceView(originPiece.getSideType(), originPiece.getPieceType());
+                    pieceSprite.position = this.getPositionForFileRank(originFileRank);
+                    this.setPieceSpriteForFileRank(originFileRank, pieceSprite);
                 }
+
+                pieceSprite.setPiece(originPiece.getSideType(), originPiece.getPieceType());
+
+                moveStruct.sprite = pieceSprite;
+
+                this.setPieceSpriteForFileRank(originFileRank, null);
             }
+            for(let i = 0; i < moveStructs.length; i++){
+                let moveStruct = moveStructs[i];
 
+                let originFileRank = moveStruct.originFileRank;
+                let destFileRank = moveStruct.destFileRank;
 
-            let pieceSprite = <PieceView>this.getPieceSpriteForFileRank(fileRank);
-            pieceSprite.setPiece(piece.getSideType(), piece.getPieceType());
-            removeStruct.sprite = pieceSprite;
+                let originPiece = moveStruct.originPiece;
+                let destPiece = moveStruct.destPiece;
 
-            this.setPieceSpriteForFileRank(fileRank, null);
-        }
-
-        for(let i = 0; i < moveStructs.length; i++){
-            let moveStruct = moveStructs[i];
-
-            let originFileRank = moveStruct.originFileRank;
-            let destFileRank = moveStruct.destFileRank;
-
-            let originPiece = moveStruct.originPiece;
-            let destPiece = moveStruct.destPiece;
-
-            let pieceSprite = this.getPieceSpriteForFileRank(originFileRank);
-            if(pieceSprite == null){
-                pieceSprite = this.createPieceView(originPiece.getSideType(), originPiece.getPieceType());
-                pieceSprite.position = this.getPositionForFileRank(originFileRank);
-                this.setPieceSpriteForFileRank(originFileRank, pieceSprite);
-            }
-
-            pieceSprite.setPiece(originPiece.getSideType(), originPiece.getPieceType());
-
-            moveStruct.sprite = pieceSprite;
-
-            this.setPieceSpriteForFileRank(originFileRank, null);
-        }
-        for(let i = 0; i < moveStructs.length; i++){
-            let moveStruct = moveStructs[i];
-
-            let originFileRank = moveStruct.originFileRank;
-            let destFileRank = moveStruct.destFileRank;
-
-            let originPiece = moveStruct.originPiece;
-            let destPiece = moveStruct.destPiece;
-
-            {
-                let pieceSprite = this.getPieceSpriteForFileRank(destFileRank);
-                if(pieceSprite != null){
-                    this.removePieceView(pieceSprite);
-                    this.setPieceSpriteForFileRank(destFileRank, null);
+                {
+                    let pieceSprite = this.getPieceSpriteForFileRank(destFileRank);
+                    if(pieceSprite != null){
+                        this.removePieceView(pieceSprite);
+                        this.setPieceSpriteForFileRank(destFileRank, null);
+                    }
                 }
+
+                this.setPieceSpriteForFileRank(destFileRank, moveStruct.sprite);
             }
 
-            this.setPieceSpriteForFileRank(destFileRank, moveStruct.sprite);
-        }
+
+            for(let i = 0; i < addStructs.length; i++){
+                let addStruct = addStructs[i];
+
+                let fileRank = addStruct.fileRank;
+                let piece = addStruct.piece;
 
 
-        for(let i = 0; i < addStructs.length; i++){
-            let addStruct = addStructs[i];
-
-            let fileRank = addStruct.fileRank;
-            let piece = addStruct.piece;
-
-
-            {
-                let pieceSprite = this.getPieceSpriteForFileRank(fileRank);
-                if(pieceSprite != null){
-                    this.removePieceView(pieceSprite);
-                    this.setPieceSpriteForFileRank(fileRank, null);
+                {
+                    let pieceSprite = this.getPieceSpriteForFileRank(fileRank);
+                    if(pieceSprite != null){
+                        this.removePieceView(pieceSprite);
+                        this.setPieceSpriteForFileRank(fileRank, null);
+                    }
                 }
+
+
+
+                let pieceSprite = this.createPieceView(piece.getSideType(), piece.getPieceType());
+                pieceSprite.position = this.getPositionForFileRank(fileRank);
+
+                pieceSprite.visible = false;
+
+                addStruct.sprite = pieceSprite;
+
+                this.setPieceSpriteForFileRank(fileRank, pieceSprite);
             }
-
-
-
-            let pieceSprite = this.createPieceView(piece.getSideType(), piece.getPieceType());
-            pieceSprite.position = this.getPositionForFileRank(fileRank);
-
-            pieceSprite.visible = false;
-
-            addStruct.sprite = pieceSprite;
-
-            this.setPieceSpriteForFileRank(fileRank, pieceSprite);
+        }else {
+            for(let i = 0; i < moveStructs.length; i++){
+                let moveStruct = moveStructs[i];
+                moveStruct.sprite = this.getPieceSpriteForFileRank(moveStruct.originFileRank);
+            }
         }
+
 
 
         let moveStructCounter = 0;
@@ -1222,27 +1232,29 @@ export class BoardView extends PIXI.Graphics {
                 let originPiece = moveStruct.originPiece;
                 let destPiece = moveStruct.destPiece;
 
-                (<PieceView>moveStruct.sprite).setPiece(destPiece.getSideType(), destPiece.getPieceType());
+                if(isStrictMove){
+                    (<PieceView>moveStruct.sprite).setPiece(destPiece.getSideType(), destPiece.getPieceType());
+                }
             }
 
-            if(moveStructCounter != moveStructs.length) {
-                return;
+            if(moveStructCounter == moveStructs.length && isStrictMove){
+                for(let i = 0; i < removeStructs.length; i++) {
+                    let removeStruct = removeStructs[i];
+
+                    this.removePieceView(<PieceView>removeStruct.sprite);
+                }
+
+                for(let i = 0; i < addStructs.length; i++) {
+                    let addStruct = moveStructs[i];
+
+                    (<PieceView>addStruct.sprite).visible = true;
+                }
+
             }
 
-
-            for(let i = 0; i < removeStructs.length; i++) {
-                let removeStruct = removeStructs[i];
-
-                this.removePieceView(<PieceView>removeStruct.sprite);
+            if(endAnimation != null){
+                endAnimation(moveClass, isUndoMove);
             }
-
-            for(let i = 0; i < addStructs.length; i++) {
-                let addStruct = moveStructs[i];
-
-                (<PieceView>addStruct.sprite).visible = true;
-            }
-
-            //this.endAnimation(moveClass, isUndoMove);
         };
 
         for(let i = 0; i < moveStructs.length; i++){
@@ -1251,37 +1263,46 @@ export class BoardView extends PIXI.Graphics {
             let originFileRank = moveStruct.originFileRank;
             let destFileRank = moveStruct.destFileRank;
 
-            let sprite = <PieceView>moveStruct.sprite;
+            let sprite = moveStruct.sprite;
 
-            let positionFrom : PIXI.Point;
-            let positionTo : PIXI.Point;
-
-            if (this.positionManager.isMovingSprite(sprite)) {
-                positionFrom = this.getPositionForFileRank(originFileRank);
-            } else {
-                positionFrom = sprite.position.clone();
-            }
-
-            positionTo = this.getPositionForFileRank(destFileRank);
-
-
-            let actionMovingType : ActionMovingTypes = ActionMovingTypes.PREDICT;
-            if(isUndoMove){
-                actionMovingType = ActionMovingTypes.UNMOVE;
-            }else {
-                actionMovingType = ActionMovingTypes.MOVE;
-            }
 
             let localMoveCallback : ( () => void ) | null = () => {
                 globalMoveCallback(moveStruct);
             };
 
-            if(isUndoMove){
+            if(sprite == null){
                 localMoveCallback();
-                localMoveCallback = null;
+            }else {
+                let positionFrom : PIXI.Point;
+                let positionTo : PIXI.Point;
+
+                if (this.positionManager.isMovingSprite(sprite)) {
+                    positionFrom = this.getPositionForFileRank(originFileRank);
+                } else {
+                    positionFrom = sprite.position.clone();
+                }
+
+                positionTo = this.getPositionForFileRank(destFileRank);
+
+
+                let actionMovingType : ActionMovingTypes = ActionMovingTypes.PREDICT;
+                if(isUndoMove){
+                    actionMovingType = ActionMovingTypes.UNMOVE;
+                }else {
+                    actionMovingType = ActionMovingTypes.MOVE;
+                }
+
+
+
+                if(isUndoMove){
+                    localMoveCallback();
+                    localMoveCallback = null;
+                }
+
+                this.addMovingSprite(sprite, positionFrom, positionTo, <ActionMovingTypes>actionMovingType, localMoveCallback);
             }
 
-            this.addMovingSprite(sprite, positionFrom, positionTo, <ActionMovingTypes>actionMovingType, localMoveCallback);
+
         }
 
         if(moveStructs.length == 0){
