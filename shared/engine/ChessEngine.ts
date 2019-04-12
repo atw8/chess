@@ -12,6 +12,12 @@ import {FairyLeaper} from "./Fairy/FairyLeaper";
 import {FairyRider} from "./Fairy/FairyRider";
 import {CastleType} from "./CastleType";
 
+interface PromotionStruct {
+    "isPromotion" : boolean;
+    "pieceType" ?: PieceType;
+    "sideType" ?: SideType;
+};
+
 export class ChessEngine extends  AbstractEngine {
     private initParam : {isChess960 : boolean, beginFenStr : string};
 
@@ -899,19 +905,24 @@ export class ChessEngine extends  AbstractEngine {
         return {isCastlingMove: ret, sideType: sideType, castleType: castleType};
     }
 
-    public isLastMovePromotionMove():{"isPromotionMove": boolean, "promotionPieceTypes": PieceType[], unpromotionPieceTypes : PieceType[]}{
-        let ret : {"isPromotionMove": boolean, "promotionPieceTypes": PieceType[], unpromotionPieceTypes : PieceType[]}  = { "isPromotionMove" : false, "promotionPieceTypes" : [], "unpromotionPieceTypes" : []};;
+
+
+
+    public isLastMovePromotionMove():PromotionStruct{
+        let ret : PromotionStruct;
 
         if(this.moveClasses.length !== 0){
             let moveClass = this.moveClasses[this.moveClasses.length - 1];
             ret = ChessEngine.isPromotionMove(moveClass);
+        }else {
+            ret = {"isPromotion" : false};
         }
 
         return ret;
     }
 
-    public static isPromotionMove(moveClass : MoveClass):{"isPromotionMove": boolean, "promotionPieceTypes": PieceType[], unpromotionPieceTypes : PieceType[]}{
-        let ret : {"isPromotionMove": boolean, "promotionPieceTypes": PieceType[], unpromotionPieceTypes : PieceType[]}  = { "isPromotionMove" : false, "promotionPieceTypes" : [], "unpromotionPieceTypes" : []};;
+    public static isPromotionMove(moveClass : MoveClass):PromotionStruct{
+        let ret : PromotionStruct = {"isPromotion" : false};
 
         let numCounter : { [key : number] : number} = {};
         numCounter[SideType.WHITE] = 0;
@@ -953,11 +964,9 @@ export class ChessEngine extends  AbstractEngine {
             if(numCounter[sideType] == 0){
                 for(let pieceType = PieceType.FIRST_PIECE; pieceType <= PieceType.LAST_PIECE; ++pieceType){
                     if(pieceTypeChanges[sideType][pieceType] > 0){
-                        ret["isPromotionMove"] = true;
-                        ret["promotionPieceTypes"].push(pieceType);
-                    }else if(pieceTypeChanges[sideType][pieceType] < 0){
-                        ret["isPromotionMove"] = true;
-                        ret["unpromotionPieceTypes"].push(pieceType);
+                        ret.isPromotion = true;
+                        ret.sideType = sideType;
+                        ret.pieceType = pieceType;
                     }
                 }
             }
@@ -2046,13 +2055,11 @@ export class ChessEngine extends  AbstractEngine {
             }else {
                 for(let i = 0; i < moveClasses.length; i++){
                     let moveClass = moveClasses[i];
-                    let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
-                    if(isPromotionMove["isPromotionMove"]){
-                        let promotionPieceTypes = isPromotionMove["promotionPieceTypes"];
-                        if(promotionPieceTypes.length == 1){
-                            if(promotionPieceType == promotionPieceTypes[0]){
-                                retMove = moveClass;
-                            }
+                    let isPromotionMove : PromotionStruct = ChessEngine.isPromotionMove(moveClass);
+
+                    if(isPromotionMove.isPromotion){
+                        if(promotionPieceType == isPromotionMove.pieceType){
+                            retMove = moveClass;
                         }
                     }
                 }
@@ -2159,13 +2166,9 @@ export class ChessEngine extends  AbstractEngine {
             str = str + String(destFileRank.y);
 
             let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
-            if(isPromotionMove["isPromotionMove"]){
+            if(isPromotionMove.isPromotion){
                 str = str + "=";
-                let promotionPieceTypes = isPromotionMove["promotionPieceTypes"];
-                for(let i = 0; i < promotionPieceTypes.length; i++){
-                    let promotionPieceType = promotionPieceTypes[i];
-                    str = str + ChessEngine.sideTypePieceTypeToFenChar(SideType.WHITE, promotionPieceType);
-                }
+                str = str + ChessEngine.sideTypePieceTypeToFenChar(SideType.WHITE, <PieceType>isPromotionMove.pieceType);
             }
         }
 
@@ -2206,14 +2209,9 @@ export class ChessEngine extends  AbstractEngine {
 
         let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
 
-        if(isPromotionMove["isPromotionMove"]){
-            let promotionPieceTypes = isPromotionMove["promotionPieceTypes"];
-            for(let i = 0; i < promotionPieceTypes.length; i++){
-                let promotionPieceType = promotionPieceTypes[i];
-                uciMove = uciMove + ChessEngine.sideTypePieceTypeToFenChar(SideType.BLACK, promotionPieceType);
-            }
+        if(isPromotionMove.isPromotion){
+            uciMove = uciMove + ChessEngine.sideTypePieceTypeToFenChar(SideType.WHITE, <PieceType>isPromotionMove.pieceType);
         }
-
 
         return uciMove;
     }
@@ -2286,11 +2284,9 @@ export class ChessEngine extends  AbstractEngine {
                     let legalMove = legalMoves[i];
 
                     let isPromotionMove = ChessEngine.isPromotionMove(legalMove);
-
-                    if(isPromotionMove["isPromotionMove"]){
-                        let promotionPieceTypes = isPromotionMove["promotionPieceTypes"];
-                        if(promotionPieceTypes[0] == sideTypePieceType["pieceType"]){
-                            ret = legalMove;
+                    if(isPromotionMove.isPromotion){
+                        if(PieceModel.isEqualTo(sideTypePieceType, isPromotionMove)){
+                            ret = legalMove
                         }
                     }
                 }
