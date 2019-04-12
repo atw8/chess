@@ -2,24 +2,22 @@ import Socket = require("socket.io-client");
 
 import {
     ClientServerMessage,
-    MessageType, OnGetRoomsListMessage,
-    OnLoginGuestMessage, OpGetRoomsListMessage, OpLoginGuestMessage,
+    MessageType, OnRoomGetListMessage,
+    OnLoginGuestMessage, OpRoomGetListMessage, OpLoginGuestMessage,
     ServerClientMessage,
-    ErrorCode, OpJoinRoomMessage
+    ErrorCode, OpRoomJoinMessage, OnRoomJoinMessage, OnRoomMakeMoveMessage, OpRoomMakeMoveMessage
 } from "./../../shared/MessageTypes";
 
 
 
 import {SocketClientInterface} from "./SocketClientInterface";
+import {LocalStorageKeys} from "../LocalStorageKeys";
 
 
 export class SocketClientAgent {
     private socket : SocketIOClient.Socket;
 
-    private token ?: string;
-
-    private isConnected : boolean;
-
+    private token : string;
 
     private requestId : number;
 
@@ -41,32 +39,34 @@ export class SocketClientAgent {
 
         this.localStartTimeStamps = {};
 
+        {
+            let _token = localStorage.getItem(LocalStorageKeys.TOKEN);
+            if(_token != null){
+                this.token = _token;
+            }
+        }
+
         this.requestId = 0;
 
         this.latency = null;
         this.minTimeDiff = null;
         this.maxTimeDiff = null;
 
-
-        this.isConnected = false;
-
         this.socket = Socket();
         this.socket.on("connect", this.OnConnect.bind(this));
         this.socket.on("disconnect", this.OnDisconnect.bind(this));
 
         this.socket.on(MessageType.OnLoginGuest, this.OnLoginGuest.bind(this));
-        this.socket.on(MessageType.OnGetRoomsList, this.OnGetRoomList.bind(this));
+        this.socket.on(MessageType.OnRoomGetList, this.OnGetRoomList.bind(this));
+        this.socket.on(MessageType.OnRoomJoin, this.OnRoomJoin.bind(this));
+        this.socket.on(MessageType.OnRoomMakeMove, this.OnRoomMakeMove.bind(this));
+
+
     }
 
-
-
-    public getIsConnected():boolean {
-        return this.isConnected;
-    }
 
     public OnConnect(){
         console.debug("onConnect");
-        this.isConnected = true;
 
         this.socketClientInterface.OnConnect();
 
@@ -74,7 +74,6 @@ export class SocketClientAgent {
     }
     public OnDisconnect(){
         console.debug("onDisconnect");
-        this.isConnected = false;
 
         this.socketClientInterface.OnDisconnect();
     }
@@ -164,33 +163,66 @@ export class SocketClientAgent {
 
 
         this.token = onLoginGuestMessage.token;
+        localStorage.setItem(LocalStorageKeys.TOKEN, this.token);
 
 
-        this.OpJoinRoom();
+        this.OpRoomJoin(onLoginGuestMessage.roomId);
+
+        this.socketClientInterface.OnLoginGuest(onLoginGuestMessage);
     }
 
 
     public OpGetRoomList(){
-        let opGetRoomListMessage : OpGetRoomsListMessage = new OpGetRoomsListMessage();
+        let opGetRoomListMessage : OpRoomGetListMessage = new OpRoomGetListMessage();
 
         this.emitClientServerMessage(opGetRoomListMessage);
     }
     public OnGetRoomList(message : string){
-        let onGetRoomListMessage : OnGetRoomsListMessage | null = OnGetRoomsListMessage.createFromString(message);
+        let onGetRoomListMessage : OnRoomGetListMessage | null = OnRoomGetListMessage.createFromString(message);
         if(onGetRoomListMessage == null){
             return;
         }
 
+
         this.updateLatencyTimeDiff(onGetRoomListMessage);
+
+        this.socketClientInterface.OnRoomGetList(onGetRoomListMessage);
     }
 
 
-    public OpJoinRoom(roomId ?: number){
-        let opJoinRoomMessage : OpJoinRoomMessage  = new OpJoinRoomMessage(roomId);
+    public OpRoomJoin(roomId ?: number){
+        let opRoomJoinMsg : OpRoomJoinMessage  = new OpRoomJoinMessage(roomId);
 
-        this.emitClientServerMessage(opJoinRoomMessage);
+        this.emitClientServerMessage(opRoomJoinMsg);
+    }
+    public OnRoomJoin(message : string) {
+        let onRoomJoinMsg: OnRoomJoinMessage | null = OnRoomJoinMessage.createFromString(message);
+        if(onRoomJoinMsg == null){
+            return;
+        }
+
+        this.updateLatencyTimeDiff(onRoomJoinMsg);
+
+        this.socketClientInterface.OnRoomJoin(onRoomJoinMsg);
     }
 
+
+
+    public OpRoomMakeMove(roomId : number, sanMove : string){
+        let opRoomMakeMoveMsg : OpRoomMakeMoveMessage = new OpRoomMakeMoveMessage(roomId, sanMove);
+
+        this.emitClientServerMessage(opRoomMakeMoveMsg);
+    }
+    public OnRoomMakeMove(message : string){
+        let onRoomMakeMoveMsg: OnRoomMakeMoveMessage | null = OnRoomMakeMoveMessage.createFromString(message);
+        if(onRoomMakeMoveMsg == null){
+            return;
+        }
+
+        this.updateLatencyTimeDiff(onRoomMakeMoveMsg);
+
+        this.socketClientInterface.OnRoomMakeMove(onRoomMakeMoveMsg);
+    }
 
 
 

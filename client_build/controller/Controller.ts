@@ -1,13 +1,13 @@
 import {SocketClientAgent} from "./SocketClientAgent";
 
-import {OnGetRoomsListMessage, OnLoginGuestMessage} from "./../../shared/MessageTypes";
+import {OnRoomGetListMessage, OnLoginGuestMessage, OnRoomMakeMoveMessage} from "./../../shared/MessageTypes";
 
 import {SocketClientInterface} from "./SocketClientInterface";
 import {BoardView} from "../view/BoardView";
 
 import {ChessEngine} from "../../shared/engine/ChessEngine";
 import {MoveClass} from "../../shared/engine/MoveClass";
-import {OnJoinRoomMessage} from "../../shared/MessageTypes";
+import {OnRoomJoinMessage} from "../../shared/MessageTypes";
 import {SimpleGame} from "../app";
 import {MainLayer} from "../MainLayer";
 import {TouchLayer} from "../view/TouchLayer";
@@ -51,6 +51,8 @@ export class Controller implements SocketClientInterface{
 
     public notifyMove(moveClass : MoveClass):boolean{
         if(this.chessEngine.isMoveLegal(moveClass, false)){
+
+
             this.chessEngine.doMove(moveClass);
             this.uiBoardView.doMove(moveClass);
 
@@ -81,12 +83,30 @@ export class Controller implements SocketClientInterface{
     public OnLoginGuest(onLoginGuestMessage :OnLoginGuestMessage){
 
     }
-    public OnGetRoomList(onGetRoomListMessage : OnGetRoomsListMessage){
+    public OnRoomGetList(onGetRoomListMessage : OnRoomGetListMessage){
 
     }
-    public OnJoinRoom(onJoinRoomMessage : OnJoinRoomMessage){
+
+    public synchronizeMove(moveClass : MoveClass){
+        this.uiTouchLayer.setIsEnabled(false);
+        this.uiBoardView.doMoveAnimation(moveClass, false, false, null);
+
+        let sanMove = this.chessEngine.getSANMoveForCurrentBoardAndMoveClass(moveClass);
+        this.socketClientAgent.OpRoomMakeMove(0, sanMove);
+    }
+
+    public OnRoomJoin(onJoinRoomMessage : OnRoomJoinMessage){
         this.chessEngine.init(onJoinRoomMessage.roomInitConfig);
         this.uiBoardView.updateViewToModel(this.chessEngine);
+    }
+    public OnRoomMakeMove(onRoomMakeMoveMsg: OnRoomMakeMoveMessage): void {
+        let moveClass = this.chessEngine.getMoveClassForCurrentBoardAndSanMove(onRoomMakeMoveMsg.sanMove);
+        if(moveClass == null){
+            console.log("OnRoomMakeMove moveClass == null");
+            return;
+        }
+        this.chessEngine.doMove(moveClass);
+        this.uiBoardView.doMove(moveClass);
     }
 
     /*

@@ -1,9 +1,17 @@
-import {OnGetRoomsListMessage, OnLoginGuestMessage} from "../../shared/MessageTypes";
+import {
+    OnRoomGetListMessage,
+    OnRoomJoinMessage,
+    OnLoginGuestMessage,
+    OnRoomMakeMoveMessage
+} from "../../shared/MessageTypes";
 
 export interface SocketClientInterface {
     OnConnect() : void;
     OnDisconnect() : void;
 
-    OnLoginGuest(onLoginGuestMessage :OnLoginGuestMessage) :void;
-    OnGetRoomList(onGetRoomListMessage : OnGetRoomsListMessage):void;
+    OnLoginGuest(onLoginGuestMsg :OnLoginGuestMessage) :void;
+
+    OnRoomGetList(onGetRoomListMsg : OnRoomGetListMessage):void;
+    OnRoomJoin(onJoinRoomMsg : OnRoomJoinMessage):void;
+    OnRoomMakeMove(onRoomMakeMoveMsg : OnRoomMakeMoveMessage):void;
 }

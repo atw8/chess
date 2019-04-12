@@ -6,8 +6,9 @@ import fs = require("fs");
 
 let app = express();
 app.use(require('morgan')('dev'));
-import bodyParser = require('body-parser')
+import bodyParser = require('body-parser');
 import {SocketServerAgent} from "./SocketServerAgent";
+import {AddressInfo} from "net";
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -48,7 +49,7 @@ server.on('error', function(error : any){
     }
 });
 server.on("listening", function onListening() {
-    let addr = server.address();
+    let addr = <AddressInfo>server.address();
     let bind = typeof addr === 'string'
         ? 'pipe ' + addr
         : 'port ' + addr.port;

@@ -6,12 +6,13 @@ import {RoomServer} from "./RoomServer";
 const uuidv4 = require('uuid/v4');
 
 import {
-    ClientServerMessage, ErrorCode, MessageType, OnGetRoomsListMessage, OnJoinRoomMessage,
-    OnLoginGuestMessage, OpGetRoomsListMessage, OpJoinRoomMessage,
-    OpLoginGuestMessage,
+    ClientServerMessage, ErrorCode, MessageType, OnRoomGetListMessage, OnRoomJoinMessage,
+    OnLoginGuestMessage, OnRoomMakeMoveMessage, OpRoomGetListMessage, OpRoomJoinMessage,
+    OpLoginGuestMessage, OpRoomMakeMoveMessage,
     ServerClientMessage
 } from "./../shared/MessageTypes";
 import {ValidatorResult} from "jsonschema";
+import {json} from "express";
 
 export class SocketServerAgent {
     private io : SocketIO.Server;
@@ -39,8 +40,11 @@ export class SocketServerAgent {
 
         socket.on("disconnect", this.onConnectionDisconnect.bind(this, socket));
         socket.on(MessageType.OpLoginGuest, this.OpLoginGuest.bind(this, socket));
-        socket.on(MessageType.OpGetRoomsList, this.OpGetRoomList.bind(this, socket));
-        socket.on(MessageType.OpJoinRoom, this.OpJoinRoom.bind(this, socket));
+
+
+        socket.on(MessageType.OpRoomGetList, this.OpGetRoomList.bind(this, socket));
+        socket.on(MessageType.OpRoomJoin, this.OpJoinRoom.bind(this, socket));
+        socket.on(MessageType.OpRoomMakeMove, this.OpRoomMakeMove.bind(this, socket));
     }
 
     public onConnectionDisconnect(socket : SocketIO.Socket){
@@ -53,9 +57,14 @@ export class SocketServerAgent {
         }
     }
 
-    public emitMessage(socket : SocketIO.Socket, clientServerMessage : ClientServerMessage, serverClientMessage : ServerClientMessage){
+    public emitMessage(socket : SocketIO.Socket | string, clientServerMessage : ClientServerMessage, serverClientMessage : ServerClientMessage){
         serverClientMessage.setTimeStamp(Date.now());
         serverClientMessage.setRequestId(clientServerMessage.getRequestId());
+
+
+        if(typeof socket == "string"){
+            socket = <SocketIO.Socket> this.tokenSocketMap.get(socket);
+        }
 
         socket.emit(serverClientMessage.getMessageType(), JSON.stringify(serverClientMessage));
     }
@@ -67,13 +76,17 @@ export class SocketServerAgent {
             return;
         }
 
-        let opLoginGuestMessageToken : string | undefined = opLoginGuestMessage.getToken();
+
+
 
         let token : string;
-        if(opLoginGuestMessageToken === undefined){
-            token = uuidv4();
-        }else {
-            token = opLoginGuestMessageToken;
+        {
+          let _token = opLoginGuestMessage.getToken();
+          if(_token == undefined){
+              token = uuidv4();
+          }else {
+              token = _token;
+          }
         }
 
 
@@ -81,37 +94,50 @@ export class SocketServerAgent {
         this.socketTokenMap.set(socket, token);
 
 
-
         let onLoginGuestMessage : OnLoginGuestMessage = new OnLoginGuestMessage(token);
+        onLoginGuestMessage.roomId = this.roomServer.getRoomIdForToken(token);
+
         this.emitMessage(socket, opLoginGuestMessage, onLoginGuestMessage);
     }
 
     public OpGetRoomList(socket : SocketIO.Socket, message : string){
         console.log("SocketServerAgent.OpGetRoomList");
-        let opGetRoomsListMessage : OpGetRoomsListMessage | null = OpGetRoomsListMessage.createFromString(message);
+        let opGetRoomsListMessage : OpRoomGetListMessage | null = OpRoomGetListMessage.createFromString(message);
         if(opGetRoomsListMessage == null){
             return;
         }
 
 
-        let onGetRoomListMessage : OnGetRoomsListMessage = new OnGetRoomsListMessage([]);
-        this.roomServer.populateOnGetRoomsListMessage(onGetRoomListMessage);
+        let onGetRoomListMessage : OnRoomGetListMessage = new OnRoomGetListMessage([]);
+        onGetRoomListMessage.roomIds = this.roomServer.getRoomIdList();
         this.emitMessage(socket, opGetRoomsListMessage, onGetRoomListMessage);
     }
 
     public OpJoinRoom(socket : SocketIO.Socket, message : string){
         console.log("SocketServerAgent.OpJoinRoom");
-        let opJoinRoomMessage : OpJoinRoomMessage | null = OpJoinRoomMessage.createFromString(message);
+        let opJoinRoomMessage : OpRoomJoinMessage | null = OpRoomJoinMessage.createFromString(message);
         if(opJoinRoomMessage == null){
             return;
         }
 
-        let onJoinRoomMessage : OnJoinRoomMessage = new OnJoinRoomMessage(opJoinRoomMessage.roomId);
-        this.roomServer.populateOnJoinRoomMessage(onJoinRoomMessage);
+        let token = <string>this.socketTokenMap.get(socket);
+        let onJoinRoomMessage : OnRoomJoinMessage = this.roomServer.joinRoom(token, opJoinRoomMessage);
+
         this.emitMessage(socket, opJoinRoomMessage, onJoinRoomMessage);
     }
 
+    public OpRoomMakeMove(socket : SocketIO.Socket, message : string){
+        console.log("SocketServerAgent.OpRoomMakeMove");
+        let opRoomMakeMoveMessage : OpRoomMakeMoveMessage | null = OpRoomMakeMoveMessage.createFromString(message);
+        if(opRoomMakeMoveMessage == null){
+            return;
+        }
 
+        let token = <string>this.socketTokenMap.get(socket);
+        let onRoomMakeMoveMessage : OnRoomMakeMoveMessage = this.roomServer.makeMove(token, opRoomMakeMoveMessage);
+
+        this.emitMessage(socket, opRoomMakeMoveMessage, onRoomMakeMoveMessage);
+    }
 
 }
 
