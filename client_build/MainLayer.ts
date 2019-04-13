@@ -1,13 +1,20 @@
 import {BoardView} from "./view/BoardView";
 import {Controller} from "./controller/Controller";
 import {SimpleGame} from "./app";
-import {ChessEngine} from "../shared/engine/ChessEngine";
 import {PromotePieceLayer} from "./view/PromotePieceLayer";
 import {MoveClass} from "../shared/engine/MoveClass";
+import {WaitingNode} from "./view/WaitingNode";
+import {TimePanel} from "./otherView/TimePanel";
+import {SideType} from "../shared/engine/SideType";
+
 
 export class MainLayer extends PIXI.Container {
-    private boardView : BoardView;
+    private uiBoardView : BoardView;
+    private uiTimePanels : { [key : number] : TimePanel};
+
     private controller : Controller;
+
+    private uiWaitingNode : WaitingNode;
 
     constructor(){
         super();
@@ -16,28 +23,44 @@ export class MainLayer extends PIXI.Container {
         this.controller.setParentView(this);
         //this.controller.setParentView(this);
 
-        this.boardView = new BoardView(400, 400, this.controller);
-        this.boardView.position.set(SimpleGame.getWidth()/2, SimpleGame.getHeight()/2);
-        this.addChild(this.boardView);
+        this.uiBoardView = new BoardView(400, this.controller);
+        this.uiBoardView.position.set(SimpleGame.getWidth()/2, SimpleGame.getHeight()/2);
+        this.addChild(this.uiBoardView);
+        //SimpleGame.debugDraw(this.uiBoardView);
 
 
-        this.controller.setBoardView(this.boardView);
+        this.uiTimePanels = {};
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            let uiTimePanel = new TimePanel(sideType,40);
+            this.addChild(uiTimePanel);
 
-        /*
-        let promotePieceLayer = new PromotePieceLayer([], 90);
+            uiTimePanel.position.y = this.uiBoardView.position.y - this.uiBoardView.height/2 - uiTimePanel.height/2;
 
-        this.addChild(promotePieceLayer);
-        */
-        //this.boardView.position.set(SimpleGame.game.width/2, SimpleGame.game.height/2);
-        //SimpleGame.game.world.add(this.boardView);
+            this.uiTimePanels[sideType] = uiTimePanel;
+        }
+        this.uiTimePanels[SideType.WHITE].position.x = this.uiBoardView.position.x - this.uiBoardView.width/2 + this.uiTimePanels[SideType.WHITE].width/2;
+        this.uiTimePanels[SideType.BLACK].position.x = this.uiBoardView.position.x + this.uiBoardView.width/2 - this.uiTimePanels[SideType.BLACK].width/2;
 
-        //this.boardView.position.set(SimpleGame.game.width/2, SimpleGame.game.height/2);
-        //SimpleGame.game.world.add(this.boardView);
+
+        this.controller.setBoardView(this.uiBoardView);
+
+
+
+        //Add the uiWaitingNode
+        this.uiWaitingNode = new WaitingNode(40);
+        this.uiWaitingNode.position.set(SimpleGame.getWidth()/2, SimpleGame.getHeight()/2);
+        this.addChild(this.uiWaitingNode);
+        this.uiWaitingNode.visible = false
     }
 
     public showPromotePieceLayer(moveClasses : MoveClass[], callback : (moveClass : MoveClass) => void){
         let promotePieceLayer = new PromotePieceLayer(moveClasses, 90, callback);
         promotePieceLayer.position.set(SimpleGame.getWidth()/2, SimpleGame.getHeight()/2);
         this.addChild(promotePieceLayer);
+    }
+
+
+    public setWaitingNodeVisible(isVisible : boolean){
+        this.uiWaitingNode.visible = isVisible;
     }
 }
