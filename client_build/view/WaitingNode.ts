@@ -60,7 +60,7 @@ export class WaitingNode extends PIXI.Container{
 
         //Align all the graphics
 
-        SimpleGame.arrangeHorizontally([this.uiBallsNode, this.uiText]);
+        SimpleGame.arrangeHorizontally([this.uiBallsNode, this.m_size/2, this.uiText]);
 
 
 
