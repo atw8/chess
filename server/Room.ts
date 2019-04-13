@@ -1,7 +1,7 @@
 import {RoomServer} from "./RoomServer";
 import {ChessEngine} from "../shared/engine/ChessEngine";
 import {
-    ErrorCode,
+    ErrorCode, OnRoomJoinBroadcastMessage,
     OnRoomJoinMessage,
     OnRoomMakeMoveMessage,
     OpRoomJoinMessage,
@@ -79,40 +79,63 @@ export class Room {
         return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive
     }
 
-    public joinRoom(token : string, opJoinRoomMessage : OpRoomJoinMessage, onJoinRoomMessage : OnRoomJoinMessage):void{
-        let sideType = opJoinRoomMessage.sideType;
-        if(sideType == undefined){
-            if(!(SideType.WHITE in this.sideTypeTokenMap || SideType.BLACK in this.sideTypeTokenMap)){
-                sideType = this.getRandomIntInclusive(SideType.FIRST_SIDE, SideType.LAST_SIDE);
-            }else if(!(SideType.WHITE in this.sideTypeTokenMap)){
-                sideType = SideType.WHITE;
-            }else if(!(SideType.BLACK in this.sideTypeTokenMap)){
-                sideType = SideType.BLACK;
-            }
+    public joinRoom(token : string, opJoinRoomMsg : OpRoomJoinMessage, onJoinRoomMsg : OnRoomJoinMessage):void{
+        let sideType = opJoinRoomMsg.sideType;
+        if(token in this.tokenSideTypeMap){
+            onJoinRoomMsg.setErrorCode(ErrorCode.JOIN_ROOM_ALREADY_IN_ROOM);
 
+            sideType = this.tokenSideTypeMap[token];
+        }else {
             if(sideType == undefined){
-                onJoinRoomMessage.setErrorCode(ErrorCode.JOIN_ROOM_ALREADY_HAS_SIDE_TYPE)
+                if(!(SideType.WHITE in this.sideTypeTokenMap || SideType.BLACK in this.sideTypeTokenMap)){
+                    sideType = this.getRandomIntInclusive(SideType.FIRST_SIDE, SideType.LAST_SIDE);
+                }else if(!(SideType.WHITE in this.sideTypeTokenMap)){
+                    sideType = SideType.WHITE;
+                }else if(!(SideType.BLACK in this.sideTypeTokenMap)){
+                    sideType = SideType.BLACK;
+                }
+
+                if(sideType == undefined){
+                    onJoinRoomMsg.setErrorCode(ErrorCode.JOIN_ROOM_ALREADY_HAS_SIDE_TYPE);
+                    return;
+                }
+            }else if(sideType in this.sideTypeTokenMap) {
+                onJoinRoomMsg.setErrorCode(ErrorCode.JOIN_ROOM_ALREADY_HAS_SIDE_TYPE);
                 return;
             }
-        }else if(sideType in this.sideTypeTokenMap) {
-            onJoinRoomMessage.setErrorCode(ErrorCode.JOIN_ROOM_ALREADY_HAS_SIDE_TYPE);
-            return;
-        }
-        onJoinRoomMessage.sideType = sideType;
-
-
-        if(token in this.tokenSideTypeMap){
-            onJoinRoomMessage.setErrorCode(ErrorCode.JOIN_ROOM_ALREADY_JOINED);
-            return;
+            onJoinRoomMsg.sideType = sideType;
         }
 
-        this.tokenSideTypeMap[token] = sideType;
-        this.sideTypeTokenMap[sideType] = token;
+
+        if(onJoinRoomMsg.getErrorCode() == ErrorCode.SUCCESS || onJoinRoomMsg.getErrorCode() == ErrorCode.JOIN_ROOM_ALREADY_IN_ROOM){
+            this.tokenSideTypeMap[token] = sideType;
+            this.sideTypeTokenMap[sideType] = token;
+
+
+            this.roomStateConfig.isWaiting = !((SideType.WHITE in this.sideTypeTokenMap) && (SideType.BLACK in this.sideTypeTokenMap));
+
+            onJoinRoomMsg.roomInitConfig = this.getRoomInitConfig();
+            onJoinRoomMsg.roomStateConfig = this.getRoomStateConfig();
+        }
+        this.roomServer.emitMessage(token, opJoinRoomMsg, onJoinRoomMsg);
+
+
+        if(onJoinRoomMsg.getErrorCode() == ErrorCode.SUCCESS){
+            let oppositeToken = this.sideTypeTokenMap[ChessEngine.getOppositeSideType(sideType)];
+            if(oppositeToken != undefined){
+                let onJoinRoomBroadcastMsg = new OnRoomJoinBroadcastMessage(this.roomInitConfig.roomId);
+                onJoinRoomBroadcastMsg.roomInitConfig = this.getRoomInitConfig();
+                onJoinRoomBroadcastMsg.roomStateConfig = this.getRoomStateConfig();
+
+
+                this.roomServer.emitMessage(oppositeToken, null, onJoinRoomBroadcastMsg);
+            }
+        }
     }
 
     public makeMove(token : string, opRoomMakeMoveMessage : OpRoomMakeMoveMessage, onRoomMakeMoveMessage : OnRoomMakeMoveMessage):void{
         if(!(token in this.tokenSideTypeMap)){
-            onRoomMakeMoveMessage.setErrorCode(ErrorCode.DO_MOVE_NOT_IN_ROOM)
+            onRoomMakeMoveMessage.setErrorCode(ErrorCode.DO_MOVE_NOT_IN_ROOM);
             return;
         }
 

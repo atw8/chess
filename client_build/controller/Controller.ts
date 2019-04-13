@@ -1,6 +1,11 @@
 import {SocketClientAgent} from "./SocketClientAgent";
 
-import {OnRoomGetListMessage, OnLoginGuestMessage, OnRoomMakeMoveMessage} from "./../../shared/MessageTypes";
+import {
+    OnRoomGetListMessage,
+    OnLoginGuestMessage,
+    OnRoomMakeMoveMessage,
+    RoomStateConfig, RoomInitConfig, OnRoomJoinBroadcastMessage
+} from "./../../shared/MessageTypes";
 
 import {SocketClientInterface} from "./SocketClientInterface";
 import {BoardView} from "../view/BoardView";
@@ -30,6 +35,9 @@ export class Controller implements SocketClientInterface{
     private uiMainLayer : MainLayer;
     private chessEngine : ChessEngine;
 
+    private roomStateConfig : RoomStateConfig;
+    private roomInitConfig : RoomInitConfig;
+
 
     public setParentView(uiMainLayer : MainLayer){
         this.uiMainLayer = uiMainLayer;
@@ -42,6 +50,8 @@ export class Controller implements SocketClientInterface{
 
         this.synchronizeTouchLayer();
     }
+
+
     public synchronizeTouchLayer(){
         if(this.uiMainLayer != undefined && this.uiBoardView != undefined){
             this.uiTouchLayer.setIsEnabled(true);
@@ -49,28 +59,27 @@ export class Controller implements SocketClientInterface{
     }
 
 
-    public notifyMove(moveClass : MoveClass):boolean{
-        if(this.chessEngine.isMoveLegal(moveClass, false)){
-
-
-            this.chessEngine.doMove(moveClass);
-            this.uiBoardView.doMove(moveClass);
-
-            return false;
-        }
-
-        return true;
-    }
-    public notifyPromote(moveClass : MoveClass[]){
+    public notifyMove(moveClass : MoveClass):void{
         this.uiTouchLayer.setIsEnabled(false);
 
-        this.uiMainLayer.showPromotePieceLayer(moveClass, (moveClass : MoveClass) => {
-            this.chessEngine.doMove(moveClass);
-            this.uiBoardView.doMove(moveClass);
 
-            this.uiTouchLayer.setIsEnabled(true);
-        });
+        this.uiBoardView.doMoveAnimation(moveClass, false, false, null);
+        this.uiBoardView.doMove(moveClass);
+        let sanMove = this.chessEngine.getSANMoveForCurrentBoardAndMoveClass(moveClass);
+
+        //this.socketClientAgent.OpRoomMakeMove(0, sanMove);
+
+        //this.uiBoardView.doMove(moveClass, )
+        //this.chessEngine.doMove(moveClass);
+        //this.uiBoardView.doMove(moveClass);
     }
+    public notifyPromote(moveClass : MoveClass[]):void{
+        this.uiTouchLayer.setIsEnabled(false);
+
+        this.uiMainLayer.showPromotePieceLayer(moveClass, this.notifyMove.bind(this))
+    }
+
+
 
 
     public OnConnect(){
@@ -95,10 +104,28 @@ export class Controller implements SocketClientInterface{
         this.socketClientAgent.OpRoomMakeMove(0, sanMove);
     }
 
-    public OnRoomJoin(onJoinRoomMessage : OnRoomJoinMessage){
-        this.chessEngine.init(onJoinRoomMessage.roomInitConfig);
+    public OnRoomJoin(onRoomJoinMsg : OnRoomJoinMessage){
+        this.roomInitConfig = <RoomInitConfig> onRoomJoinMsg.roomInitConfig;
+        this.roomStateConfig = <RoomStateConfig> onRoomJoinMsg.roomStateConfig;
+
+        this.chessEngine.init(this.roomInitConfig);
         this.uiBoardView.updateViewToModel(this.chessEngine);
+
+
+        this.synchronizeIsWaiting();
     }
+    public OnRoomJoinBroadcast(onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage){
+        this.roomStateConfig = <RoomStateConfig> onRoomJoinBroadcastMsg.roomStateConfig;
+
+
+        this.synchronizeIsWaiting();
+    }
+    public synchronizeIsWaiting(){
+        this.uiTouchLayer.setIsEnabled(!this.roomStateConfig.isWaiting);
+        this.uiMainLayer.setWaitingNodeVisible(this.roomStateConfig.isWaiting);
+    }
+
+
     public OnRoomMakeMove(onRoomMakeMoveMsg: OnRoomMakeMoveMessage): void {
         let moveClass = this.chessEngine.getMoveClassForCurrentBoardAndSanMove(onRoomMakeMoveMsg.sanMove);
         if(moveClass == null){

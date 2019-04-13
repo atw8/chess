@@ -1,20 +1,23 @@
 import {GameTimeType} from "../shared/gameTime/GameTimeType";
 import {
+    ClientServerMessage,
     ErrorCode,
     OnRoomGetListMessage,
     OnRoomJoinMessage,
     OnRoomMakeMoveMessage,
     OpRoomJoinMessage,
     OpRoomMakeMoveMessage,
-    RoomInitConfig
+    RoomInitConfig, ServerClientMessage
 } from "../shared/MessageTypes";
 
 
 import {SocketServerAgent} from "./SocketServerAgent";
 
 import {Room} from "./Room"
+import * as SocketIO from "socket.io";
 
 export class RoomServer {
+    private socketServerAgent : SocketServerAgent;
 
     private roomConfigs : RoomInitConfig[];
     private roomsMap : { [key : number] : Room};
@@ -22,7 +25,9 @@ export class RoomServer {
     private tokenRoomIdMap : { [key : string] : number};
 
 
-    constructor(socketServer : SocketServerAgent){
+    constructor(socketServerAgent : SocketServerAgent){
+        this.socketServerAgent = socketServerAgent;
+
         this.roomConfigs = [];
         let roomConfig1 : RoomInitConfig = {
             roomId : 1,
@@ -74,7 +79,7 @@ export class RoomServer {
         return this.tokenRoomIdMap[token];
     }
 
-    public joinRoom(token : string, opJoinRoomMessage : OpRoomJoinMessage):OnRoomJoinMessage{
+    public joinRoom(token : string, opJoinRoomMessage : OpRoomJoinMessage):void{
         let ret : OnRoomJoinMessage = new OnRoomJoinMessage(opJoinRoomMessage.roomId, opJoinRoomMessage.sideType);
 
         if(ret.roomId == undefined){
@@ -84,19 +89,10 @@ export class RoomServer {
         let room : Room = this.roomsMap[ret.roomId];
         if(room == undefined){
             ret.setErrorCode(ErrorCode.ROOM_DOES_NOT_EXIST);
-            return ret;
+            this.emitMessage(token, opJoinRoomMessage, ret);
+        }else {
+            room.joinRoom(token, opJoinRoomMessage, ret);
         }
-
-        room.joinRoom(token, opJoinRoomMessage, ret);
-
-        if(ret.getErrorCode() == ErrorCode.SUCCESS){
-            ret.roomInitConfig = room.getRoomInitConfig();
-            ret.roomStateConfig = room.getRoomStateConfig();
-
-            this.tokenRoomIdMap[token] = ret.roomId;
-        }
-
-        return ret;
     }
 
     public makeMove(token : string, opRoomMakeMoveMessage : OpRoomMakeMoveMessage):OnRoomMakeMoveMessage{
@@ -114,5 +110,10 @@ export class RoomServer {
         }
 
         return ret;
+    }
+
+
+    public emitMessage(socket : SocketIO.Socket | string, clientServerMessage : ClientServerMessage | null, serverClientMessage : ServerClientMessage){
+        this.socketServerAgent.emitMessage(socket, clientServerMessage, serverClientMessage);
     }
 }

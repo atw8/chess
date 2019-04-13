@@ -1,6 +1,5 @@
 import {Schema, Validator, ValidatorResult} from "jsonschema";
 import {GameTimeType} from "../shared/gameTime/GameTimeType";
-import {isUndefined} from "util";
 import {SideType} from "./engine/SideType";
 
 
@@ -17,6 +16,7 @@ export enum MessageType {
 
     OpRoomJoin = "OpRoomJoin",
     OnRoomJoin = "OnRoomJoin",
+    OnRoomJoinBroadcast = "OnRoomJoinBroadcast",
 }
 
 export enum ErrorCode {
@@ -25,7 +25,7 @@ export enum ErrorCode {
     ROOM_DOES_NOT_EXIST = 1,
 
     JOIN_ROOM_ALREADY_HAS_SIDE_TYPE = 11,
-    JOIN_ROOM_ALREADY_JOINED = 12,
+    JOIN_ROOM_ALREADY_IN_ROOM = 12,
 
     DO_MOVE_NOT_IN_ROOM = 21,
     DO_MOVE_NOT_MOVE_TURN = 22,
@@ -746,6 +746,79 @@ export class OnRoomJoinMessage extends ServerClientMessage {
         return onJoinRoomMessage;
     }
 }
+export class OnRoomJoinBroadcastMessage extends ServerClientMessage {
+    public roomId : number;
+    public roomInitConfig : RoomInitConfig;
+    public roomStateConfig : RoomStateConfig;
+
+    constructor(roomId : number){
+        super(MessageType.OnRoomJoinBroadcast);
+        this.roomId = roomId;
+    }
+
+    public static validateSchema(json : any):boolean{
+        if(!ServerClientMessage.validateSchema(json)){
+            return false;
+        }
+
+        let schema : Schema = {
+            "id" : "/OnRoomJoinBroadcastMessage",
+            "type" : "object",
+            "properties" : {
+                "roomId" : {
+                    "type" : "integer",
+                },
+                "roomInitConfig" : {
+                    "type" : "object",
+                },
+                "roomStateConfig" : {
+                    "type" : "object",
+                },
+            },
+            "required" : ["roomId", "roomInitConfig", "roomStateConfig"]
+        };
+
+        let validatorResult : ValidatorResult = validator.validate(json, schema);
+        if(!validatorResult.valid){
+            console.log(validatorResult);
+            console.log(validatorResult.valid);
+            return false;
+        }
+
+        if(!RoomInitConfig.validateSchema(json.roomInitConfig)){
+            return false;
+        }
+
+        if(!RoomStateConfig.validateSchema(json.roomStateConfig)){
+            return false;
+        }
+
+        return true;
+    }
+
+
+    public static createFromString(str : string):OnRoomJoinBroadcastMessage | null {
+        let json;
+        try {
+            json = JSON.parse(str);
+        } catch (e) {
+            return null;
+        }
+
+        return this.createFromJson(json);
+    }
+    public static createFromJson(json : any):OnRoomJoinBroadcastMessage | null {
+        if(!this.validateSchema(json)){
+            return null;
+        }
+
+        let onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage = new OnRoomJoinBroadcastMessage(json.roomId);
+        onRoomJoinBroadcastMsg.roomInitConfig = <RoomInitConfig>RoomInitConfig.createFromJson(json.roomInitConfig);
+        onRoomJoinBroadcastMsg.roomStateConfig = <RoomStateConfig>RoomStateConfig.createFromJson(json.roomStateConfig);
+
+        return onRoomJoinBroadcastMsg;
+    }
+};
 
 //The move message for this room
 export class OpRoomMakeMoveMessage extends ClientServerMessage {

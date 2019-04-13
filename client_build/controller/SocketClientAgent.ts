@@ -5,7 +5,7 @@ import {
     MessageType, OnRoomGetListMessage,
     OnLoginGuestMessage, OpRoomGetListMessage, OpLoginGuestMessage,
     ServerClientMessage,
-    ErrorCode, OpRoomJoinMessage, OnRoomJoinMessage, OnRoomMakeMoveMessage, OpRoomMakeMoveMessage
+    ErrorCode, OpRoomJoinMessage, OnRoomJoinMessage, OnRoomJoinBroadcastMessage, OnRoomMakeMoveMessage, OpRoomMakeMoveMessage,
 } from "./../../shared/MessageTypes";
 
 
@@ -58,7 +58,10 @@ export class SocketClientAgent {
 
         this.socket.on(MessageType.OnLoginGuest, this.OnLoginGuest.bind(this));
         this.socket.on(MessageType.OnRoomGetList, this.OnGetRoomList.bind(this));
+
         this.socket.on(MessageType.OnRoomJoin, this.OnRoomJoin.bind(this));
+        this.socket.on(MessageType.OnRoomJoinBroadcast, this.OnRoomJoinBroadcast.bind(this));
+
         this.socket.on(MessageType.OnRoomMakeMove, this.OnRoomMakeMove.bind(this));
 
 
@@ -204,6 +207,14 @@ export class SocketClientAgent {
         this.updateLatencyTimeDiff(onRoomJoinMsg);
 
         this.socketClientInterface.OnRoomJoin(onRoomJoinMsg);
+    }
+    public OnRoomJoinBroadcast(message : string){
+        let onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage | null = OnRoomJoinBroadcastMessage.createFromString(message);
+        if(onRoomJoinBroadcastMsg == null){
+            return;
+        }
+
+        this.socketClientInterface.OnRoomJoinBroadcast(onRoomJoinBroadcastMsg);
     }
 
 

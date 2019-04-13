@@ -57,9 +57,11 @@ export class SocketServerAgent {
         }
     }
 
-    public emitMessage(socket : SocketIO.Socket | string, clientServerMessage : ClientServerMessage, serverClientMessage : ServerClientMessage){
+    public emitMessage(socket : SocketIO.Socket | string, clientServerMessage : ClientServerMessage | null, serverClientMessage : ServerClientMessage){
         serverClientMessage.setTimeStamp(Date.now());
-        serverClientMessage.setRequestId(clientServerMessage.getRequestId());
+        if(clientServerMessage != null){
+            serverClientMessage.setRequestId(clientServerMessage.getRequestId());
+        }
 
 
         if(typeof socket == "string"){
@@ -120,10 +122,10 @@ export class SocketServerAgent {
             return;
         }
 
-        let token = <string>this.socketTokenMap.get(socket);
-        let onJoinRoomMessage : OnRoomJoinMessage = this.roomServer.joinRoom(token, opJoinRoomMessage);
 
-        this.emitMessage(socket, opJoinRoomMessage, onJoinRoomMessage);
+
+        let token = <string>this.socketTokenMap.get(socket);
+        this.roomServer.joinRoom(token, opJoinRoomMessage);
     }
 
     public OpRoomMakeMove(socket : SocketIO.Socket, message : string){
