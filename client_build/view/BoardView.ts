@@ -21,11 +21,8 @@ import {PositionManager} from "./PositionControl/PositionManager";
 import {PositionConstantSpeed} from "./PositionControl/PositionConstantSpeed";
 import {PositionMovePiece} from "./PositionControl/PositionMovePiece";
 
-import {SimpleGame} from "../app";
 
 import {getNameForImageTag, ImageTag} from "../ImageTag";
-import {text} from "body-parser";
-
 
 
 
@@ -99,17 +96,11 @@ export class BoardView extends PIXI.Graphics {
         return this.positionManager;
     }
 
+    private m_size : number;
 
-    private m_width: number;
-    private m_height: number;
     private controller: Controller;
 
-    public getWidth():number{
-        return this.m_width;
-    }
-    public getHeight():number{
-        return this.m_height;
-    }
+
 
     private fileRankNumberGroup : PIXI.Container;
     private pointGroup: PIXI.Container;
@@ -119,10 +110,10 @@ export class BoardView extends PIXI.Graphics {
     private pieceSpriteGroup : PIXI.Container;
 
 
-    constructor(width: number, height: number, controller: Controller) {
+    constructor(m_size: number, controller: Controller) {
         super();
-        this.m_width = width;
-        this.m_height = height;
+        this.m_size = m_size;
+
         this.controller = controller;
 
         this.boardFacing = SideType.WHITE;
@@ -133,7 +124,7 @@ export class BoardView extends PIXI.Graphics {
 
 
         this.beginFill(this.getColorForColorType_inNum(SideType.WHITE));
-        this.drawRect(-this.m_width / 2, -this.m_height / 2, this.m_width, this.m_height);
+        this.drawRect(-this.m_size / 2, -this.m_size / 2, this.m_size, this.m_size);
 
 
         let squareWidth = this.getSquareWidth();
@@ -186,14 +177,14 @@ export class BoardView extends PIXI.Graphics {
         //The select light of the board
         this.uiSelectLightSprite = PIXI.Sprite.from(getNameForImageTag(ImageTag.select_light));
         this.bottomGroup.addChild(this.uiSelectLightSprite);
-        this.uiSelectLightSprite.scale.set(this.m_width / 700, this.m_height / 700);
+        this.uiSelectLightSprite.scale.set(this.m_size / 700, this.m_size / 700);
         this.uiSelectLightSprite.anchor.set(0.5, 0.5);
         this.hideSelectLightSprite();
 
         //The option cycle sprite
         this.uiOptionCycleSprite = PIXI.Sprite.from(getNameForImageTag(ImageTag.option_light));
         this.bottomGroup.addChild(this.uiOptionCycleSprite);
-        this.uiOptionCycleSprite.scale.set(this.m_width / 700, this.m_height / 700);
+        this.uiOptionCycleSprite.scale.set(this.m_size / 700, this.m_size / 700);
         this.uiOptionCycleSprite.anchor.set(0.5, 0.5);
         this.uiOptionCycleSprite.alpha = 0.3;
         this.uiOptionCycleFileRank = null;
@@ -278,13 +269,13 @@ export class BoardView extends PIXI.Graphics {
 
 
     public getSquareWidth(): number {
-        let squareWidth = this.m_width / ChessEngine.getNumOfFiles();
+        let squareWidth = this.m_size / ChessEngine.getNumOfFiles();
 
         return squareWidth;
     }
 
     public getSquareHeight(): number {
-        let squareHeight = this.m_height / ChessEngine.getNumOfRanks();
+        let squareHeight = this.m_size / ChessEngine.getNumOfRanks();
 
         return squareHeight;
     }
@@ -400,20 +391,24 @@ export class BoardView extends PIXI.Graphics {
 
 
 
-        let isIllegalMove : boolean = false;
+        let isLegalMove : boolean = true;
 
 
-        if (legalMoves.length === 0) {
-            isIllegalMove = true;
-        }else if(legalMoves.length >= 1) {
-            if (legalMoves.length == 1) {
-                isIllegalMove = this.controller.notifyMove(legalMoves[0]);
-            } else {
-                this.normalizePromote(legalMoves);
+        if(legalMoves.length == 0){
+            isLegalMove = false;
+        }else if(legalMoves.length == 1){
+            isLegalMove = (<ChessEngine>chessEngine).isMoveLegal(legalMoves[0], false);
+
+            if(isLegalMove){
+                this.controller.notifyMove(legalMoves[0])
             }
+        }else {
+            this.normalizePromote(legalMoves);
         }
 
-        if(isIllegalMove){
+        if(isLegalMove){
+
+        }else {
             let positionFrom : PIXI.Point;
             if(this.positionManager.isMovingSprite(<PieceView>this.originSprite)){
                 positionFrom = this.getPositionForFileRank(<FileRank>this.originFileRank);
@@ -498,10 +493,9 @@ export class BoardView extends PIXI.Graphics {
 
             this.fileRankNumberGroup.addChild(fileUi);
 
-            let scaleX = this.m_width/800;
-            let scaleY = this.m_height/800;
+            let scale = this.m_size/800;
 
-            fileUi.scale.set(scaleX, scaleY);
+            fileUi.scale.set(scale, scale);
         }
         for(let rank = 1; rank <= ChessEngine.getNumOfRanks(); rank++){
 
@@ -513,10 +507,9 @@ export class BoardView extends PIXI.Graphics {
 
             this.fileRankNumberGroup.addChild(rankUi);
 
-            let scaleX = this.m_width/800;
-            let scaleY = this.m_height/800;
+            let scale = this.m_size/800;
 
-            rankUi.scale.set(scaleX, scaleY);
+            rankUi.scale.set(scale, scale);
         }
     }
 
@@ -596,17 +589,17 @@ export class BoardView extends PIXI.Graphics {
         let y: number = 0;
 
 
-        let minX = this.m_width / (ChessEngine.getNumOfFiles() * 2);
-        let maxX = this.m_width - minX;
+        let minX = this.m_size / (ChessEngine.getNumOfFiles() * 2);
+        let maxX = this.m_size - minX;
 
-        minX -= this.m_width / 2;
-        maxX -= this.m_width / 2;
+        minX -= this.m_size / 2;
+        maxX -= this.m_size / 2;
 
-        let minY = this.m_height / (ChessEngine.getNumOfRanks() * 2);
-        let maxY = this.m_height - minY;
+        let minY = this.m_size / (ChessEngine.getNumOfRanks() * 2);
+        let maxY = this.m_size - minY;
 
-        minY -= this.m_height / 2;
-        maxY -= this.m_height / 2;
+        minY -= this.m_size / 2;
+        maxY -= this.m_size / 2;
 
         switch(this.boardFacing){
             case SideType.WHITE:
@@ -623,11 +616,11 @@ export class BoardView extends PIXI.Graphics {
     }
 
     public getFileRankForPosition(position: PIXI.Point): FileRank {
-        position.x += this.m_width / 2;
-        position.y += this.m_height / 2;
+        position.x += this.m_size / 2;
+        position.y += this.m_size / 2;
 
-        let squareWidth = this.m_width / ChessEngine.getNumOfFiles();
-        let squareHeight = this.m_height / ChessEngine.getNumOfRanks();
+        let squareWidth = this.getSquareWidth();
+        let squareHeight = this.getSquareHeight();
 
         let fileNumber: number = -1;
         let rank: number = -1;
@@ -670,7 +663,7 @@ export class BoardView extends PIXI.Graphics {
         switch(actionMovingType){
             case ActionMovingTypes.MOVE:
             {
-                let moveSpeed = Math.max(this.m_width, this.m_height)/3200;
+                let moveSpeed = this.m_size/3200;
                 action = new PositionMovePiece(sprite, positionFrom, positionTo, moveSpeed, 300 / ChessEngine.getNumOfFiles());
             }
                 break;
@@ -681,20 +674,20 @@ export class BoardView extends PIXI.Graphics {
                 break;
             case ActionMovingTypes.ILLEGAL:
             {
-                let invalidSpeed = Math.max(this.m_width, this.m_height)/3200;
+                let invalidSpeed = this.m_size/3200;
 
                 action = new PositionConstantSpeed(sprite, positionFrom, positionTo, invalidSpeed);
             }
                 break;
             case ActionMovingTypes.FLIP_BOARD:
             {
-                let moveSpeed = Math.max(this.m_width, this.m_height)/3200;
+                let moveSpeed = this.m_size/3200;
                 action = new PositionMovePiece(sprite, positionFrom, positionTo, moveSpeed, 300 / ChessEngine.getNumOfFiles());
             }
                 break;
             case ActionMovingTypes.PREDICT:
             {
-                let moveSpeed = Math.max(this.m_width, this.m_height)/3200;
+                let moveSpeed = this.m_size/3200;
                 action = new PositionMovePiece(sprite, positionFrom, positionTo, moveSpeed, 300 / ChessEngine.getNumOfFiles());
             }
             break;
@@ -1111,7 +1104,7 @@ export class BoardView extends PIXI.Graphics {
 
     public doMoveAnimation(moveClass : MoveClass, isUndoMove : boolean, isStrictMove : boolean, endAnimation : ((moveClass : MoveClass, isUndoMove : boolean) => void) | null){
         if(this.touchType != TouchTypes.NO_TOUCH) {
-            this.onTouchEnded(new PIXI.Point(this.m_width * 100, this.m_height * 100), null);
+            this.onTouchEnded(new PIXI.Point(this.m_size * 100, this.m_size * 100), null);
         }
         this.removeAllSquares();
 
@@ -1273,17 +1266,8 @@ export class BoardView extends PIXI.Graphics {
             if(sprite == null){
                 localMoveCallback();
             }else {
-                let positionFrom : PIXI.Point;
-                let positionTo : PIXI.Point;
-
-                if (this.positionManager.isMovingSprite(sprite)) {
-                    positionFrom = this.getPositionForFileRank(originFileRank);
-                } else {
-                    positionFrom = sprite.position.clone();
-                }
-
-                positionTo = this.getPositionForFileRank(destFileRank);
-
+                let positionFrom : PIXI.Point = this.positionManager.getEndPosition(sprite);
+                let positionTo : PIXI.Point = this.getPositionForFileRank(destFileRank);
 
                 let actionMovingType : ActionMovingTypes = ActionMovingTypes.PREDICT;
                 if(isUndoMove){
