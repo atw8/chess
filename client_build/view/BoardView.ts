@@ -281,7 +281,7 @@ export class BoardView extends PIXI.Graphics {
     }
 
 
-        public onTouchBegan(worldLocation: PIXI.Point, chessEngine: ChessEngine) {
+    public onTouchBegan(worldLocation: PIXI.Point, chessEngine: ChessEngine) {
         this.currentTouchLocation = worldLocation;
         this._onTouchBegan(worldLocation, chessEngine);
     }
