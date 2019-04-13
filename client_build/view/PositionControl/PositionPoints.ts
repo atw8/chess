@@ -9,8 +9,8 @@ export class PositionPoints{
     }
 
     private m_target : PIXI.DisplayObject;
-    private m_startPosition : PIXI.Point;
-    private m_endPosition : PIXI.Point;
+    //private m_startPosition : PIXI.Point;
+    //private m_endPosition : PIXI.Point;
 
     private m_numOfPoints : number;
     private m_pointCumulDistMap : number[];
@@ -23,22 +23,23 @@ export class PositionPoints{
 
     private m_timeElapsed : number;
 
-    private m_previousPosition : PIXI.Point;
+    //private m_previousPosition : PIXI.Point;
     private m_deltaPosition : PIXI.Point;
+    public m_lastDelta : number;
 
     constructor(target : PIXI.DisplayObject, startPosition : PIXI.Point, endPosition : PIXI.Point, numOfPoints :number, pointCumulDistMap : number[], pointSpeedMap : number[]){
         this.m_target = target;
-        this.m_startPosition = startPosition;
-        this.m_endPosition = endPosition;
+        //this.m_startPosition = startPosition;
+        //this.m_endPosition = endPosition;
 
         this.m_numOfPoints = numOfPoints;
         this.m_pointCumulDistMap = pointCumulDistMap;
         this.m_pointSpeedMap = pointSpeedMap;
 
 
-        this.m_previousPosition = startPosition;
+        //this.m_previousPosition = startPosition;
 
-        this.m_deltaPosition = new PIXI.Point(this.m_endPosition.x - this.m_startPosition.x, this.m_endPosition.y - this.m_startPosition.y);
+        this.m_deltaPosition = new PIXI.Point(endPosition.x - startPosition.x, endPosition.y - startPosition.y);
 
 
         this.m_pointDistMap = [];
@@ -59,6 +60,7 @@ export class PositionPoints{
 
 
         this.m_timeElapsed = 0.0;
+        this.m_lastDelta = 0.0;
     }
 
 
@@ -74,11 +76,13 @@ export class PositionPoints{
 
 
         //Make the PositionMove Piece Stackable
+        /*
         let position = this.m_target.position.clone();
         let diff = { x : position["x"] - this.m_previousPosition["x"], y : position["y"] - this.m_previousPosition["y"] };
 
         this.m_startPosition["x"] = this.m_startPosition["x"] + diff["x"];
         this.m_startPosition["y"] = this.m_startPosition["y"] + diff["y"];
+        */
 
         if(this.m_pointCumulDistMap[this.m_numOfPoints - 1] !== 0){
             //Find out what interval we are in
@@ -104,11 +108,22 @@ export class PositionPoints{
 
 
             let newPosition = new PIXI.Point();
-            newPosition["x"] = this.m_startPosition["x"] + this.m_deltaPosition["x"] * delta;
-            newPosition["y"] = this.m_startPosition["y"] + this.m_deltaPosition["y"] * delta;
+            newPosition["x"] = this.m_target.position.x + this.m_deltaPosition.x * (delta - this.m_lastDelta);
+            newPosition["y"] = this.m_target.position.y + this.m_deltaPosition.y * (delta - this.m_lastDelta);
+
 
             this.m_target.position.set(newPosition.x, newPosition.y);
-            this.m_previousPosition = newPosition;
+            this.m_lastDelta = delta;
+            //this.m_previousPosition = newPosition;
         }
     };
+
+
+    public getDeltaPosition():PIXI.Point{
+        let ret : PIXI.Point = new PIXI.Point();
+        ret.x = this.m_deltaPosition.x * (1.0 - this.m_lastDelta);
+        ret.y = this.m_deltaPosition.y * (1.0 - this.m_lastDelta);
+
+        return ret;
+    }
 }

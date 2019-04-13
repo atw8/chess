@@ -19,7 +19,7 @@ export class PositionManager {
 
         //let ticker = PIXI.ticker.shared;
 
-        setTimeout(this.updateMovingSprites.bind(this, this.m_delay, null));
+        this.updateMovingSprites(0, null);
     }
 
     public getLength():number{
@@ -73,7 +73,7 @@ export class PositionManager {
             finishCallback();
         }
 
-        setTimeout(this.updateMovingSprites.bind(this, this.m_delay, null));
+        setTimeout(this.updateMovingSprites.bind(this, this.m_delay, null), this.m_delay);
     }
 
 
@@ -84,6 +84,23 @@ export class PositionManager {
 
             if (sprite === movingSprite.sprite) {
                 ret = true;
+            }
+        }
+
+        return ret;
+    }
+
+
+    public getEndPosition(sprite : PIXI.DisplayObject):PIXI.Point {
+        let ret : PIXI.Point = sprite.position.clone();
+
+        for(let i = 0; i < this.m_movingSprites.length; i++){
+            let movingSprite = this.m_movingSprites[i];
+
+            if(sprite == movingSprite.sprite){
+                let deltaPosition = movingSprite.action.getDeltaPosition();
+                ret.x += deltaPosition.x;
+                ret.y += deltaPosition.y;
             }
         }
 
