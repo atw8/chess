@@ -25,15 +25,17 @@ export class WaitingNode extends PIXI.Container{
         for(let i = 0; i < uiNumOfBalls; i++){
             let uiBall = new PIXI.Graphics();
 
-            uiBall.beginFill(0xFFFFFF, 1);2
+            uiBall.beginFill(0xFFFFFF, 1);
             uiBall.drawCircle(0, 0, this.m_size * sizeRadiusConstant);
 
             let angle : number = 2.0 * Math.PI * (i/uiNumOfBalls);
+
             uiBall.position.set(this.m_size*0.5*Math.cos(angle), this.m_size*0.5*Math.sin(angle));
 
             this.uiBallsNode.addChild(uiBall);
-            //this.addChild(uiBall);
         }
+
+
 
 
         //rotation tween
@@ -57,11 +59,10 @@ export class WaitingNode extends PIXI.Container{
 
 
         //Align all the graphics
-        let uiBallsNodeWidth = this.m_size + 2*this.m_size*sizeRadiusConstant;
-        let uiTextWidth = this.uiText.width;
 
-        this.uiBallsNode.position.x = uiBallsNodeWidth/2 - (uiBallsNodeWidth + uiTextWidth)/2;
-        this.uiText.position.x = uiBallsNodeWidth + uiTextWidth/2 - (uiBallsNodeWidth + uiTextWidth)/2;
+        SimpleGame.arrangeHorizontally([this.uiBallsNode, this.uiText]);
+
+
 
     }
 
