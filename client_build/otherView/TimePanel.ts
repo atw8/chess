@@ -1,54 +1,77 @@
-import 'p2';
-import 'pixi';
-import 'phaser';
-import {SimpleGame} from "../app";
-import TextStyleOptions = PIXI.TextStyleOptions;
+import * as PIXI from 'pixi.js';
+import {SideType} from "../../shared/engine/SideType";
+import {PieceType} from "../../shared/engine/PieceType";
 
+import {PieceView} from "../view/PieceView";
+import {SimpleGame} from "../app";
 
 
 export class TimePanel extends PIXI.Graphics {
-    private m_width : number;
-    public getWidth():number{
-        return this.m_width;
-    }
-    private m_height : number;
-    public getHeight():number{
-        return this.m_height;
-    }
+    private m_size : number;
+
+    private sideType : SideType;
+
+
+    private uiPieceView : PieceView;
 
     private uiText : PIXI.Text;
 
-    constructor(width : number, height : number){
+
+    constructor(sideType: SideType, m_size: number) {
         super();
 
-        this.m_width = width;
-        this.m_height = height;
+        this.sideType = sideType;
 
-        this.beginFill(0xFBE2B2);
-        this.drawRoundedRect(-this.m_width/2, -this.m_height/2, this.m_width, this.m_height, 3);
+        this.m_size = m_size;
 
 
-        this.uiText = new PIXI.Text("Turn");
-        let textStyleOptions : TextStyleOptions = {};
-        textStyleOptions.fontSize = 50;
-        textStyleOptions.fontFamily = "Times New Roman"
+        this.uiPieceView = new PieceView(this.sideType, PieceType.PAWN, this.m_size, this.m_size);
+        this.addChild(this.uiPieceView);
+
+
+        this.uiText = new PIXI.Text();
+        let textStyleOptions: PIXI.TextStyleOptions = {};
+        textStyleOptions.fontSize = this.m_size;
+        textStyleOptions.fontFamily = "Helvetica";
         this.uiText.style = new PIXI.TextStyle(textStyleOptions);
 
-        this.uiText.position.y = 8;
-        this.uiText.scale.set(this.m_height/this.uiText.height, this.m_height/this.uiText.height);
-        this.uiText.anchor.set(0.5, 0.5);
+        this.uiText.anchor.set(0.0, 0.5);
         this.addChild(this.uiText);
 
-        this.setTime(60* 1000);
+        this.setTime(60 * 1000);
+
+
+
+
+
+        SimpleGame.arrangeHorizontally([this.uiPieceView, this.uiText]);
+
+        this.beginFill(0xFBE2B2);
+        this.drawRect(-this.width/2, -this.height/2, this.width, this.height);
+
+        this.lineStyle(1, 0x000000);
+        this.moveTo(-this.width/2, -this.height/2);
+        this.lineTo(this.width/2, -this.height/2);
+        this.lineTo(this.width/2, this.height/2);
+        this.lineTo(-this.width/2, this.height/2);
+        this.lineTo(-this.width/2, -this.height/2);
+
+        this.setTime(Infinity);
     }
 
 
     public setTime(timeMilli : number){
-        let minutes = Math.floor(timeMilli / (60 * 1000));
-        let seconds = minutes * 60 - Math.floor(timeMilli/1000);
+        let text : string = "";
+        if(isFinite(timeMilli)){
+            let minutes = Math.floor(timeMilli / (60 * 1000));
+            let seconds = minutes * 60 - Math.floor(timeMilli/1000);
 
+            text = this.leftPad(minutes, 2) + ":" + this.leftPad(seconds, 2);
+        }else {
+            text = " ∞";//U+221E"
+        }
 
-        this.uiText.text = this.leftPad(minutes, 2) + ":" + this.leftPad(seconds, 2);
+        this.uiText.text = text
     }
 
 
