@@ -105,15 +105,16 @@ export class SimpleGame extends PIXI.Application{
         for(let i = 0; i < sprs.length; i++){
             let spr = sprs[i];
 
-            let anchor = new PIXI.Point();
+
+            let anchorX = 0.5;
             // @ts-ignore
             if(spr.anchor != undefined){
                 // @ts-ignore
-                anchor = spr.anchor.clone();
+                anchorX = spr.anchor.x;
             }
 
 
-            spr.position.x = width + anchor.x * spr.width;
+            spr.position.x = width + anchorX * spr.width;
 
             width += spr.width;
         }
