@@ -3,6 +3,7 @@ import {getNameForImageTag, getLocationForImageTag, ImageTag} from "./ImageTag";
 import {LogoLayer} from "./LogoLayer";
 import {MainLayer} from "./MainLayer";
 
+import * as TWEEN from '@tweenjs/tween.js'
 
 export class SimpleGame extends PIXI.Application{
     private static gInstance : SimpleGame;
@@ -76,12 +77,65 @@ export class SimpleGame extends PIXI.Application{
 
         this.stage.addChild(mainLayer);
 
+
+
         console.log("hello world");
+    }
+
+
+    public static debugDraw(spr : PIXI.Container){
+        let parent = spr.parent;
+
+
+        let debugNode = new PIXI.Graphics();
+        debugNode.lineStyle(4, 0xFF0000);
+        debugNode.moveTo(-spr.width/2, -spr.height/2);
+        debugNode.lineTo(spr.width/2, -spr.height/2);
+        debugNode.lineTo(spr.width/2, spr.height/2);
+        debugNode.lineTo(-spr.width/2, spr.height/2);
+        debugNode.lineTo(-spr.width/2, -spr.height/2);
+
+
+        debugNode.position = spr.position.clone();
+        parent.addChild(debugNode);
+    }
+
+    public static arrangeHorizontally(sprs : PIXI.Container[]){
+        let width : number = 0;
+        for(let i = 0; i < sprs.length; i++){
+            let spr = sprs[i];
+
+            let anchor = new PIXI.Point();
+            // @ts-ignore
+            if(spr.anchor != undefined){
+                // @ts-ignore
+                anchor = spr.anchor.clone();
+            }
+
+
+            spr.position.x = width + anchor.x * spr.width;
+
+            width += spr.width;
+        }
+
+        for(let i = 0; i < sprs.length; i++){
+            let spr = sprs[i];
+            spr.position.x = spr.position.x - width/2
+        }
+
+
     }
 
 }
 
 
 window.onload = () => {
+    function animate(time : number){
+        requestAnimationFrame(animate);
+        TWEEN.update(time);
+    }
+
+    requestAnimationFrame(animate);
+
     SimpleGame.getInstance();
 };
