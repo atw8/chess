@@ -100,31 +100,39 @@ export class SimpleGame extends PIXI.Application{
         parent.addChild(debugNode);
     }
 
-    public static arrangeHorizontally(sprs : PIXI.Container[]){
+    public static arrangeHorizontally(sprs : (PIXI.Container | number)[]):number{
         let width : number = 0;
         for(let i = 0; i < sprs.length; i++){
             let spr = sprs[i];
 
 
-            let anchorX = 0.5;
-            // @ts-ignore
-            if(spr.anchor != undefined){
+            if(typeof spr == "number"){
+                width += spr;
+            }else {
+                let anchorX = 0.5;
                 // @ts-ignore
-                anchorX = spr.anchor.x;
+                if(spr.anchor != undefined){
+                    // @ts-ignore
+                    anchorX = spr.anchor.x;
+                }
+
+                spr.position.x = width + anchorX * spr.width;
+
+                width += spr.width;
             }
 
-
-            spr.position.x = width + anchorX * spr.width;
-
-            width += spr.width;
         }
 
         for(let i = 0; i < sprs.length; i++){
             let spr = sprs[i];
-            spr.position.x = spr.position.x - width/2
+            if(typeof spr != "number"){
+                spr.position.x = spr.position.x - width/2
+            }
+
         }
 
 
+        return width;
     }
 
 }
