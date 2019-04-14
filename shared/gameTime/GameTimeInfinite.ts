@@ -9,7 +9,8 @@ export class GameTimeInfinite extends GameTimeAbstract {
     }
 
     public getCurrentTime(sideType : SideType, timeStamp : number):number{
-        return Number.MAX_VALUE;
+        return Infinity;
+        //return Number.MAX_VALUE;
     }
 
     constructor(){

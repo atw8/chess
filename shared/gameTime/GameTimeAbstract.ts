@@ -2,8 +2,6 @@ import {SideType} from "../engine/SideType";
 import {GameTimeType} from "./GameTimeType";
 
 export abstract class GameTimeAbstract {
-    protected startTimeStamp : number;
-    protected endTimeStamp : number;
     protected timeStamps : number[];
 
 
@@ -16,23 +14,21 @@ export abstract class GameTimeAbstract {
     public abstract getCurrentTime(sideType : SideType, timeStamp : number):number;
 
     constructor(){
-        this.startTimeStamp = 0;
-        this.endTimeStamp = 0;
         this.timeStamps = [];
     }
 
 
     public getMoveTurn():SideType{
-        return this.timeStamps.length%2 == 0 ? SideType.WHITE : SideType.BLACK;
+        return this.timeStamps.length%2 == 1 ? SideType.WHITE : SideType.BLACK;
     }
 
 
 
     public start(startTimeStamp : number){
-        this.startTimeStamp = startTimeStamp;
+        this.timeStamps.push(startTimeStamp);
     }
     public end(endTimeStamp : number){
-        this.endTimeStamp = endTimeStamp
+        this.timeStamps.push(endTimeStamp);
     }
 
     public doMove(timeStamp : number){

@@ -12,7 +12,19 @@ export class GameTimeNormal extends GameTimeAbstract {
         return GameTimeType.NORMAL;
     }
     public getCurrentTime(sideType : SideType, timeStamp : number):number{
-        return 100;
+        let ret = this.totalTime;
+
+        if(sideType == SideType.WHITE){
+            for(let i = 1; i < this.timeStamps.length; i += 2){
+                ret += this.timeStamps[i - 1] - this.timeStamps[i] + this.incrTime;
+            }
+        }else if(sideType == SideType.BLACK){
+            for(let i = 0; i < this.timeStamps.length; i += 2){
+                ret += this.timeStamps[i - 1] - this.timeStamps[i] + this.incrTime;
+            }
+        }
+
+        return ret;
     }
 
 
