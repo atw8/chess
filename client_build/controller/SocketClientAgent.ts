@@ -2,22 +2,34 @@ import Socket = require("socket.io-client");
 
 import {
     ClientServerMessage,
-    MessageType, OnRoomGetListMessage,
-    OnLoginGuestMessage, OpRoomGetListMessage, OpLoginGuestMessage,
+    MessageType,
+    OnRoomGetListMessage,
+    OnUserLoginGuestMessage,
+    OpRoomGetListMessage,
+    OpUserLoginGuestMessage,
     ServerClientMessage,
-    ErrorCode, OpRoomJoinMessage, OnRoomJoinMessage, OnRoomJoinBroadcastMessage, OnRoomMakeMoveMessage, OpRoomMakeMoveMessage,
+    ErrorCode,
+    OpRoomJoinMessage,
+    OnRoomJoinMessage,
+    OnRoomJoinBroadcastMessage,
+    OnRoomMakeMoveMessage,
+    OpRoomMakeMoveMessage,
+    OnRoomMakeMoveBroadcastMessage,
 } from "./../../shared/MessageTypes";
 
 
 
 import {SocketClientInterface} from "./SocketClientInterface";
-import {LocalStorageKeys} from "../LocalStorageKeys";
+import {LocalStorageManager} from "../LocalStorageManager";
 
 
 export class SocketClientAgent {
     private socket : SocketIOClient.Socket;
 
-    private token : string;
+    private playerId : number;
+    public getPlayerId():number{
+        return this.playerId;
+    }
 
     private requestId : number;
 
@@ -39,12 +51,7 @@ export class SocketClientAgent {
 
         this.localStartTimeStamps = {};
 
-        {
-            let _token = localStorage.getItem(LocalStorageKeys.TOKEN);
-            if(_token != null){
-                this.token = _token;
-            }
-        }
+
 
         this.requestId = 0;
 
@@ -63,6 +70,7 @@ export class SocketClientAgent {
         this.socket.on(MessageType.OnRoomJoinBroadcast, this.OnRoomJoinBroadcast.bind(this));
 
         this.socket.on(MessageType.OnRoomMakeMove, this.OnRoomMakeMove.bind(this));
+        this.socket.on(MessageType.OnRoomMakeMoveBroadcast, this.OnRoomMakeMoveBroadcast.bind(this));
 
 
     }
@@ -73,7 +81,7 @@ export class SocketClientAgent {
 
         this.socketClientInterface.OnConnect();
 
-        this.OpLoginGuest(this.token);
+        this.OpLoginGuest(LocalStorageManager.getGuestToken());
     }
     public OnDisconnect(){
         console.debug("onDisconnect");
@@ -149,12 +157,12 @@ export class SocketClientAgent {
 
     //Related OpLoginGuest
     public OpLoginGuest(token ?: string){
-        let opLoginGuestMessage : OpLoginGuestMessage = new OpLoginGuestMessage(token);
+        let opLoginGuestMessage : OpUserLoginGuestMessage = new OpUserLoginGuestMessage(token);
 
         this.emitClientServerMessage(opLoginGuestMessage);
     }
     public OnLoginGuest(message : string){
-        let onLoginGuestMessage : OnLoginGuestMessage | null = OnLoginGuestMessage.createFromString(message);
+        let onLoginGuestMessage : OnUserLoginGuestMessage | null = OnUserLoginGuestMessage.createFromString(message);
         if(onLoginGuestMessage == null){
             return;
         }
@@ -165,8 +173,8 @@ export class SocketClientAgent {
         }
 
 
-        this.token = onLoginGuestMessage.token;
-        localStorage.setItem(LocalStorageKeys.TOKEN, this.token);
+        LocalStorageManager.setGuestToken(onLoginGuestMessage.guestToken);
+        this.playerId = onLoginGuestMessage.playerId;
 
 
         this.OpRoomJoin(onLoginGuestMessage.roomId);
@@ -233,6 +241,14 @@ export class SocketClientAgent {
         this.updateLatencyTimeDiff(onRoomMakeMoveMsg);
 
         this.socketClientInterface.OnRoomMakeMove(onRoomMakeMoveMsg);
+    }
+    public OnRoomMakeMoveBroadcast(message : string){
+        let onRoomMakeMoveBroadcastMsg : OnRoomMakeMoveBroadcastMessage | null = OnRoomMakeMoveBroadcastMessage.createFromString(message);
+        if(onRoomMakeMoveBroadcastMsg == null){
+            return;
+        }
+
+        this.socketClientInterface.OnRoomMakeMoveBroadcast(onRoomMakeMoveBroadcastMsg);
     }
 
 

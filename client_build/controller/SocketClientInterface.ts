@@ -1,15 +1,15 @@
 import {
     OnRoomGetListMessage,
     OnRoomJoinMessage,
-    OnLoginGuestMessage,
-    OnRoomMakeMoveMessage, OnRoomJoinBroadcastMessage
+    OnUserLoginGuestMessage,
+    OnRoomMakeMoveMessage, OnRoomJoinBroadcastMessage, OnRoomMakeMoveBroadcastMessage
 } from "../../shared/MessageTypes";
 
 export interface SocketClientInterface {
     OnConnect() : void;
     OnDisconnect() : void;
 
-    OnLoginGuest(onLoginGuestMsg :OnLoginGuestMessage) :void;
+    OnLoginGuest(onLoginGuestMsg :OnUserLoginGuestMessage) :void;
 
     OnRoomGetList(onGetRoomListMsg : OnRoomGetListMessage):void;
 
@@ -18,4 +18,5 @@ export interface SocketClientInterface {
     OnRoomJoinBroadcast(onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage):void;
 
     OnRoomMakeMove(onRoomMakeMoveMsg : OnRoomMakeMoveMessage):void;
+    OnRoomMakeMoveBroadcast(onRoomMakeMoveBroadcastMsg : OnRoomMakeMoveBroadcastMessage):void;
 }
