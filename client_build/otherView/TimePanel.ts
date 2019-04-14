@@ -44,17 +44,17 @@ export class TimePanel extends PIXI.Graphics {
 
 
 
-        SimpleGame.arrangeHorizontally([this.uiPieceView, this.uiText]);
+        let _width = SimpleGame.arrangeHorizontally([this.m_size/4, this.uiPieceView, this.uiText, this.m_size/4]);
 
         this.beginFill(0xFBE2B2);
-        this.drawRect(-this.width/2, -this.height/2, this.width, this.height);
+        this.drawRect(-_width/2, -this.height/2, _width, this.height);
 
         this.lineStyle(1, 0x000000);
-        this.moveTo(-this.width/2, -this.height/2);
-        this.lineTo(this.width/2, -this.height/2);
-        this.lineTo(this.width/2, this.height/2);
-        this.lineTo(-this.width/2, this.height/2);
-        this.lineTo(-this.width/2, -this.height/2);
+        this.moveTo(-_width/2, -this.height/2);
+        this.lineTo(_width/2, -this.height/2);
+        this.lineTo(_width/2, this.height/2);
+        this.lineTo(-_width/2, this.height/2);
+        this.lineTo(-_width/2, -this.height/2);
 
         this.setTime(Infinity);
     }
@@ -64,7 +64,7 @@ export class TimePanel extends PIXI.Graphics {
         let text : string = "";
         if(isFinite(timeMilli)){
             let minutes = Math.floor(timeMilli / (60 * 1000));
-            let seconds = minutes * 60 - Math.floor(timeMilli/1000);
+            let seconds = Math.floor(timeMilli/1000) -  minutes * 60;
 
             text = this.leftPad(minutes, 2) + ":" + this.leftPad(seconds, 2);
         }else {
