@@ -439,11 +439,11 @@ export class BoardView extends PIXI.Graphics {
 
 
 
-    public flipBoardFacing(){
-        this.setBoardFacing(ChessEngine.getOppositeSideType(this.boardFacing));
+    public flipBoardFacing(isAnimation : boolean){
+        this.setBoardFacing(ChessEngine.getOppositeSideType(this.boardFacing),isAnimation);
     }
 
-    public setBoardFacing(boardFacing : SideType){
+    public setBoardFacing(boardFacing : SideType, isAnimation : boolean){
         if(boardFacing == this.boardFacing){
             return;
         }
@@ -468,7 +468,13 @@ export class BoardView extends PIXI.Graphics {
                     this.boardFacing = newBoardFacing;
                     positionTo = this.getPositionForFileRank(fileRank);
 
-                    this.addMovingSprite(sprite, positionFrom, positionTo, ActionMovingTypes.FLIP_BOARD, null);
+
+                    if(isAnimation){
+                        this.addMovingSprite(sprite, positionFrom, positionTo, ActionMovingTypes.FLIP_BOARD, null);
+                    }else {
+                        sprite.position = positionTo;
+                    }
+
                 }
             }
         }
