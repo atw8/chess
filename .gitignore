@@ -84,8 +84,8 @@
 /.idea/encodings.xml
 /client_build/ImageTag.js
 /client_build/ImageTag.js.map
-/client_build/LocalStorageKeys.js
-/client_build/LocalStorageKeys.js.map
+/client_build/LocalStorageManagerger.js
+/client_build/LocalStorageManager.js.mapjs.map
 /client_build/LogoLayer.js
 /client_build/LogoLayer.js.map
 /client_build/MainLayer.js
@@ -104,3 +104,7 @@
 /client_build/view/SquareColorCons.js.map
 /client_build/view/WaitingNode.js
 /client_build/view/WaitingNode.js.map
+/server/UserServer.js.map
+/server/UserServer.js
+/shared/engine/SideType.js
+/shared/engine/SideType.js.map
