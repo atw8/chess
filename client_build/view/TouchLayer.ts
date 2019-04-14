@@ -35,7 +35,7 @@ export class TouchLayer{
 
 
     public onTouchBegan(interactionEvent : InteractionEvent){
-        console.log("onTouchBegan");
+        //console.log("onTouchBegan");
         if(this.identifier != null ||!this.isEnabled){
             return;
         }
@@ -46,7 +46,7 @@ export class TouchLayer{
         //console.log("onTouchBegan ", interactionEvent.data.global.x,", ", interactionEvent.data.global.y);
     }
     public onTouchMoved(interactionEvent : InteractionEvent){
-        console.log("onTouchMoved");
+        //console.log("onTouchMoved");
         if(this.identifier != interactionEvent.data.identifier){
             return;
         }
@@ -56,7 +56,7 @@ export class TouchLayer{
         //console.log("onTouchMoved ", interactionEvent.data.global.x,", ", interactionEvent.data.global.y);
     }
     public onTouchEnded(interactionEvent : InteractionEvent){
-        console.log("onTouchEnded");
+        //console.log("onTouchEnded");
         if(this.identifier != interactionEvent.data.identifier){
             return;
         }

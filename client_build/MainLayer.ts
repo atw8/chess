@@ -50,7 +50,9 @@ export class MainLayer extends PIXI.Container {
         this.uiWaitingNode = new WaitingNode(40);
         this.uiWaitingNode.position.set(SimpleGame.getWidth()/2, SimpleGame.getHeight()/2);
         this.addChild(this.uiWaitingNode);
-        this.uiWaitingNode.visible = false
+
+
+        this.setWaitingNodeVisible(true);
     }
 
     public showPromotePieceLayer(moveClasses : MoveClass[], callback : (moveClass : MoveClass) => void){
@@ -62,5 +64,11 @@ export class MainLayer extends PIXI.Container {
 
     public setWaitingNodeVisible(isVisible : boolean){
         this.uiWaitingNode.visible = isVisible;
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            //this.uiTimePanels[sideType].visible = !isVisible;
+        }
+    }
+    public setTime(sideType : SideType, timeMili : number){
+        this.uiTimePanels[sideType].setTime(timeMili);
     }
 }
