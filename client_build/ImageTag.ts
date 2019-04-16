@@ -1,6 +1,8 @@
 export enum ImageTag {
     logo = "logo",
 
+    particle = "particle",
+
     white_pawn = "white_pawn",
     black_pawn = "black_pawn",
     white_knight = "white_knight",
@@ -39,6 +41,9 @@ export enum ImageTag {
 export function getNameForImageTag(imageTag : ImageTag):string{
     let ret : string = "";
     switch(imageTag){
+        case ImageTag.particle:
+            ret = "particle"
+            break;
         case ImageTag.logo:
             ret = "img_logo";
             break;
@@ -122,6 +127,9 @@ export function getNameForImageTag(imageTag : ImageTag):string{
 export function getLocationForImageTag(imageTag : ImageTag):string{
     let ret : string = "";
     switch(imageTag){
+        case ImageTag.particle:
+            ret = "image/particle.png";
+            break;
         case ImageTag.logo:
             ret = "image/img_logo.png";
             break;

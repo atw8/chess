@@ -108,3 +108,11 @@
 /server/UserServer.js
 /shared/engine/SideType.js
 /shared/engine/SideType.js.map
+/client_build/LanguageHelper.js
+/client_build/LanguageHelper.js.map
+/client_build/view/WinNode.js
+/client_build/view/WinNode.js.map
+/server/RoomState.js
+/server/RoomState.js.map
+/shared/engine/WinStateEnum.js
+/shared/engine/WinStateEnum.js.map

@@ -6,6 +6,11 @@ import {MoveClass} from "../shared/engine/MoveClass";
 import {WaitingNode} from "./view/WaitingNode";
 import {TimePanel} from "./otherView/TimePanel";
 import {SideType} from "../shared/engine/SideType";
+import {WinNode} from "./view/WinNode";
+import {ChessGameStateEnum} from "../shared/engine/ChessGameStateEnum";
+import {ChessEngine} from "../shared/engine/ChessEngine";
+import {WinStateEnum} from "../shared/engine/WinStateEnum";
+import {LanguageHelper, LanguageKey} from "./LanguageHelper";
 
 
 export class MainLayer extends PIXI.Container {
@@ -45,7 +50,6 @@ export class MainLayer extends PIXI.Container {
         this.controller.setBoardView(this.uiBoardView);
 
 
-
         //Add the uiWaitingNode
         this.uiWaitingNode = new WaitingNode(40);
         this.uiWaitingNode.position.set(SimpleGame.getWidth()/2, SimpleGame.getHeight()/2);
@@ -53,6 +57,51 @@ export class MainLayer extends PIXI.Container {
 
 
         this.setWaitingNodeVisible(true);
+
+
+
+
+        let chessGameStateSet : ChessGameStateEnum[] = [];
+        chessGameStateSet.push(ChessGameStateEnum.DRAW_STALEMATE);
+        chessGameStateSet.push(ChessGameStateEnum.DRAW_REPETITION);
+        chessGameStateSet.push(ChessGameStateEnum.DRAW_INSUFFICIENT_MATERIAL);
+        chessGameStateSet.push(ChessGameStateEnum.DRAW_AGREEMENT);
+        chessGameStateSet.push(ChessGameStateEnum.DRAW_50MOVES);
+        chessGameStateSet.push(ChessGameStateEnum.BLACK_WIN_TIME);
+        chessGameStateSet.push(ChessGameStateEnum.BLACK_WIN_RESIGN);
+        chessGameStateSet.push(ChessGameStateEnum.BLACK_WIN_FORFEIT);
+        chessGameStateSet.push(ChessGameStateEnum.BLACK_WIN_CHECKMATE);
+        chessGameStateSet.push(ChessGameStateEnum.WHITE_WIN_TIME);
+        chessGameStateSet.push(ChessGameStateEnum.WHITE_WIN_RESIGN);
+        chessGameStateSet.push(ChessGameStateEnum.WHITE_WIN_FORFEIT);
+        chessGameStateSet.push(ChessGameStateEnum.WHITE_WIN_CHECKMATE);
+        let chessGameStateIndex = 6;
+
+        let uiWinNode : WinNode | null = null;
+
+
+        this.uiBoardView.interactive = true;
+        this.uiBoardView.on("pointerdown", ()=>{
+            console.log("hello");
+            if(uiWinNode != null){
+                uiWinNode.parent.removeChild(uiWinNode);
+                uiWinNode = null;
+            }
+
+            let chessGameState = chessGameStateSet[chessGameStateIndex];
+            chessGameStateIndex = (chessGameStateIndex + 1)%chessGameStateSet.length;
+
+            let winState = ChessEngine.getWinStateForGameStateAndSideType(chessGameState, SideType.WHITE);
+
+            uiWinNode = new WinNode(45, chessGameState, winState);
+            uiWinNode.position.set(SimpleGame.getWidth()/2, SimpleGame.getHeight()/2);
+            this.addChild(uiWinNode);
+        })
+
+
+
+
+
     }
 
     public showPromotePieceLayer(moveClasses : MoveClass[], callback : (moveClass : MoveClass) => void){
@@ -63,12 +112,22 @@ export class MainLayer extends PIXI.Container {
 
 
     public setWaitingNodeVisible(isVisible : boolean){
+        isVisible = false;
         this.uiWaitingNode.visible = isVisible;
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            //this.uiTimePanels[sideType].visible = !isVisible;
+            this.uiTimePanels[sideType].visible = !isVisible;
         }
     }
     public setTime(sideType : SideType, timeMili : number){
         this.uiTimePanels[sideType].setTime(timeMili);
+    }
+
+    public showWinNode(chessGameState : ChessGameStateEnum, winStateEnum : WinStateEnum){
+        let uiWinNode = new WinNode(45, chessGameState, winStateEnum);
+        uiWinNode.position.set(SimpleGame.getWidth()/2, SimpleGame.getHeight()/2);
+        this.addChild(uiWinNode);
+    }
+    public showLoseNode(){
+
     }
 }

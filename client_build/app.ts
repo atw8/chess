@@ -30,6 +30,8 @@ export class SimpleGame extends PIXI.Application{
         let imageTags : ImageTag[] = [];
         imageTags.push(ImageTag.logo);
 
+        imageTags.push(ImageTag.particle);
+
         imageTags.push(ImageTag.white_pawn);
         imageTags.push(ImageTag.black_pawn);
         imageTags.push(ImageTag.white_knight);
@@ -100,25 +102,33 @@ export class SimpleGame extends PIXI.Application{
         parent.addChild(debugNode);
     }
 
+
+    public static arrangeVertically(sprs : (PIXI.Container | number)[]):number{
+        return SimpleGame.arrangeHelper(sprs, "y", "height");
+    }
     public static arrangeHorizontally(sprs : (PIXI.Container | number)[]):number{
-        let width : number = 0;
+        return SimpleGame.arrangeHelper(sprs, "x", "width");
+    }
+
+    private static arrangeHelper(sprs : (PIXI.Container | number)[], propXY : "x" | "y", propWidthHeight : "width" | "height"):number{
+        let wh : number = 0;
         for(let i = 0; i < sprs.length; i++){
             let spr = sprs[i];
 
 
             if(typeof spr == "number"){
-                width += spr;
+                wh += spr;
             }else {
-                let anchorX = 0.5;
+                let anchor = 0.5;
                 // @ts-ignore
                 if(spr.anchor != undefined){
                     // @ts-ignore
-                    anchorX = spr.anchor.x;
+                    anchor = spr.anchor[propXY];
                 }
 
-                spr.position.x = width + anchorX * spr.width;
+                spr.position[propXY] = wh + anchor * spr[propWidthHeight];
 
-                width += spr.width;
+                wh += spr[propWidthHeight];
             }
 
         }
@@ -126,15 +136,15 @@ export class SimpleGame extends PIXI.Application{
         for(let i = 0; i < sprs.length; i++){
             let spr = sprs[i];
             if(typeof spr != "number"){
-                spr.position.x = spr.position.x - width/2
+                spr.position[propXY] = spr.position[propXY] - wh/2
             }
 
         }
 
 
-        return width;
-    }
+        return wh;
 
+    }
 }
 
 

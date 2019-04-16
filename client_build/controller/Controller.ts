@@ -25,6 +25,7 @@ import {GameTimeType} from "../../shared/gameTime/GameTimeType";
 import {GameTimeInfinite} from "../../shared/gameTime/GameTimeInfinite";
 import {GameTimeMove} from "../../shared/gameTime/GameTimeMove";
 import {GameTimeNormal} from "../../shared/gameTime/GameTimeNormal";
+import {RoomState} from "../../server/RoomState";
 
 
 export class Controller implements SocketClientInterface{
@@ -153,16 +154,17 @@ export class Controller implements SocketClientInterface{
             this.uiBoardView.setBoardFacing(sideType, false);
         }
 
+        //this.gameTimeStructs[SideType.WHITE].start(this.socketClientAgent.getServerTimeStamp());
+        //this.gameTimeStructs[SideType.BLACK].start(this.socketClientAgent.getServerTimeStamp());
 
-
-        this.gameTimeStructs[SideType.WHITE].start(this.socketClientAgent.getServerTimeStamp());
-        this.gameTimeStructs[SideType.BLACK].start(this.socketClientAgent.getServerTimeStamp());
+        this.synchronizeIsWaiting();
     }
     public OnRoomJoinBroadcast(onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage){
         this.roomStateConfig = <RoomStateConfig> onRoomJoinBroadcastMsg.roomStateConfig;
 
         this.synchronizeIsWaiting();
     }
+
 
 
 
@@ -191,9 +193,9 @@ export class Controller implements SocketClientInterface{
         this.synchronizeIsWaiting();
     }
     public synchronizeIsWaiting(){
-        this.uiMainLayer.setWaitingNodeVisible(this.roomStateConfig.isWaiting);
+        this.uiMainLayer.setWaitingNodeVisible(this.roomStateConfig.roomState != RoomState.NORMAL);
 
-        if(this.roomStateConfig.isWaiting){
+        if(this.roomStateConfig.roomState != RoomState.NORMAL){
             this.uiTouchLayer.setIsEnabled(false);
         }else {
             let mySideType = this.roomStateConfig.getSideTypeForPlayerId(this.socketClientAgent.getPlayerId())
@@ -207,8 +209,13 @@ export class Controller implements SocketClientInterface{
         if(this.roomStateConfig == undefined){
             return;
         }
+
+        if(this.roomStateConfig.roomState != RoomState.NORMAL){
+            return;
+        }
+
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            let currentTime = this.gameTimeStructs[sideType].getCurrentTime(sideType, this.socketClientAgent.getServerTimeStamp())
+            let currentTime = this.gameTimeStructs[sideType].getCurrentTime(sideType, this.socketClientAgent.getServerTimeStamp());
             this.uiMainLayer.setTime(sideType, currentTime);
         }
         //console.log("tick ", dt);
