@@ -68,7 +68,7 @@ export class TimePanel extends PIXI.Graphics {
 
             text = this.leftPad(minutes, 2) + ":" + this.leftPad(seconds, 2);
         }else {
-            text = " ∞";//U+221E"
+            text = " \u221E";
         }
 
         this.uiText.text = text
