@@ -11,6 +11,7 @@ import {FairyStupid} from "./Fairy/FairyStupid";
 import {FairyLeaper} from "./Fairy/FairyLeaper";
 import {FairyRider} from "./Fairy/FairyRider";
 import {CastleType} from "./CastleType";
+import {WinStateEnum} from "./WinStateEnum";
 
 interface PromotionStruct {
     "isPromotion" : boolean;
@@ -1166,34 +1167,71 @@ export class ChessEngine extends  AbstractEngine {
 
     }
 
-    public getGameResult():ChessGameResultEnum{
-        let gameResult : ChessGameResultEnum = ChessGameResultEnum.NORMAL;
-        switch(this.getGameState()) {
+    public static getGameResultForGameState(chessGameState : ChessGameStateEnum):ChessGameResultEnum{
+        let chessGameResult : ChessGameResultEnum = ChessGameResultEnum.NORMAL;
+
+        switch(chessGameState) {
             case ChessGameStateEnum.NORMAL:
-                gameResult = ChessGameResultEnum.NORMAL;
+                chessGameResult = ChessGameResultEnum.NORMAL;
                 break;
             case ChessGameStateEnum.WHITE_WIN_TIME:
             case ChessGameStateEnum.WHITE_WIN_CHECKMATE:
             case ChessGameStateEnum.WHITE_WIN_RESIGN:
             case ChessGameStateEnum.WHITE_WIN_FORFEIT:
-                gameResult = ChessGameResultEnum.WHITE_WIN;
+                chessGameResult = ChessGameResultEnum.WHITE_WIN;
                 break;
             case ChessGameStateEnum.BLACK_WIN_TIME:
             case ChessGameStateEnum.BLACK_WIN_CHECKMATE:
             case ChessGameStateEnum.BLACK_WIN_RESIGN:
             case ChessGameStateEnum.BLACK_WIN_FORFEIT:
-                gameResult = ChessGameResultEnum.BLACK_WIN;
+                chessGameResult = ChessGameResultEnum.BLACK_WIN;
                 break;
             case ChessGameStateEnum.DRAW_STALEMATE:
             case ChessGameStateEnum.DRAW_INSUFFICIENT_MATERIAL:
             case ChessGameStateEnum.DRAW_50MOVES:
             case ChessGameStateEnum.DRAW_REPETITION:
             case ChessGameStateEnum.DRAW_AGREEMENT:
-                gameResult = ChessGameResultEnum.DRAW;
+                chessGameResult = ChessGameResultEnum.DRAW;
                 break;
         }
 
-        return gameResult;
+        return chessGameResult;
+    }
+    public static getWinStateForGameStateAndSideType(chessGameState : ChessGameStateEnum, sideType : SideType):WinStateEnum{
+        let chessGameResult = ChessEngine.getGameResultForGameState(chessGameState);
+        return ChessEngine.getWinStateForGameResultAndSideType(chessGameResult, sideType);
+    }
+    public static getWinStateForGameResultAndSideType(chessGameResult : ChessGameResultEnum, sideType : SideType):WinStateEnum{
+        let winState : WinStateEnum = WinStateEnum.NORMAL;
+        switch(chessGameResult){
+            case ChessGameResultEnum.NORMAL:
+                winState = WinStateEnum.NORMAL;
+                break;
+            case ChessGameResultEnum.WHITE_WIN:
+                switch(sideType){
+                    case SideType.WHITE:
+                        winState = WinStateEnum.ME_WIN;
+                        break;
+                    case SideType.BLACK:
+                        winState = WinStateEnum.ME_LOSE;
+                        break;
+                }
+                break;
+            case ChessGameResultEnum.BLACK_WIN:
+                switch(sideType){
+                    case SideType.WHITE:
+                        winState = WinStateEnum.ME_LOSE;
+                        break;
+                    case SideType.BLACK:
+                        winState = WinStateEnum.ME_WIN;
+                        break;
+                }
+                break;
+            case ChessGameResultEnum.DRAW:
+                break;
+        }
+
+        return winState;
     }
 
 
