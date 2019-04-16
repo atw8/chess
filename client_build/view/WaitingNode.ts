@@ -48,11 +48,10 @@ export class WaitingNode extends PIXI.Container{
         tween.start();
 
 
-        this.uiText = new PIXI.Text("Waiting");
         let textStyleOptions : PIXI.TextStyleOptions = {};
         textStyleOptions.fontFamily = "Helvetica";
         textStyleOptions.fontSize = this.m_size;
-        this.uiText.style = new PIXI.TextStyle(textStyleOptions);
+        this.uiText = new PIXI.Text("Waiting", textStyleOptions);
         this.uiText.anchor.set(0.5, 0.5);
         this.addChild(this.uiText);
 
