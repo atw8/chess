@@ -5,7 +5,7 @@ import {
     OnRoomJoinBroadcastMessage,
     OnRoomJoinMessage,
     OnRoomMakeMoveBroadcastMessage,
-    OnRoomMakeMoveMessage,
+    OnRoomMakeMoveMessage, OnRoomTimeOutBroadcastMessage,
     OpRoomJoinMessage,
     OpRoomMakeMoveMessage,
     RoomInitConfig,
@@ -19,6 +19,7 @@ import {GameTimeType} from "../shared/gameTime/GameTimeType";
 import {GameTimeInfinite} from "../shared/gameTime/GameTimeInfinite";
 import {GameTimeMove} from "../shared/gameTime/GameTimeMove";
 import {GameTimeNormal} from "../shared/gameTime/GameTimeNormal";
+import {RoomState} from "./RoomState";
 
 export class Room {
     //private playerIdSideTypeMap : {[key : number] : SideType};
@@ -75,9 +76,11 @@ export class Room {
         this.roomStateConfig = new RoomStateConfig();
 
 
-
-
         this.updateRoomStateConfig();
+
+
+        let tickDelay : number = 300;
+        setInterval(this.tick.bind(this, tickDelay), tickDelay);
     }
 
     public getRoomInitConfig():RoomInitConfig{
@@ -89,9 +92,6 @@ export class Room {
 
 
 
-    public tick(dt : number):void {
-
-    }
 
 
     /*
@@ -126,10 +126,13 @@ export class Room {
         }
 
 
+        if(!this.roomStateConfig.hasFreeSideTypes() && this.roomStateConfig.roomState == RoomState.START){
+
+            this.startGame();
+        }
+
         if(onJoinRoomMsg.getErrorCode() == ErrorCode.SUCCESS || onJoinRoomMsg.getErrorCode() == ErrorCode.JOIN_ROOM_ALREADY_IN_ROOM){
             this.roomStateConfig.sideTypeMap[<SideType>sideType] = playerId;
-
-            this.roomStateConfig.isWaiting = this.roomStateConfig.hasFreeSideTypes();
 
             onJoinRoomMsg.roomInitConfig = this.getRoomInitConfig();
             onJoinRoomMsg.roomStateConfig = this.getRoomStateConfig();
@@ -147,8 +150,9 @@ export class Room {
                 this.roomServer.emitMessage(oppositePlayerId, null, onJoinRoomBroadcastMsg);
             }
         }
-    }
 
+
+    }
 
 
 
@@ -165,10 +169,7 @@ export class Room {
 
                 this.roomServer.emitMessage(oppositePlayerId, null, onRoomMakeMoveBroadcastMsg);
             }
-
-
         }
-
     }
 
     public _makeMove(playerId :number, opRoomMakeMoveMsg : OpRoomMakeMoveMessage, onRoomMakeMoveMsg : OnRoomMakeMoveMessage){
@@ -187,10 +188,61 @@ export class Room {
         this.roomStateConfig.sanMoves = this.chessEngine.getSanMoves();
         if(!isSuccess){
             onRoomMakeMoveMsg.setErrorCode(ErrorCode.DO_MOVE_INVALID_SAN_MOVE);
-            this.updateRoomStateConfig();
-            return;
+
         }
+
+        this.updateRoomStateConfig();
     }
 
 
+
+    public startGame(){
+        if(this.roomStateConfig.roomState != RoomState.START){
+            return;
+        }
+        this.roomStateConfig.roomState = RoomState.NORMAL;
+
+
+        let timeStamp = Date.now();
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            this.gameTimeStructs[sideType].start(timeStamp);
+        }
+        this.roomStateConfig.timeStamps.push(timeStamp);
+    }
+
+    public tick(dt : number){
+        return;
+        if(this.roomStateConfig.roomState != RoomState.NORMAL){
+            return;
+        }
+
+        let timeStamp = Date.now();
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            if(this.gameTimeStructs[sideType].isLose(sideType, timeStamp)){
+                this.chessEngine.setIsLooseByTime(sideType, true);
+                this.roomStateConfig.roomState = RoomState.END;
+            }
+        }
+
+        if(this.roomStateConfig.roomState == RoomState.END){
+            for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+                this.gameTimeStructs[sideType].end(timeStamp);
+            }
+
+            this.roomStateConfig.chessGameState = this.chessEngine.getGameState();
+            this.roomStateConfig.timeStamps.push(timeStamp);
+
+
+            for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+                let playerId = <number>this.roomStateConfig.sideTypeMap[sideType];
+
+                let onRoomTimeOutBroadcastMsg : OnRoomTimeOutBroadcastMessage = new OnRoomTimeOutBroadcastMessage(this.roomStateConfig.chessGameState, timeStamp);
+
+                this.roomServer.emitMessage(playerId, null, onRoomTimeOutBroadcastMsg);
+            }
+        }
+
+
+
+    }
 }

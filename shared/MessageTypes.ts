@@ -1,6 +1,8 @@
 import {Schema, Validator, ValidatorResult} from "jsonschema";
 import {GameTimeType} from "../shared/gameTime/GameTimeType";
 import {SideType} from "./engine/SideType";
+import {RoomState} from "../server/RoomState";
+import {ChessGameStateEnum} from "./engine/ChessGameStateEnum";
 
 
 export enum MessageType {
@@ -17,7 +19,9 @@ export enum MessageType {
     OpRoomJoin = "OpRoomJoin",
     OnRoomJoin = "OnRoomJoin",
     OnRoomJoinBroadcast = "OnRoomJoinBroadcast",
-}
+
+    OnRoomTimeOutBroadcast = "OnRoomTimeOutBroadcast",
+};
 
 export enum ErrorCode {
     SUCCESS = 0,
@@ -30,7 +34,10 @@ export enum ErrorCode {
     DO_MOVE_NOT_IN_ROOM = 21,
     DO_MOVE_NOT_MOVE_TURN = 22,
     DO_MOVE_INVALID_SAN_MOVE = 23,
-}
+};
+
+
+
 
 
 
@@ -157,11 +164,14 @@ let validator : Validator;
                 "sideTypeMap" : {
                     "type" : "object",
                 },
-                "isWaiting" : {
-                    "type" : "boolean"
+                "roomState" : {
+                    "type" : "number"
                 },
+                "chessGameState" : {
+                    "type" : "number"
+                }
             },
-            "required" : ["currentFenStr", "sanMoves", "timeStamps", "sideTypeMap", "isWaiting"]
+            "required" : ["currentFenStr", "sanMoves", "timeStamps", "sideTypeMap", "roomState", "chessGameState"]
         };
         validator.addSchema(roomStateConfig, "/RoomStateConfig");
     }
@@ -215,6 +225,16 @@ export class RoomInitConfig {
 export class RoomStateConfig {
     public sideTypeMap : { [key : number] : number};
 
+
+    public currentFenStr : string;
+
+    public sanMoves : string[];
+    public timeStamps : number[];
+
+
+    public roomState : RoomState;
+    public chessGameState : ChessGameStateEnum;
+
     //Helper functions to deal with sideTypes
     public getSideTypeForPlayerId(playerId : number):SideType|undefined{
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
@@ -263,13 +283,7 @@ export class RoomStateConfig {
     }
 
 
-    public currentFenStr : string;
 
-    public sanMoves : string[];
-    public timeStamps : number[];
-
-
-    public isWaiting : boolean;
 
     constructor(){
         this.sideTypeMap = {};
@@ -280,8 +294,8 @@ export class RoomStateConfig {
         this.sanMoves = [];
         this.timeStamps = [];
 
-
-        this.isWaiting = true;
+        this.roomState = RoomState.START;
+        this.chessGameState = ChessGameStateEnum.NORMAL;
 
     }
 
@@ -316,7 +330,8 @@ export class RoomStateConfig {
 
         roomStateConfig.sideTypeMap = json.sideTypeMap;
 
-        roomStateConfig.isWaiting = json.isWaiting;
+        roomStateConfig.roomState = json.roomState;
+        roomStateConfig.chessGameState = json.chessGameState;
 
         return roomStateConfig;
     }
@@ -1040,6 +1055,65 @@ export class OnRoomMakeMoveBroadcastMessage extends ServerClientMessage {
         let onRoomMakeMoveBroadcastMsg : OnRoomMakeMoveBroadcastMessage = new OnRoomMakeMoveBroadcastMessage(json.roomId, json.sanMove);
         onRoomMakeMoveBroadcastMsg.superCreateFromJson(json);
         return onRoomMakeMoveBroadcastMsg;
+    }
+}
+export class OnRoomTimeOutBroadcastMessage extends ServerClientMessage {
+    private chessGameState : ChessGameStateEnum;
+    private endTimeStamp : number;
+
+    constructor(chessGameState : ChessGameStateEnum, endTimeStamp : number){
+        super(MessageType.OnRoomTimeOutBroadcast)
+
+        this.chessGameState = this.chessGameState;
+        this.endTimeStamp = endTimeStamp;
+    }
+
+    public static validateSchema(json : any):boolean{
+        let schema : Schema = {
+            "id" : "/OnRoomTimeOutBroadcastMessage",
+            "type" : "object",
+            "properties" : {
+                "chessGameState" : {
+                    "type" : "integer",
+                },
+                "endTimeStamp" : {
+                    "type" : "number",
+                }
+            },
+            "required" : ["chessGameState", "endTimeStamp"],
+            "$ref": "/ServerClientMessage"
+        };
+
+        let validatorResult : ValidatorResult = validator.validate(json, schema);
+        if(!validatorResult.valid){
+            console.log(validatorResult);
+            console.log(validatorResult.valid);
+            return false;
+        }
+
+        return true;
+    }
+
+    public static createFromString(str : string):OnRoomTimeOutBroadcastMessage | null {
+        let json;
+        try {
+            json = JSON.parse(str);
+        } catch (e) {
+            return null;
+        }
+
+        return this.createFromJson(json);
+    }
+    public static createFromJson(json : any):OnRoomTimeOutBroadcastMessage | null {
+        if(!OnRoomTimeOutBroadcastMessage.validateSchema(json)){
+            return null;
+        }
+
+        let chessGameState = json.chessGameState;
+        let endTimeStamp = json.endTimeStamp;
+        let onRoomTimeOutBroacastMsg : OnRoomTimeOutBroadcastMessage = new OnRoomTimeOutBroadcastMessage(chessGameState, endTimeStamp);
+
+        return onRoomTimeOutBroacastMsg;
     }
 }
 
