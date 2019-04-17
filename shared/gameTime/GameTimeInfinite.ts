@@ -1,6 +1,7 @@
 import {GameTimeAbstract} from "./GameTimeAbstract"
 import {GameTimeType} from "./GameTimeType";
 import {SideType} from "../engine/SideType";
+import {GameTimeManager} from "./GameTimeManager";
 
 
 export class GameTimeInfinite extends GameTimeAbstract {
@@ -13,8 +14,8 @@ export class GameTimeInfinite extends GameTimeAbstract {
         //return Number.MAX_VALUE;
     }
 
-    constructor(){
-        super();
+    constructor(gameTimeManager : GameTimeManager){
+        super(gameTimeManager);
     }
 
 }

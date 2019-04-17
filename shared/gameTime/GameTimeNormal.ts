@@ -1,6 +1,7 @@
 import {GameTimeAbstract} from "./GameTimeAbstract"
 import {GameTimeType} from "./GameTimeType";
 import {SideType} from "../engine/SideType";
+import {GameTimeManager} from "./GameTimeManager";
 
 
 export class GameTimeNormal extends GameTimeAbstract {
@@ -14,13 +15,15 @@ export class GameTimeNormal extends GameTimeAbstract {
     public getCurrentTime(sideType : SideType, timeStamp : number):number{
         let ret = this.totalTime;
 
+
+        let timeStamps = this.gameTimeManager.getTimeStamps();
         if(sideType == SideType.WHITE){
-            for(let i = 1; i < this.timeStamps.length; i += 2){
-                ret += this.timeStamps[i - 1] - this.timeStamps[i] + this.incrTime;
+            for(let i = 1; i < timeStamps.length; i += 2){
+                ret += timeStamps[i - 1] - timeStamps[i] + this.incrTime;
             }
         }else if(sideType == SideType.BLACK){
-            for(let i = 0; i < this.timeStamps.length; i += 2){
-                ret += this.timeStamps[i - 1] - this.timeStamps[i] + this.incrTime;
+            for(let i = 0; i < timeStamps.length; i += 2){
+                ret += timeStamps[i - 1] - timeStamps[i] + this.incrTime;
             }
         }
 
@@ -28,8 +31,9 @@ export class GameTimeNormal extends GameTimeAbstract {
     }
 
 
-    constructor(totalTime : number, incrTime : number){
-        super();
+    constructor(gameTimeManager : GameTimeManager, totalTime : number, incrTime : number){
+        super(gameTimeManager);
+
         this.totalTime = totalTime;
         this.incrTime = incrTime;
     }

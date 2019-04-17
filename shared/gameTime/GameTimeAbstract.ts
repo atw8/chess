@@ -1,10 +1,8 @@
 import {SideType} from "../engine/SideType";
 import {GameTimeType} from "./GameTimeType";
+import {GameTimeManager} from "./GameTimeManager";
 
 export abstract class GameTimeAbstract {
-    protected timeStamps : number[];
-
-
     public abstract getGameTimeType():GameTimeType;
     public isLose(sideType : SideType, timeStamp : number):boolean{
         let currentTime = this.getCurrentTime(sideType, timeStamp);
@@ -13,32 +11,23 @@ export abstract class GameTimeAbstract {
     }
     public abstract getCurrentTime(sideType : SideType, timeStamp : number):number;
 
-    constructor(){
-        this.timeStamps = [];
-    }
 
+    protected gameTimeManager : GameTimeManager;
 
-    public getMoveTurn():SideType{
-        return this.timeStamps.length%2 == 1 ? SideType.WHITE : SideType.BLACK;
+    constructor(gameTimeManager : GameTimeManager){
+        this.gameTimeManager = gameTimeManager;
     }
 
 
 
-    public start(startTimeStamp : number){
-        this.timeStamps.push(startTimeStamp);
-    }
-    public end(endTimeStamp : number){
-        this.timeStamps.push(endTimeStamp);
-    }
+    public start(startTimeStamp : number){}
+    public end(endTimeStamp : number){}
 
-    public doMove(timeStamp : number){
-        this.timeStamps.push(timeStamp);
-    }
-    public undoMove(){
-        this.timeStamps.pop();
-    }
+    public doMove(timeStamp : number){}
+    public undoMove(){}
 
-    public setTimeStamps(timeStamps : number[]){
-        this.timeStamps = timeStamps;
-    }
+    public setTimeStamps(timeStamps : number[]){}
+
+
+
 }
