@@ -116,3 +116,5 @@
 /server/RoomState.js.map
 /shared/engine/WinStateEnum.js
 /shared/engine/WinStateEnum.js.map
+/shared/DomainMapStruct.js.map
+/shared/DomainMapStruct.ts
