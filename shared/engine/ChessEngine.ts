@@ -22,20 +22,20 @@ interface PromotionStruct {
 export class ChessEngine extends  AbstractEngine {
     private initParam : {isChess960 : boolean, beginFenStr : string};
 
-    private captureFairy:{ [key : number] : { [key:number] : Fairy}};
-    private normalFairy : { [ key : number] : { [key : number] : Fairy}};
-    private pawn2MoveFairy : { [key : number] : Fairy};
+    private captureFairy:{ [key in SideType] : { [key in PieceType] : Fairy}};
+    private normalFairy : { [key in SideType] : { [key in PieceType] : Fairy}};
+    private pawn2MoveFairy : { [key in SideType] : Fairy};
 
     private moveTurn : SideType;
 
     private halfMoveClockVector : number[];
     private moveNumber : number;
 
-    private fenStrKingOriginFileNumber : { [key : number] : number | null}; //key is the sideType
-    private fenStrRookOriginFileNumber : { [key : number] : { [key : number] : number | null} }; //key is the sideType, castleType
+    private fenStrKingOriginFileNumber : { [key in SideType] : number | null}; //key is the sideType
+    private fenStrRookOriginFileNumber : { [key in SideType] : { [key in CastleType] : number | null} }; //key is the sideType, castleType
 
 
-    private fenStrCastling : { [key : number] : { [key : number] : boolean} };
+    private fenStrCastling : { [key in SideType] : { [key in CastleType] : boolean} };
     private enPassantSquare : FileRank | null;
 
     private fenStrings : string[];
@@ -47,10 +47,10 @@ export class ChessEngine extends  AbstractEngine {
 
 
     private m_gameState : ChessGameStateEnum;
-    private m_isLooseTime : { [key : number] : boolean} = {};
-    private m_isResign : { [key : number] : boolean} = {};
-    private m_isForfeit : { [key : number] : boolean} = {};
-    private m_askForDraw : { [key : number] : boolean} = {};
+    public m_isLoseByTime : { [key in SideType] : boolean};
+    public m_isResign : { [key in SideType] : boolean};
+    public m_isForfeit : { [key in SideType] : boolean};
+    public m_askForDraw : { [key in SideType] : boolean};
 
 
     public static getNumOfFiles():number{
@@ -60,9 +60,7 @@ export class ChessEngine extends  AbstractEngine {
         return 8;
     }
     public static getHashForFileRank(fileRank: FileRank): number {
-        let hash = (fileRank.y - 1) * ChessEngine.getNumOfFiles() + (fileRank.x - 1);
-
-        return hash;
+        return (fileRank.y - 1) * ChessEngine.getNumOfFiles() + (fileRank.x - 1);
     }
     public static getFileRankForHash(hash: number): FileRank {
         let fileNumber = (hash % ChessEngine.getNumOfFiles());
@@ -79,11 +77,6 @@ export class ChessEngine extends  AbstractEngine {
     constructor(initParam ?: {isChess960 ?: boolean, beginFenStr ?: string}){
         super(ChessEngine.getNumOfFiles(), ChessEngine.getNumOfRanks(),[PieceType.PAWN, PieceType.KNIGHT, PieceType.BISHOP, PieceType.ROOK, PieceType.QUEEN, PieceType.KING], [SideType.WHITE, SideType.BLACK]);
 
-        this.captureFairy = {};
-        this.normalFairy = {};
-
-        this.pawn2MoveFairy = {};
-
         this.initGlobal();
         this.init(initParam);
     }
@@ -91,13 +84,18 @@ export class ChessEngine extends  AbstractEngine {
 
 
     public initGlobal(){
-
+        // @ts-ignore
         this.captureFairy = {};
+        // @ts-ignore
         this.captureFairy[SideType.WHITE] = {};
+        // @ts-ignore
         this.captureFairy[SideType.BLACK] = {};
 
+        // @ts-ignore
         this.normalFairy = {};
+        // @ts-ignore
         this.normalFairy[SideType.WHITE] = {};
+        // @ts-ignore
         this.normalFairy[SideType.BLACK] = {};
 
         //IMPLEMENT THE PAWN FAIRY
@@ -220,6 +218,7 @@ export class ChessEngine extends  AbstractEngine {
 
         //IMPLEMENT THE PAWN MOVE BY TWO FAIRY
         {
+            // @ts-ignore
             this.pawn2MoveFairy = {};
 
             let whiteFairyStupid = new FairyStupid();
@@ -269,17 +268,23 @@ export class ChessEngine extends  AbstractEngine {
 
         this.moveNumber = 1;
 
+        // @ts-ignore
         this.fenStrCastling = {};
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            // @ts-ignore
             this.fenStrCastling[sideType] = {};
             for(let castleType = CastleType.FIRST_CASTLE; castleType <= CastleType.LAST_CASTLE; castleType++){
                 this.fenStrCastling[sideType][castleType] = false;
             }
         }
+
+        // @ts-ignore
         this.fenStrKingOriginFileNumber = {};
+        // @ts-ignore
         this.fenStrRookOriginFileNumber = {};
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
             this.fenStrKingOriginFileNumber[sideType] = null;
+            // @ts-ignore
             this.fenStrRookOriginFileNumber[sideType] = {};
             for(let castleType = CastleType.FIRST_CASTLE; castleType <= CastleType.LAST_CASTLE; castleType++){
                 this.fenStrRookOriginFileNumber[sideType][castleType] = null;
@@ -475,7 +480,7 @@ export class ChessEngine extends  AbstractEngine {
 
                 let sideType : SideType = c.toLowerCase() == c ? SideType.WHITE : SideType.BLACK;
 
-                let fenStrKingOriginFileNumber = this.fenStrKingOriginFileNumber[sideType]
+                let fenStrKingOriginFileNumber = this.fenStrKingOriginFileNumber[sideType];
 
                 if(fenStrKingOriginFileNumber == null){
                     continue;
@@ -556,21 +561,23 @@ export class ChessEngine extends  AbstractEngine {
 
         console.debug(this.getFenStrFromCurrentBoard());
 
-        this.m_isLooseTime = {};
-        this.setIsLooseByTime(SideType.WHITE, false);
-        this.setIsLooseByTime(SideType.BLACK, false);
-
+        // @ts-ignore
+        this.m_isLoseByTime = {};
+        // @ts-ignore
         this.m_isResign = {};
-        this.setIsResign(SideType.WHITE, false);
-        this.setIsResign(SideType.BLACK, false);
-
+        // @ts-ignore
         this.m_isForfeit = {};
-        this.setIsForfeit(SideType.WHITE, false);
-        this.setIsForfeit(SideType.BLACK, false);
-
+        // @ts-ignore
         this.m_askForDraw = {};
-        this.setIsAskForDraw(SideType.WHITE, false);
-        this.setIsAskForDraw(SideType.BLACK, false);
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            this.m_isLoseByTime[sideType] = false;
+            this.m_isResign[sideType] = false;
+            this.m_isForfeit[sideType] = false;
+            this.m_askForDraw[sideType] = false;
+        }
+
+
+
 
 
         this.m_gameState = ChessGameStateEnum.NORMAL;
@@ -783,7 +790,7 @@ export class ChessEngine extends  AbstractEngine {
 
 
     public isLastMoveTwoPawnMove():{ "isTwoPawnMove" : boolean, "enPassantSquare" : FileRank | null}{
-        let ret : { "isTwoPawnMove" : boolean, "enPassantSquare" : FileRank | null}  = { "isTwoPawnMove" : false, "enPassantSquare" : null};;
+        let ret : { "isTwoPawnMove" : boolean, "enPassantSquare" : FileRank | null}  = { "isTwoPawnMove" : false, "enPassantSquare" : null};
 
         if(this.moveClasses.length === 0){
             ret["isTwoPawnMove"] = false;
@@ -1077,30 +1084,45 @@ export class ChessEngine extends  AbstractEngine {
         return this.m_isForfeit[sideType];
     }
     public setIsForfeit(sideType : SideType, isForfeit : boolean){
+        if(this.m_isForfeit[sideType] == isForfeit){
+            return;
+        }
+
         this.m_isForfeit[sideType] = isForfeit;
+        this.updateGameState();
     }
 
-    public getIsLooseByTime(sideType : SideType) : boolean{
-        return this.m_isLooseTime[sideType];
+    public getIsLoseByTime(sideType : SideType) : boolean{
+        return this.m_isLoseByTime[sideType];
     }
-    public setIsLooseByTime(sideType : SideType, isLoose : boolean){
-        this.m_isLooseTime[sideType] = isLoose;
+    public setIsLoseByTime(sideType : SideType, isLose : boolean){
+        if(this.m_isLoseByTime[sideType] == isLose){
+            return;
+        }
+        this.m_isLoseByTime[sideType] = isLose;
+        this.updateGameState();
     }
-
 
     public getIsResign(sideType : SideType) : boolean{
         return this.m_isResign[sideType];
     }
     public setIsResign(sideType : SideType, isResign : boolean){
+        if(this.m_isResign[sideType] == isResign){
+            return;
+        }
         this.m_isResign[sideType] = isResign;
+        this.updateGameState();
     }
-
 
     public getIsAskForDraw(sideType : SideType) : boolean{
         return this.m_askForDraw[sideType];
     }
     public setIsAskForDraw(sideType : SideType, isAskForDraw : boolean){
+        if(this.m_askForDraw[sideType] == isAskForDraw){
+            return;
+        }
         this.m_askForDraw[sideType] = isAskForDraw;
+        this.updateGameState();
     }
 
 
@@ -1141,9 +1163,9 @@ export class ChessEngine extends  AbstractEngine {
             }
         }else if(this.isDrawByInsufficientMaterial()){
             this.m_gameState = ChessGameStateEnum.DRAW_INSUFFICIENT_MATERIAL;
-        }else if(this.getIsLooseByTime(SideType.WHITE)){
+        }else if(this.getIsLoseByTime(SideType.WHITE)){
             this.m_gameState = ChessGameStateEnum.BLACK_WIN_TIME;
-        }else if(this.getIsLooseByTime(SideType.BLACK)){
+        }else if(this.getIsLoseByTime(SideType.BLACK)){
             this.m_gameState = ChessGameStateEnum.WHITE_WIN_TIME;
         }else if(this.getIsResign(SideType.WHITE)){
             this.m_gameState = ChessGameStateEnum.BLACK_WIN_RESIGN;
@@ -1499,8 +1521,6 @@ export class ChessEngine extends  AbstractEngine {
         return false;
     }
     public getAllLegalMoves(destFileRank : FileRank | null, isCheckGameState : boolean) : MoveClass[]{
-        let moveTurn = this.getMoveTurn();
-
         let ret : MoveClass[] = [];
 
         let sideType = this.getMoveTurn();
