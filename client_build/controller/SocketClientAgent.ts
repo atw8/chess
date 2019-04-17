@@ -1,22 +1,21 @@
 import Socket = require("socket.io-client");
-
 import {
     ClientServerMessage,
-    MessageType,
-    OnRoomGetListMessage,
-    OnUserLoginGuestMessage,
-    OpRoomGetListMessage,
-    OpUserLoginGuestMessage,
-    ServerClientMessage,
     ErrorCode,
-    OpRoomJoinMessage,
-    OnRoomJoinMessage,
+    MessageType,
     OnRoomJoinBroadcastMessage,
-    OnRoomMakeMoveMessage,
-    OpRoomMakeMoveMessage,
+    OnRoomJoinMessage,
     OnRoomMakeMoveBroadcastMessage,
+    OnRoomMakeMoveMessage,
+    OnRoomTimeOutBroadcastMessage,
+    OnUserLoginGuestMessage,
+    OpRoomJoinMessage,
+    OpRoomMakeMoveMessage,
+    OpUserLoginGuestMessage,
+    RoomInitConfig,
+    RoomStateConfig,
+    ServerClientMessage,
 } from "./../../shared/MessageTypes";
-
 
 
 import {SocketClientInterface} from "./SocketClientInterface";
@@ -25,11 +24,6 @@ import {LocalStorageManager} from "../LocalStorageManager";
 
 export class SocketClientAgent {
     private socket : SocketIOClient.Socket;
-
-    private playerId : number;
-    public getPlayerId():number{
-        return this.playerId;
-    }
 
     private requestId : number;
 
@@ -44,8 +38,28 @@ export class SocketClientAgent {
 
 
 
+
+    private playerId : number;
+    public getPlayerId():number{
+        return this.playerId;
+    }
+
+
+
+    private roomInitConfigs : { [key : number] : RoomInitConfig } = {};
+    private roomStateConfigs : { [key : number] : RoomStateConfig } = {};
+
+    public getRoomInitConfig(roomId : number):RoomInitConfig{
+        return this.roomInitConfigs[roomId];
+    }
+    public getRoomStateConfig(roomId : number):RoomStateConfig{
+        return this.roomStateConfigs[roomId];
+    }
+
     constructor(socketClientInterface : SocketClientInterface){
         console.log("SocketClientAgent.constructor");
+
+        this.roomInitConfigs = {};
 
         this.socketClientInterface = socketClientInterface;
 
@@ -60,6 +74,7 @@ export class SocketClientAgent {
         this.maxTimeDiff = null;
 
         this.socket = Socket();
+
         this.socket.on("connect", this.OnConnect.bind(this));
         this.socket.on("disconnect", this.OnDisconnect.bind(this));
 
@@ -72,7 +87,7 @@ export class SocketClientAgent {
         this.socket.on(MessageType.OnRoomMakeMove, this.OnRoomMakeMove.bind(this));
         this.socket.on(MessageType.OnRoomMakeMoveBroadcast, this.OnRoomMakeMoveBroadcast.bind(this));
 
-
+        this.socket.on(MessageType.OnRoomTimeOutBroadcast, this.OnRoomTimeOutBroadcast.bind(this));
     }
 
 
@@ -80,6 +95,7 @@ export class SocketClientAgent {
         console.debug("onConnect");
 
         this.socketClientInterface.OnConnect();
+
 
         this.OpLoginGuest(LocalStorageManager.getGuestToken());
     }
@@ -157,11 +173,13 @@ export class SocketClientAgent {
 
     //Related OpLoginGuest
     public OpLoginGuest(token ?: string){
+        console.debug("OpLoginGuest ", token);
         let opLoginGuestMessage : OpUserLoginGuestMessage = new OpUserLoginGuestMessage(token);
 
         this.emitClientServerMessage(opLoginGuestMessage);
     }
     public OnLoginGuest(message : string){
+        console.debug("OnLoginGuest ", message);
         let onLoginGuestMessage : OnUserLoginGuestMessage | null = OnUserLoginGuestMessage.createFromString(message);
         if(onLoginGuestMessage == null){
             return;
@@ -184,11 +202,14 @@ export class SocketClientAgent {
 
 
     public OpGetRoomList(){
+        /*
         let opGetRoomListMessage : OpRoomGetListMessage = new OpRoomGetListMessage();
 
         this.emitClientServerMessage(opGetRoomListMessage);
+        */
     }
     public OnGetRoomList(message : string){
+        /*
         let onGetRoomListMessage : OnRoomGetListMessage | null = OnRoomGetListMessage.createFromString(message);
         if(onGetRoomListMessage == null){
             return;
@@ -198,15 +219,18 @@ export class SocketClientAgent {
         this.updateLatencyTimeDiff(onGetRoomListMessage);
 
         this.socketClientInterface.OnRoomGetList(onGetRoomListMessage);
+        */
     }
 
 
     public OpRoomJoin(roomId ?: number){
+        console.debug("OpRoomJoin ", roomId);
         let opRoomJoinMsg : OpRoomJoinMessage  = new OpRoomJoinMessage(roomId);
 
         this.emitClientServerMessage(opRoomJoinMsg);
     }
     public OnRoomJoin(message : string) {
+        console.debug("OnRoomJoin ", message);
         let onRoomJoinMsg: OnRoomJoinMessage | null = OnRoomJoinMessage.createFromString(message);
         if(onRoomJoinMsg == null){
             return;
@@ -214,25 +238,46 @@ export class SocketClientAgent {
 
         this.updateLatencyTimeDiff(onRoomJoinMsg);
 
+        if(onRoomJoinMsg.getErrorCode() == ErrorCode.SUCCESS || onRoomJoinMsg.getErrorCode() == ErrorCode.JOIN_ROOM_ALREADY_IN_ROOM){
+            let roomId = <number>onRoomJoinMsg.roomId;
+
+            this.roomInitConfigs[roomId] = <RoomInitConfig>onRoomJoinMsg.roomInitConfig;
+            this.roomStateConfigs[roomId] = <RoomStateConfig>onRoomJoinMsg.roomStateConfig;
+        }
+
         this.socketClientInterface.OnRoomJoin(onRoomJoinMsg);
     }
     public OnRoomJoinBroadcast(message : string){
+        console.debug("OnRoomJoinBroadcast ", message);
         let onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage | null = OnRoomJoinBroadcastMessage.createFromString(message);
         if(onRoomJoinBroadcastMsg == null){
             return;
         }
 
+
+        if(onRoomJoinBroadcastMsg.getErrorCode() == ErrorCode.SUCCESS){
+            let roomStateConfig = this.roomStateConfigs[onRoomJoinBroadcastMsg.roomId];
+
+            roomStateConfig.roomState = onRoomJoinBroadcastMsg.roomState;
+            roomStateConfig.sideTypeMap = onRoomJoinBroadcastMsg.sideTypeMap;
+
+            roomStateConfig.chessGameState = onRoomJoinBroadcastMsg.chessGameState;
+            roomStateConfig.roomState = onRoomJoinBroadcastMsg.roomState;
+            roomStateConfig.timeStamps.push(onRoomJoinBroadcastMsg.beginTimeStamp);
+        }
         this.socketClientInterface.OnRoomJoinBroadcast(onRoomJoinBroadcastMsg);
     }
 
 
 
     public OpRoomMakeMove(roomId : number, sanMove : string){
+        console.debug("OpRoomMakeMove ", roomId, " ", sanMove);
         let opRoomMakeMoveMsg : OpRoomMakeMoveMessage = new OpRoomMakeMoveMessage(roomId, sanMove);
 
         this.emitClientServerMessage(opRoomMakeMoveMsg);
     }
     public OnRoomMakeMove(message : string){
+        console.debug("OnRoomMakeMove ", message);
         let onRoomMakeMoveMsg: OnRoomMakeMoveMessage | null = OnRoomMakeMoveMessage.createFromString(message);
         if(onRoomMakeMoveMsg == null){
             return;
@@ -240,17 +285,64 @@ export class SocketClientAgent {
 
         this.updateLatencyTimeDiff(onRoomMakeMoveMsg);
 
+        if(onRoomMakeMoveMsg.getErrorCode() == ErrorCode.SUCCESS){
+            let roomStateConfig = this.roomStateConfigs[onRoomMakeMoveMsg.roomId];
+
+            roomStateConfig.sanMoves.push(onRoomMakeMoveMsg.sanMove);
+            roomStateConfig.timeStamps.push(onRoomMakeMoveMsg.timeStamp);
+
+            if(onRoomMakeMoveMsg.roomState != undefined){
+                roomStateConfig.roomState = onRoomMakeMoveMsg.roomState;
+            }
+            if(onRoomMakeMoveMsg.chessGameState != undefined){
+                roomStateConfig.chessGameState = onRoomMakeMoveMsg.chessGameState;
+            }
+        }
         this.socketClientInterface.OnRoomMakeMove(onRoomMakeMoveMsg);
     }
     public OnRoomMakeMoveBroadcast(message : string){
+        console.debug("OnRoomMakeMoveBroadcast ", message);
         let onRoomMakeMoveBroadcastMsg : OnRoomMakeMoveBroadcastMessage | null = OnRoomMakeMoveBroadcastMessage.createFromString(message);
         if(onRoomMakeMoveBroadcastMsg == null){
             return;
         }
 
+        if(onRoomMakeMoveBroadcastMsg.getErrorCode() == ErrorCode.SUCCESS){
+            let roomStateConfig = this.roomStateConfigs[onRoomMakeMoveBroadcastMsg.roomId];
+
+            roomStateConfig.sanMoves.push(onRoomMakeMoveBroadcastMsg.sanMove);
+            roomStateConfig.timeStamps.push(onRoomMakeMoveBroadcastMsg.timeStamp);
+
+            if(onRoomMakeMoveBroadcastMsg.roomState != undefined){
+                roomStateConfig.roomState = onRoomMakeMoveBroadcastMsg.roomState;
+            }
+            if(onRoomMakeMoveBroadcastMsg.chessGameState != undefined){
+                roomStateConfig.chessGameState = onRoomMakeMoveBroadcastMsg.chessGameState;
+            }
+        }
+
+
         this.socketClientInterface.OnRoomMakeMoveBroadcast(onRoomMakeMoveBroadcastMsg);
     }
 
+
+    public OnRoomTimeOutBroadcast(message : string){
+        console.debug("OnRoomTimeOutBroadcast ", message);
+        let onRoomTimeOutBroadcastMsg : OnRoomTimeOutBroadcastMessage | null = OnRoomTimeOutBroadcastMessage.createFromString(message);
+        if(onRoomTimeOutBroadcastMsg == null){
+            return;
+        }
+
+        if(onRoomTimeOutBroadcastMsg.getErrorCode() == ErrorCode.SUCCESS){
+            let roomStateConfig = this.roomStateConfigs[onRoomTimeOutBroadcastMsg.roomId];
+
+            roomStateConfig.roomState = onRoomTimeOutBroadcastMsg.roomState;
+            roomStateConfig.chessGameState = onRoomTimeOutBroadcastMsg.chessGameState;
+            roomStateConfig.timeStamps.push(onRoomTimeOutBroadcastMsg.endTimeStamp);
+        }
+
+        this.socketClientInterface.OnRoomTimeOutBroadcast(onRoomTimeOutBroadcastMsg);
+    }
 
 
 }

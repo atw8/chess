@@ -1,7 +1,7 @@
 import {Schema, Validator, ValidatorResult} from "jsonschema";
 import {GameTimeType} from "../shared/gameTime/GameTimeType";
 import {SideType} from "./engine/SideType";
-import {RoomState} from "../server/RoomState";
+import {RoomStateEnum} from "../shared/RoomStateEnum";
 import {ChessGameStateEnum} from "./engine/ChessGameStateEnum";
 
 
@@ -34,6 +34,7 @@ export enum ErrorCode {
     DO_MOVE_NOT_IN_ROOM = 21,
     DO_MOVE_NOT_MOVE_TURN = 22,
     DO_MOVE_INVALID_SAN_MOVE = 23,
+    DO_MOVE_NOT_ACTIVE_GAME = 24,
 };
 
 
@@ -56,7 +57,27 @@ let validator : Validator;
         return input in ErrorCode;
     };
 
+    validator.customFormats.GameTimeType = function(input : number){
+        return input in GameTimeType;
+    };
 
+    validator.customFormats.ChessGameStateEnum = function(input : number){
+        return input in ChessGameStateEnum;
+    };
+
+    validator.customFormats.RoomStateEnum = function(input : number){
+        return input in RoomStateEnum;
+    };
+    validator.customFormats.SideTypeMap = function(input : any){
+        let ret : boolean = true;
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE && ret; sideType++){
+            if(!(sideType in input)){
+                ret = false;
+            }
+        }
+
+        return ret;
+    };
     {
         let clientServerSchema : Schema = {
             "id" : "/ClientServerMessage",
@@ -97,12 +118,14 @@ let validator : Validator;
         };
         validator.addSchema(serverClientSchema, "/ServerClientMessage");
 
+
         let gameTimeStructSchema : Schema = {
             "id" : "/GameTimeStruct",
             "type" : "object",
             "properties" : {
                 "timeType" : {
-                    "type" : "integer"
+                    "type" : "integer",
+                    "format" : "GameTimeType",
                 },
                 "totalTime" : {
                     "type" : "number"
@@ -127,7 +150,7 @@ let validator : Validator;
                 "gameTimeStructs" : {
                     "type" : "object",
                     "additionalProperties": {"$ref": "/GameTimeStruct"},
-                    "required" : ["1", "2"]
+                    "format" : "SideTypeMap"
                 },
 
                 "isChess960" : {
@@ -163,15 +186,33 @@ let validator : Validator;
                 },
                 "sideTypeMap" : {
                     "type" : "object",
+                    "additionalProperties": {"type" : "integer"},
                 },
                 "roomState" : {
-                    "type" : "number"
+                    "type" : "integer",
+                    "format" : "RoomStateEnum"
                 },
                 "chessGameState" : {
-                    "type" : "number"
+                    "type" : "integer",
+                    "format" : "ChessGameStateEnum"
+                },
+                "isResignMap" : {
+                    "type" : "object",
+                    "additionalProperties": {"type" : "boolean"},
+                    "format" : "SideTypeMap",
+                },
+                "askDrawMap" : {
+                    "type" : "object",
+                    "additionalProperties": {"type" : "boolean"},
+                    "format" : "SideTypeMap"
+                },
+                "isLoseByTimeMap" : {
+                    "type" : "object",
+                    "additionalProperties": {"type" : "boolean"},
+                    "format" : "SideTypeMap"
                 }
             },
-            "required" : ["currentFenStr", "sanMoves", "timeStamps", "sideTypeMap", "roomState", "chessGameState"]
+            "required" : ["currentFenStr", "sanMoves", "timeStamps", "sideTypeMap", "roomState", "chessGameState", "isResignMap", "askDrawMap", "isLoseByTimeMap"]
         };
         validator.addSchema(roomStateConfig, "/RoomStateConfig");
     }
@@ -181,7 +222,7 @@ let validator : Validator;
 export class RoomInitConfig {
     public roomId : number;
 
-    public gameTimeStructs : { [key : number] : {"timeType" : GameTimeType, "totalTime" ?: number, "incrTime" ?: number}};
+    public gameTimeStructs : { [key in SideType] : {"timeType" : GameTimeType, "totalTime" ?: number, "incrTime" ?: number}};
 
     public isChess960 ?: boolean;
     public beginFenStr ?: string;
@@ -223,7 +264,7 @@ export class RoomInitConfig {
 }
 
 export class RoomStateConfig {
-    public sideTypeMap : { [key : number] : number};
+    public sideTypeMap : { [key in SideType] ?: number};
 
 
     public currentFenStr : string;
@@ -231,56 +272,14 @@ export class RoomStateConfig {
     public sanMoves : string[];
     public timeStamps : number[];
 
+    public isResignMap : { [key in SideType] : boolean};
+    public askDrawMap : { [key in SideType] : boolean};
+    public isLoseByTimeMap : { [key in SideType] : boolean};
 
-    public roomState : RoomState;
+
+    public roomState : RoomStateEnum;
     public chessGameState : ChessGameStateEnum;
 
-    //Helper functions to deal with sideTypes
-    public getSideTypeForPlayerId(playerId : number):SideType|undefined{
-        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            if(this.sideTypeMap[sideType] == playerId){
-                return sideType;
-            }
-        }
-
-        return undefined;
-    }
-    public getPlayerIdForSideType(sideType : SideType):number{
-        return this.sideTypeMap[sideType];
-    }
-
-    public isSideTypeFree(sideType : SideType):boolean{
-        return !(sideType in this.sideTypeMap);
-    }
-    public getFreeSideTypes():SideType[]{
-        let ret : SideType[] = [];
-        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            if(this.isSideTypeFree(sideType)){
-                ret.push(sideType);
-            }
-        }
-
-        return ret;
-    }
-    public getNotFreSideTypes():SideType[]{
-        let ret : SideType[] = [];
-        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            if(!this.isSideTypeFree(sideType)){
-                ret.push(sideType);
-            }
-        }
-
-        return ret;
-    }
-    public hasFreeSideTypes():boolean{
-        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            if(this.isSideTypeFree(sideType)){
-                return true;
-            }
-        }
-
-        return false;
-    }
 
 
 
@@ -294,7 +293,7 @@ export class RoomStateConfig {
         this.sanMoves = [];
         this.timeStamps = [];
 
-        this.roomState = RoomState.START;
+        this.roomState = RoomStateEnum.START;
         this.chessGameState = ChessGameStateEnum.NORMAL;
 
     }
@@ -332,6 +331,11 @@ export class RoomStateConfig {
 
         roomStateConfig.roomState = json.roomState;
         roomStateConfig.chessGameState = json.chessGameState;
+
+
+        roomStateConfig.isLoseByTimeMap = json.isLoseByTimeMap;
+        roomStateConfig.askDrawMap = json.askDrawMap;
+        roomStateConfig.isResignMap = json.isResignMap;
 
         return roomStateConfig;
     }
@@ -607,6 +611,7 @@ export class OnUserLoginGuestMessage extends ServerClientMessage {
 //RELATED TO ROOM
 //Getting the list of rooms
 export class OpRoomGetListMessage extends ClientServerMessage {
+    /*
     public constructor(){
         super(MessageType.OpRoomGetList);
     }
@@ -635,8 +640,10 @@ export class OpRoomGetListMessage extends ClientServerMessage {
 
         return opGetRoomsListMessage;
     }
+    */
 }
 export class OnRoomGetListMessage extends ServerClientMessage {
+    /*
     public roomIds : number[];
 
     public constructor(roomIds : number[]){
@@ -692,6 +699,7 @@ export class OnRoomGetListMessage extends ServerClientMessage {
 
         return onGetRoomsListMessage;
     }
+    */
 }
 
 //Related to joining a room
@@ -827,8 +835,12 @@ export class OnRoomJoinMessage extends ServerClientMessage {
 }
 export class OnRoomJoinBroadcastMessage extends ServerClientMessage {
     public roomId : number;
-    public roomInitConfig : RoomInitConfig;
-    public roomStateConfig : RoomStateConfig;
+
+    public sideTypeMap : { [key in SideType] ?: number};
+    public beginTimeStamp : number;
+    public chessGameState : ChessGameStateEnum;
+    public roomState : RoomStateEnum;
+
 
     constructor(roomId : number){
         super(MessageType.OnRoomJoinBroadcast);
@@ -843,16 +855,23 @@ export class OnRoomJoinBroadcastMessage extends ServerClientMessage {
                 "roomId" : {
                     "type" : "integer",
                 },
-                "roomInitConfig" : {
+                "sideTypeMap" : {
                     "type" : "object",
-                    "$ref" : "/RoomInitConfig"
+                    "additionalProperties" : {"type" : "integer"}
                 },
-                "roomStateConfig" : {
+                "beginTimeStamp" : {
+                    "type" : "integer"
+                },
+                "roomState" : {
                     "type" : "object",
-                    "$ref" : "/RoomStateConfig"
+                    "format" : "RoomStateEnum"
+                },
+                "chessGameState" : {
+                    "type" : "integer",
+                    "format" : "ChessGameStateEnum"
                 },
             },
-            "required" : ["roomId", "roomInitConfig", "roomStateConfig"],
+            "required" : ["roomId", "sideTypeMap", "beginTimeStamp", "chessGameState", "roomState"],
             "$ref": "/ServerClientMessage"
         };
 
@@ -884,8 +903,10 @@ export class OnRoomJoinBroadcastMessage extends ServerClientMessage {
 
         let onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage = new OnRoomJoinBroadcastMessage(json.roomId);
         onRoomJoinBroadcastMsg.superCreateFromJson(json);
-        onRoomJoinBroadcastMsg.roomInitConfig = <RoomInitConfig>RoomInitConfig.createFromJson(json.roomInitConfig);
-        onRoomJoinBroadcastMsg.roomStateConfig = <RoomStateConfig>RoomStateConfig.createFromJson(json.roomStateConfig);
+        onRoomJoinBroadcastMsg.sideTypeMap = json.sideTypeMap;
+        onRoomJoinBroadcastMsg.beginTimeStamp = json.beginTimeStamp;
+        onRoomJoinBroadcastMsg.chessGameState = json.chessGameState;
+        onRoomJoinBroadcastMsg.roomState = json.roomState;
 
         return onRoomJoinBroadcastMsg;
     }
@@ -950,11 +971,16 @@ export class OpRoomMakeMoveMessage extends ClientServerMessage {
 export class OnRoomMakeMoveMessage extends ServerClientMessage {
     public roomId : number;
     public sanMove : string;
+    public moveTimeStamp : number;
 
-    constructor(roomId : number, sanMove : string){
+    public roomState ?: RoomStateEnum;
+    public chessGameState ?: ChessGameStateEnum;
+
+    constructor(roomId : number, sanMove : string, moveTimeStamp : number){
         super(MessageType.OnRoomMakeMove);
         this.roomId = roomId;
         this.sanMove = sanMove;
+        this.moveTimeStamp = moveTimeStamp;
     }
 
     public static validateSchema(json : any):boolean{
@@ -967,9 +993,20 @@ export class OnRoomMakeMoveMessage extends ServerClientMessage {
                 },
                 "sanMove" : {
                     "type" : "string",
+                },
+                "moveTimeStamp" : {
+                    "type" : "number"
+                },
+                "roomState" : {
+                    "type" : "number",
+                    "format" : "RoomStateEnum"
+                },
+                "chessGameState" : {
+                    "type" : "number",
+                    "format" : "ChessGameStateEnum"
                 }
             },
-            "required" : ["roomId", "sanMove"],
+            "required" : ["roomId", "sanMove", "timeStamp"],
             "$ref": "/ServerClientMessage"
         };
 
@@ -997,24 +1034,32 @@ export class OnRoomMakeMoveMessage extends ServerClientMessage {
             return null;
         }
 
-        let onRoomMakeMoveMessage : OnRoomMakeMoveMessage = new OnRoomMakeMoveMessage(json.roomId, json.sanMove);
+        let onRoomMakeMoveMessage : OnRoomMakeMoveMessage = new OnRoomMakeMoveMessage(json.roomId, json.sanMove, json.moveTimeStamp);
         onRoomMakeMoveMessage.superCreateFromJson(json);
+        onRoomMakeMoveMessage.roomState = json.roomState;
+        onRoomMakeMoveMessage.chessGameState = json.chessGameState;
+
         return onRoomMakeMoveMessage;
     }
 }
 export class OnRoomMakeMoveBroadcastMessage extends ServerClientMessage {
     public roomId : number;
     public sanMove : string;
+    public moveTimeStamp : number;
 
-    constructor(roomId : number, sanMove : string){
+    public roomState ?: RoomStateEnum;
+    public chessGameState ?: ChessGameStateEnum;
+
+    constructor(roomId : number, sanMove : string, moveTimeStamp : number){
         super(MessageType.OnRoomMakeMoveBroadcast);
         this.roomId = roomId;
         this.sanMove = sanMove;
+        this.moveTimeStamp = moveTimeStamp;
     }
 
     public static validateSchema(json : any):boolean{
         let schema : Schema = {
-            "id" : "/OnRoomMakeMoveBroadcastMessage",
+            "id" : "/OnRoomMakeMoveMessage",
             "type" : "object",
             "properties" : {
                 "roomId" : {
@@ -1022,9 +1067,20 @@ export class OnRoomMakeMoveBroadcastMessage extends ServerClientMessage {
                 },
                 "sanMove" : {
                     "type" : "string",
+                },
+                "moveTimeStamp" : {
+                    "type" : "number"
+                },
+                "roomState" : {
+                    "type" : "number",
+                    "format" : "RoomStateEnum"
+                },
+                "chessGameState" : {
+                    "type" : "number",
+                    "format" : "ChessGameStateEnum"
                 }
             },
-            "required" : ["roomId", "sanMove"],
+            "required" : ["roomId", "sanMove", "timeStamp"],
             "$ref": "/ServerClientMessage"
         };
 
@@ -1052,20 +1108,26 @@ export class OnRoomMakeMoveBroadcastMessage extends ServerClientMessage {
             return null;
         }
 
-        let onRoomMakeMoveBroadcastMsg : OnRoomMakeMoveBroadcastMessage = new OnRoomMakeMoveBroadcastMessage(json.roomId, json.sanMove);
+        let onRoomMakeMoveBroadcastMsg : OnRoomMakeMoveBroadcastMessage = new OnRoomMakeMoveBroadcastMessage(json.roomId, json.sanMove, json.moveTimeStamp);
         onRoomMakeMoveBroadcastMsg.superCreateFromJson(json);
         return onRoomMakeMoveBroadcastMsg;
     }
 }
 export class OnRoomTimeOutBroadcastMessage extends ServerClientMessage {
-    private chessGameState : ChessGameStateEnum;
-    private endTimeStamp : number;
+    public roomId : number;
+    public roomState : RoomStateEnum;
+    public chessGameState : ChessGameStateEnum;
+    public endTimeStamp : number;
+    public isLoseByTimeMap : { [key in SideType] : boolean};
 
-    constructor(chessGameState : ChessGameStateEnum, endTimeStamp : number){
-        super(MessageType.OnRoomTimeOutBroadcast)
+    constructor(roomId : number, roomState : RoomStateEnum, chessGameState : ChessGameStateEnum, endTimeStamp : number, isLoseByTimeMap : { [key in SideType] : boolean}){
+        super(MessageType.OnRoomTimeOutBroadcast);
 
+        this.roomId = roomId;
+        this.roomState = roomState;
         this.chessGameState = this.chessGameState;
         this.endTimeStamp = endTimeStamp;
+        this.isLoseByTimeMap = isLoseByTimeMap;
     }
 
     public static validateSchema(json : any):boolean{
@@ -1073,14 +1135,27 @@ export class OnRoomTimeOutBroadcastMessage extends ServerClientMessage {
             "id" : "/OnRoomTimeOutBroadcastMessage",
             "type" : "object",
             "properties" : {
+                "roomId" : {
+                    "type" : "integer"
+                },
+                "roomState" : {
+                    "type": "integer",
+                    "format" : "RoomStateEnum"
+                },
                 "chessGameState" : {
                     "type" : "integer",
+                    "format" : "ChessGameStateEnum"
                 },
                 "endTimeStamp" : {
                     "type" : "number",
+                },
+                "isLoseByTimeMap" : {
+                    "type" : "object",
+                    "additionalProperties": {"type" : "boolean"},
+                    "format" : "SideTypeMap"
                 }
             },
-            "required" : ["chessGameState", "endTimeStamp"],
+            "required" : ["roomId", "roomState", "chessGameState", "endTimeStamp", "isLoseByTimeMap"],
             "$ref": "/ServerClientMessage"
         };
 
@@ -1109,9 +1184,12 @@ export class OnRoomTimeOutBroadcastMessage extends ServerClientMessage {
             return null;
         }
 
+        let roomId = json.roomId;
+        let roomState = json.roomState;
         let chessGameState = json.chessGameState;
         let endTimeStamp = json.endTimeStamp;
-        let onRoomTimeOutBroacastMsg : OnRoomTimeOutBroadcastMessage = new OnRoomTimeOutBroadcastMessage(chessGameState, endTimeStamp);
+        let isLoseByTimeMap = json.isLoseByTimeMap;
+        let onRoomTimeOutBroacastMsg : OnRoomTimeOutBroadcastMessage = new OnRoomTimeOutBroadcastMessage(roomId, roomState, chessGameState, endTimeStamp, isLoseByTimeMap);
 
         return onRoomTimeOutBroacastMsg;
     }

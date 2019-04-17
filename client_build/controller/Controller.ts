@@ -6,9 +6,8 @@ import {
     OnRoomJoinBroadcastMessage,
     OnRoomMakeMoveBroadcastMessage,
     OnRoomMakeMoveMessage,
-    OnUserLoginGuestMessage,
-    RoomInitConfig,
-    RoomStateConfig
+    OnRoomTimeOutBroadcastMessage,
+    OnUserLoginGuestMessage
 } from "./../../shared/MessageTypes";
 
 import {SocketClientInterface} from "./SocketClientInterface";
@@ -20,23 +19,33 @@ import {OnRoomJoinMessage} from "../../shared/MessageTypes";
 import {MainLayer} from "../MainLayer";
 import {TouchLayer} from "../view/TouchLayer";
 import {SideType} from "../../shared/engine/SideType";
-import {GameTimeAbstract} from "../../shared/gameTime/GameTimeAbstract";
-import {GameTimeType} from "../../shared/gameTime/GameTimeType";
-import {GameTimeInfinite} from "../../shared/gameTime/GameTimeInfinite";
-import {GameTimeMove} from "../../shared/gameTime/GameTimeMove";
-import {GameTimeNormal} from "../../shared/gameTime/GameTimeNormal";
-import {RoomState} from "../../server/RoomState";
+
+import {RoomStateEnum} from "../../shared/RoomStateEnum";
+import {GameTimeManager} from "../../shared/gameTime/GameTimeManager";
+import {DomainMapStruct} from "../../shared/DomainMapStruct";
 
 
 export class Controller implements SocketClientInterface{
     private socketClientAgent : SocketClientAgent;
+
+    private roomId : number;
+
+    private uiBoardView : BoardView;
+    private uiMainLayer : MainLayer;
+    private chessEngine : ChessEngine;
+
+    private gameTimeManager : GameTimeManager;
+    private sideTypeMapStruct : DomainMapStruct<SideType, number>;
+
 
     private uiTouchLayer : TouchLayer;
 
     constructor(){
         this.socketClientAgent = new SocketClientAgent(this);
         this.chessEngine = new ChessEngine();
-        this.gameTimeStructs = {};
+
+        //this.gameTimeManager;
+
 
         this.uiTouchLayer = new TouchLayer(this);
         this.uiTouchLayer.setIsEnabled(false);
@@ -44,14 +53,6 @@ export class Controller implements SocketClientInterface{
         PIXI.ticker.shared.add(this.tick, this);
     }
 
-
-    private uiBoardView : BoardView;
-    private uiMainLayer : MainLayer;
-    private chessEngine : ChessEngine;
-    private gameTimeStructs : { [key : number] : GameTimeAbstract};
-
-    private roomStateConfig : RoomStateConfig;
-    private roomInitConfig : RoomInitConfig;
 
 
     public setParentView(uiMainLayer : MainLayer){
@@ -106,66 +107,70 @@ export class Controller implements SocketClientInterface{
     }
 
     public OnRoomJoin(onRoomJoinMsg : OnRoomJoinMessage){
-        if(onRoomJoinMsg.errorCode == ErrorCode.SUCCESS || onRoomJoinMsg.errorCode == ErrorCode.JOIN_ROOM_ALREADY_IN_ROOM){
-            this.roomInitConfig = <RoomInitConfig> onRoomJoinMsg.roomInitConfig;
-            this.roomStateConfig = <RoomStateConfig> onRoomJoinMsg.roomStateConfig;
+        if(!(onRoomJoinMsg.errorCode == ErrorCode.SUCCESS || onRoomJoinMsg.errorCode == ErrorCode.JOIN_ROOM_ALREADY_IN_ROOM)){
+            return;
+        }
+        this.roomId = <number>onRoomJoinMsg.roomId;
 
-            for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-                switch (this.roomInitConfig.gameTimeStructs[sideType].timeType) {
-                    case GameTimeType.INFINITE:
-                    {
-                        this.gameTimeStructs[sideType] = new GameTimeInfinite();
-                    }
-                        break;
-                    case GameTimeType.MOVE:
-                    {
-                        let totalTime = <number>this.roomInitConfig.gameTimeStructs[sideType].totalTime;
-                        this.gameTimeStructs[sideType] = new GameTimeMove(totalTime);
-                    }
-                        break;
-                    case GameTimeType.NORMAL:
-                    {
-                        let totalTime = <number>this.roomInitConfig.gameTimeStructs[sideType].totalTime;
-                        let incrTime = <number>this.roomInitConfig.gameTimeStructs[sideType].incrTime;
-                        this.gameTimeStructs[sideType] = new GameTimeNormal(totalTime, incrTime);
-                    }
-                        break;
-                }
-            }
+        let roomInitConfig = this.socketClientAgent.getRoomInitConfig(this.roomId);
+        let roomStateConfig = this.socketClientAgent.getRoomStateConfig(this.roomId);
 
-            this.chessEngine.init(this.roomInitConfig);
-            for(let i = 0; i < this.roomStateConfig.sanMoves.length; i++){
-                let sanMove = this.roomStateConfig.sanMoves[i];
-                this.chessEngine.doMoveSan(sanMove);
-            }
+        this.gameTimeManager = new GameTimeManager(roomInitConfig.gameTimeStructs);
 
-            this.uiBoardView.updateViewToModel(this.chessEngine);
+        this.sideTypeMapStruct = new DomainMapStruct<SideType, number>([SideType.WHITE, SideType.BLACK]);
+        this.sideTypeMapStruct.setDomainMap(roomStateConfig.sideTypeMap);
 
-
-            {
-                let timeStamp = this.socketClientAgent.getServerTimeStamp();
-                for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-                    this.uiMainLayer.setTime(sideType, this.gameTimeStructs[sideType].getCurrentTime(sideType, timeStamp));
-                }
-            }
-
-
-            let sideType = <SideType>this.roomStateConfig.getSideTypeForPlayerId(this.socketClientAgent.getPlayerId());
-            this.uiBoardView.setBoardFacing(sideType, false);
+        this.chessEngine.init(roomInitConfig);
+        for(let i = 0; i < roomStateConfig.sanMoves.length; i++){
+            let sanMove = roomStateConfig.sanMoves[i];
+            this.chessEngine.doMoveSan(sanMove);
+        }
+        for(let i = 0; i < roomStateConfig.timeStamps.length; i++){
+            let timeStamp = roomStateConfig.timeStamps[i];
+            this.gameTimeManager.doMove(timeStamp);
         }
 
+        {
+            let m_askDrawMap = roomStateConfig.askDrawMap;
+            let m_isLoseByTime = roomStateConfig.isLoseByTimeMap;
+            let m_isResignMap = roomStateConfig.isResignMap;
+
+            for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+                this.chessEngine.setIsAskForDraw(sideType, m_askDrawMap[sideType]);
+                this.chessEngine.setIsLoseByTime(sideType, m_isLoseByTime[sideType]);
+                this.chessEngine.setIsResign(sideType, m_isResignMap[sideType]);
+            }
+        }
+
+
+        this.uiBoardView.updateViewToModel(this.chessEngine);
+
+        {
+            let timeStamp = this.socketClientAgent.getServerTimeStamp();
+            for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+                this.uiMainLayer.setTime(sideType, this.gameTimeManager.getCurrentTime(sideType, timeStamp));
+            }
+        }
+
+
+
+
+        let mySideType = <SideType>this.sideTypeMapStruct.getKeyForValue(this.socketClientAgent.getPlayerId());
+
+        this.uiBoardView.setBoardFacing(mySideType, false);
         //this.gameTimeStructs[SideType.WHITE].start(this.socketClientAgent.getServerTimeStamp());
         //this.gameTimeStructs[SideType.BLACK].start(this.socketClientAgent.getServerTimeStamp());
 
         this.synchronizeIsWaiting();
     }
+
     public OnRoomJoinBroadcast(onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage){
-        this.roomStateConfig = <RoomStateConfig> onRoomJoinBroadcastMsg.roomStateConfig;
+        this.gameTimeManager.start(onRoomJoinBroadcastMsg.beginTimeStamp);
+        this.sideTypeMapStruct.setDomainMap(onRoomJoinBroadcastMsg.sideTypeMap);
+
 
         this.synchronizeIsWaiting();
     }
-
-
 
 
     public OnRoomMakeMove(onRoomMakeMoveMsg: OnRoomMakeMoveMessage): void {
@@ -173,15 +178,15 @@ export class Controller implements SocketClientInterface{
             return;
         }
 
-        this._OnRoomMakeMove(onRoomMakeMoveMsg.sanMove);
+        this._OnRoomMakeMove(onRoomMakeMoveMsg.sanMove, onRoomMakeMoveMsg.timeStamp);
     }
     public OnRoomMakeMoveBroadcast(onRoomMakeMoveBroadcastMsg: OnRoomMakeMoveBroadcastMessage): void {
         if(onRoomMakeMoveBroadcastMsg.errorCode != ErrorCode.SUCCESS){
             return;
         }
-        this._OnRoomMakeMove(onRoomMakeMoveBroadcastMsg.sanMove);
+        this._OnRoomMakeMove(onRoomMakeMoveBroadcastMsg.sanMove, onRoomMakeMoveBroadcastMsg.timeStamp);
     }
-    public _OnRoomMakeMove(sanMove : string){
+    public _OnRoomMakeMove(sanMove : string, timeStamp : number){
         let moveClass = this.chessEngine.getMoveClassForCurrentBoardAndSanMove(sanMove);
         if(moveClass == null){
             console.log("OnRoomMakeMove moveClass == null");
@@ -190,32 +195,54 @@ export class Controller implements SocketClientInterface{
         this.chessEngine.doMove(moveClass);
         this.uiBoardView.doMove(moveClass);
 
+        this.gameTimeManager.doMove(timeStamp);
+
+
+
         this.synchronizeIsWaiting();
     }
-    public synchronizeIsWaiting(){
-        this.uiMainLayer.setWaitingNodeVisible(this.roomStateConfig.roomState != RoomState.NORMAL);
 
-        if(this.roomStateConfig.roomState != RoomState.NORMAL){
+
+    public synchronizeIsWaiting(){
+        let roomStateConfig = this.socketClientAgent.getRoomStateConfig(this.roomId);
+        this.uiMainLayer.setWaitingNodeVisible(roomStateConfig.roomState != RoomStateEnum.NORMAL);
+
+        if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
             this.uiTouchLayer.setIsEnabled(false);
         }else {
-            let mySideType = this.roomStateConfig.getSideTypeForPlayerId(this.socketClientAgent.getPlayerId())
+            let mySideType = <SideType>this.sideTypeMapStruct.getKeyForValue(this.socketClientAgent.getPlayerId());
 
             this.uiTouchLayer.setIsEnabled(this.chessEngine.getMoveTurn() == mySideType);
         }
     }
 
-
-    public tick(dt : number):void{
-        if(this.roomStateConfig == undefined){
-            return;
-        }
-
-        if(this.roomStateConfig.roomState != RoomState.NORMAL){
-            return;
-        }
+    public OnRoomTimeOutBroadcast(onRoomTimeOutBroadcast : OnRoomTimeOutBroadcastMessage){
+        let roomStateConfig = this.socketClientAgent.getRoomStateConfig(this.roomId);
+        this.gameTimeManager.end(onRoomTimeOutBroadcast.endTimeStamp);
 
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            let currentTime = this.gameTimeStructs[sideType].getCurrentTime(sideType, this.socketClientAgent.getServerTimeStamp());
+            this.chessEngine.setIsLoseByTime(sideType, onRoomTimeOutBroadcast.isLoseByTimeMap[sideType]);
+        }
+
+
+        this.uiMainLayer.showWinNode(this.chessEngine.getGameState());
+    }
+
+
+    public tick(dt : number):void{
+        let roomStateConfig = this.socketClientAgent.getRoomStateConfig(this.roomId);
+
+        if(roomStateConfig == undefined){
+            return;
+        }
+
+        if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
+            return;
+        }
+
+
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            let currentTime = this.gameTimeManager.getCurrentTime(sideType, this.socketClientAgent.getServerTimeStamp());
             this.uiMainLayer.setTime(sideType, currentTime);
         }
         //console.log("tick ", dt);

@@ -2,7 +2,7 @@ import {
     OnRoomGetListMessage,
     OnRoomJoinMessage,
     OnUserLoginGuestMessage,
-    OnRoomMakeMoveMessage, OnRoomJoinBroadcastMessage, OnRoomMakeMoveBroadcastMessage
+    OnRoomMakeMoveMessage, OnRoomJoinBroadcastMessage, OnRoomMakeMoveBroadcastMessage, OnRoomTimeOutBroadcastMessage
 } from "../../shared/MessageTypes";
 
 export interface SocketClientInterface {
@@ -19,4 +19,6 @@ export interface SocketClientInterface {
 
     OnRoomMakeMove(onRoomMakeMoveMsg : OnRoomMakeMoveMessage):void;
     OnRoomMakeMoveBroadcast(onRoomMakeMoveBroadcastMsg : OnRoomMakeMoveBroadcastMessage):void;
+
+    OnRoomTimeOutBroadcast(onRoomTimeOutBroadcast : OnRoomTimeOutBroadcastMessage):void;
 }

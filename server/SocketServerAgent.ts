@@ -57,18 +57,20 @@ export class SocketServerAgent {
         }
     }
 
-    public emitMessage(socket : SocketIO.Socket | number, clientServerMessage : ClientServerMessage | null, serverClientMessage : ServerClientMessage){
+    public emitMessage(socket : SocketIO.Socket | number | undefined, clientServerMessage : ClientServerMessage | null, serverClientMessage : ServerClientMessage){
         serverClientMessage.setTimeStamp(Date.now());
         if(clientServerMessage != null){
             serverClientMessage.setRequestId(clientServerMessage.getRequestId());
         }
 
 
-        if(typeof socket == "number"){
-            socket = <SocketIO.Socket> this.playerIdSocketMap.get(socket);
+        if(typeof(socket) == "number"){
+            socket = this.playerIdSocketMap.get(socket);
         }
 
-        socket.emit(serverClientMessage.getMessageType(), JSON.stringify(serverClientMessage));
+        if(typeof(socket) != "undefined"){
+            socket.emit(serverClientMessage.getMessageType(), JSON.stringify(serverClientMessage));
+        }
     }
 
     public OpLoginGuest(socket : SocketIO.Socket, message : string){
@@ -94,6 +96,7 @@ export class SocketServerAgent {
     }
 
     public OpGetRoomList(socket : SocketIO.Socket, message : string){
+        /*
         console.log("SocketServerAgent.OpGetRoomList");
         let opGetRoomsListMessage : OpRoomGetListMessage | null = OpRoomGetListMessage.createFromString(message);
         if(opGetRoomsListMessage == null){
@@ -104,6 +107,7 @@ export class SocketServerAgent {
         let onGetRoomListMessage : OnRoomGetListMessage = new OnRoomGetListMessage([]);
         onGetRoomListMessage.roomIds = this.roomServer.getRoomIdList();
         this.emitMessage(socket, opGetRoomsListMessage, onGetRoomListMessage);
+        */
     }
 
     public OpJoinRoom(socket : SocketIO.Socket, message : string){
