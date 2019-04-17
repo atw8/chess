@@ -61,6 +61,8 @@ export class MainLayer extends PIXI.Container {
 
 
 
+
+        /*
         let chessGameStateSet : ChessGameStateEnum[] = [];
         chessGameStateSet.push(ChessGameStateEnum.DRAW_STALEMATE);
         chessGameStateSet.push(ChessGameStateEnum.DRAW_REPETITION);
@@ -97,11 +99,7 @@ export class MainLayer extends PIXI.Container {
             uiWinNode.position.set(SimpleGame.getWidth()/2, SimpleGame.getHeight()/2);
             this.addChild(uiWinNode);
         })
-
-
-
-
-
+        */
     }
 
     public showPromotePieceLayer(moveClasses : MoveClass[], callback : (moveClass : MoveClass) => void){
@@ -112,7 +110,6 @@ export class MainLayer extends PIXI.Container {
 
 
     public setWaitingNodeVisible(isVisible : boolean){
-        isVisible = false;
         this.uiWaitingNode.visible = isVisible;
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
             this.uiTimePanels[sideType].visible = !isVisible;
@@ -122,12 +119,9 @@ export class MainLayer extends PIXI.Container {
         this.uiTimePanels[sideType].setTime(timeMili);
     }
 
-    public showWinNode(chessGameState : ChessGameStateEnum, winStateEnum : WinStateEnum){
-        let uiWinNode = new WinNode(45, chessGameState, winStateEnum);
+    public showWinNode(chessGameState : ChessGameStateEnum){
+        let uiWinNode = new WinNode(45, chessGameState);
         uiWinNode.position.set(SimpleGame.getWidth()/2, SimpleGame.getHeight()/2);
         this.addChild(uiWinNode);
-    }
-    public showLoseNode(){
-
     }
 }

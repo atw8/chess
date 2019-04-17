@@ -33,23 +33,22 @@ export class RoomServer {
         let r = "roomId";
 
         this.roomConfigs = [];
-        let roomConfig1 : RoomInitConfig = {
-            roomId : 1,
-            gameTimeStructs : {}
-            //isChess960 : false,
-            //beginFenStr : "rnbqkb1r/ppp2ppp/5n2/1N1pN3/8/5P2/Pp2P1PP/R1BQKB1R b KQkq - 1 7"
-        };
-        roomConfig1.gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.MOVE, totalTime : 1 * 60 * 1000, incrTime : 0};
-        roomConfig1.gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.MOVE, totalTime : 1 * 60 * 1000, incrTime : 0};
 
-        let roomConfig2 : RoomInitConfig = {
-            roomId : 2,
-            gameTimeStructs : {},
-            isChess960 : true,
-        };
-        roomConfig2.gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.MOVE, totalTime : 1 * 45 * 1000, incrTime : 0};
-        roomConfig2.gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.MOVE, totalTime : 1 * 45 * 1000, incrTime : 0};
+        let roomConfig1 : RoomInitConfig = new RoomInitConfig();
+        roomConfig1.roomId = 1;
+        // @ts-ignore
+        roomConfig1.gameTimeStructs = {};
+        roomConfig1.gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.MOVE, totalTime : 1 * 6 * 1000, incrTime : 0};
+        roomConfig1.gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.MOVE, totalTime : 1 * 6 * 1000, incrTime : 0};
 
+
+        let roomConfig2 : RoomInitConfig = new RoomInitConfig();
+        roomConfig2.roomId = 2;
+        // @ts-ignore
+        roomConfig2.gameTimeStructs = {};
+        roomConfig2.gameTimeStructs[SideType.WHITE] =  {timeType : GameTimeType.MOVE, totalTime : 1 * 45 * 1000, incrTime : 0};
+        roomConfig2.gameTimeStructs[SideType.BLACK] =  {timeType : GameTimeType.MOVE, totalTime : 1 * 45 * 1000, incrTime : 0};
+        roomConfig2.isChess960 = true;
 
         this.roomConfigs.push(roomConfig1);
         this.roomConfigs.push(roomConfig2);
@@ -91,7 +90,7 @@ export class RoomServer {
     }
 
     public makeMove(playerId : number, opRoomMakeMoveMsg : OpRoomMakeMoveMessage):void{
-        let ret : OnRoomMakeMoveMessage = new OnRoomMakeMoveMessage(opRoomMakeMoveMsg.roomId, opRoomMakeMoveMsg.sanMove);
+        let ret : OnRoomMakeMoveMessage = new OnRoomMakeMoveMessage(opRoomMakeMoveMsg.roomId, opRoomMakeMoveMsg.sanMove, 0);
 
         let room : Room = this.roomsMap[ret.roomId];
         if(room == undefined){
