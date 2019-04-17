@@ -38,7 +38,7 @@ export class TimePanel extends PIXI.Graphics {
         this.uiText.anchor.set(0.0, 0.5);
         this.addChild(this.uiText);
 
-        this.setTime(60 * 1000);
+        this.setTime(6000 * 1000);
 
 
 
@@ -63,6 +63,9 @@ export class TimePanel extends PIXI.Graphics {
     public setTime(timeMilli : number){
         let text : string = "";
         if(isFinite(timeMilli)){
+            if(timeMilli < 0){
+                timeMilli = 0;
+            }
             let minutes = Math.floor(timeMilli / (60 * 1000));
             let seconds = Math.floor(timeMilli/1000) -  minutes * 60;
 
