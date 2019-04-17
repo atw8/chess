@@ -1,4 +1,6 @@
 export enum LanguageKey {
+    Waiting,
+
     Error,
 
     WhiteVictorious,
@@ -21,9 +23,9 @@ export enum LanguageKey {
     ThreefoldRepetition,
     Stalemate,
 
-    "OneZero",
-    "ZeroOne",
-    "HalfHalf",
+    OneZero,
+    ZeroOne,
+    HalfHalf,
 
 }
 
@@ -85,6 +87,9 @@ export namespace LanguageHelper {
                 break;
             case LanguageKey.HalfHalf:
                 ret = "\u00BD-\u00BD";
+                break;
+            case LanguageKey.Waiting:
+                ret = "Waiting";
                 break;
         }
 

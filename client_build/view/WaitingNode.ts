@@ -1,5 +1,6 @@
 import {SimpleGame} from "../app";
 import * as TWEEN from '@tweenjs/tween.js'
+import {LanguageHelper, LanguageKey} from "../LanguageHelper";
 
 export class WaitingNode extends PIXI.Container{
     private uiText : PIXI.Text;
@@ -51,14 +52,14 @@ export class WaitingNode extends PIXI.Container{
         let textStyleOptions : PIXI.TextStyleOptions = {};
         textStyleOptions.fontFamily = "Helvetica";
         textStyleOptions.fontSize = this.m_size;
-        this.uiText = new PIXI.Text("Waiting", textStyleOptions);
+        textStyleOptions.fontWeight = "bold";
+        this.uiText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.Waiting), textStyleOptions);
         this.uiText.anchor.set(0.5, 0.5);
         this.addChild(this.uiText);
 
 
 
         //Align all the graphics
-
         SimpleGame.arrangeHorizontally([this.uiBallsNode, this.m_size/2, this.uiText]);
 
 
