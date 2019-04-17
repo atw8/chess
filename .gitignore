@@ -112,9 +112,13 @@
 /client_build/LanguageHelper.js.map
 /client_build/view/WinNode.js
 /client_build/view/WinNode.js.map
-/server/RoomState.js
-/server/RoomState.js.map
+/server/RoomStateEnumEnum.js
+/server/RoomStateEnum.js.mapm.js.map
 /shared/engine/WinStateEnum.js
 /shared/engine/WinStateEnum.js.map
+/shared/DomainMapStruct.js
 /shared/DomainMapStruct.js.map
-/shared/DomainMapStruct.ts
+/shared/gameTime/GameTimeManager.js
+/shared/gameTime/GameTimeManager.js.map
+/shared/RoomStateEnum.js
+/shared/RoomStateEnum.js.map
