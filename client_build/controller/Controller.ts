@@ -11,6 +11,8 @@ import {
 } from "./../../shared/MessageTypes";
 
 import {SocketClientInterface} from "./SocketClientInterface";
+import {ControllerAbstract} from "./ControllerAbstract";
+
 import {BoardView} from "../view/BoardView";
 
 import {ChessEngine} from "../../shared/engine/ChessEngine";
@@ -23,9 +25,10 @@ import {SideType} from "../../shared/engine/SideType";
 import {RoomStateEnum} from "../../shared/RoomStateEnum";
 import {GameTimeManager} from "../../shared/gameTime/GameTimeManager";
 import {DomainMapStruct} from "../../shared/DomainMapStruct";
+import {ChessGameStateEnum} from "../../shared/engine/ChessGameStateEnum";
 
 
-export class Controller implements SocketClientInterface{
+export class Controller implements SocketClientInterface, ControllerAbstract{
     private socketClientAgent : SocketClientAgent;
 
     private roomId : number;
@@ -54,19 +57,16 @@ export class Controller implements SocketClientInterface{
     }
 
 
+    public setParentBoardView(uiParentView: MainLayer, uiBoardView: BoardView): void {
+        this.uiMainLayer = uiParentView;
 
-    public setParentView(uiMainLayer : MainLayer){
-        this.uiMainLayer = uiMainLayer;
-
-        this.synchronizeTouchLayer();
-    }
-    public setBoardView(uiBoardView : BoardView){
         this.uiBoardView = uiBoardView;
         this.uiBoardView.updateViewToModel(null);
 
         this.synchronizeTouchLayer();
-    }
 
+        this.synchronizeTouchLayer();
+    }
 
     public synchronizeTouchLayer(){
         if(this.uiMainLayer != undefined && this.uiBoardView != undefined){
@@ -198,8 +198,11 @@ export class Controller implements SocketClientInterface{
         this.gameTimeManager.doMove(timeStamp);
 
 
-
         this.synchronizeIsWaiting();
+
+        if(this.chessEngine.getGameState() != ChessGameStateEnum.NORMAL){
+            this.uiMainLayer.showWinNode(this.chessEngine.getGameState());
+        }
     }
 
 
@@ -207,10 +210,13 @@ export class Controller implements SocketClientInterface{
         let roomStateConfig = this.socketClientAgent.getRoomStateConfig(this.roomId);
         this.uiMainLayer.setWaitingNodeVisible(roomStateConfig.roomState != RoomStateEnum.NORMAL);
 
+
+
         if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
             this.uiTouchLayer.setIsEnabled(false);
         }else {
             let mySideType = <SideType>this.sideTypeMapStruct.getKeyForValue(this.socketClientAgent.getPlayerId());
+
 
             this.uiTouchLayer.setIsEnabled(this.chessEngine.getMoveTurn() == mySideType);
         }
