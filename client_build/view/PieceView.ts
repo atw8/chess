@@ -13,6 +13,13 @@ export class PieceView extends PIXI.Sprite {
     private sideType : SideType;
     private pieceType : PieceType;
 
+    public getSideType():SideType{
+        return this.sideType;
+    }
+    public getPieceType():PieceType{
+        return this.pieceType;
+    }
+
     private static getKeyForSideTypePieceType(sideType : SideType, pieceType : PieceType) : ImageTag{
         let key : ImageTag = ImageTag.null;
         switch(sideType){

@@ -21,8 +21,15 @@ export class ControllerTest implements ControllerAbstract{
         this.uiBoardView = uiBoardView;
         this.chessEngine = new ChessEngine();
 
-        this.chessEngine.init();
-        this.uiBoardView.updateViewToModel(this.chessEngine);
+
+        let startTimeStamp = Date.now();
+        for(let i = 0; i < 1000; i++){
+            this.chessEngine.init({"isChess960" : true});
+            this.uiBoardView.updateViewToModel(this.chessEngine);
+        }
+        let endTimeStamp = Date.now();
+
+        console.log(endTimeStamp - startTimeStamp);
 
 
         this.uiTouchLayer = new TouchLayer(this);

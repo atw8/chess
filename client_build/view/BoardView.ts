@@ -686,9 +686,20 @@ export class BoardView extends PIXI.Graphics {
         this.hideSelectLightSprite();
         this.hideOptionCycleSprite();
 
+
+        // @ts-ignore
+        let rememPieceMap : { [key in SideType] : { [key in PieceType] : PieceView[]}} = {};
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            // @ts-ignore
+            rememPieceMap[sideType] = {};
+            for(let pieceType = PieceType.FIRST_PIECE; pieceType <= PieceType.LAST_PIECE; pieceType++){
+                rememPieceMap[sideType][pieceType] = [];
+            }
+        }
+
         //Remove all board sprites and draw them again
         for (let fileNumber = 1; fileNumber <= ChessEngine.getNumOfFiles(); fileNumber++) {
-            for (let rank = 1; rank < ChessEngine.getNumOfRanks(); rank++) {
+            for (let rank = 1; rank <= ChessEngine.getNumOfRanks(); rank++) {
                 let fileRank = new FileRank(fileNumber, rank);
 
                 let pieceSprite = this.getPieceSpriteForFileRank(fileRank);
@@ -696,6 +707,10 @@ export class BoardView extends PIXI.Graphics {
                 if (pieceSprite != null) {
                     this.setPieceSpriteForFileRank(fileRank, null);
                     this.removePieceView(pieceSprite);
+
+                    pieceSprite.setNormal();
+
+                    rememPieceMap[pieceSprite.getSideType()][pieceSprite.getPieceType()].push(pieceSprite)
                 }
             }
         }
@@ -705,6 +720,7 @@ export class BoardView extends PIXI.Graphics {
             return;
         }
 
+
         let pieceToSquareMap = chessEngine.getPieceToSquareMap();
         for (let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++) {
             for (let pieceType = PieceType.FIRST_PIECE; pieceType <= PieceType.LAST_PIECE; pieceType++) {
@@ -712,7 +728,14 @@ export class BoardView extends PIXI.Graphics {
                 for (let i = 0; i < positions.length; i++) {
                     let fileRank = positions[i];
 
-                    let pieceSprite = this.createPieceView(sideType, pieceType);
+                    let pieceSprite : PieceView;
+                    if(rememPieceMap[sideType][pieceType].length > 0){
+                        pieceSprite = <PieceView>rememPieceMap[sideType][pieceType].pop();
+                        this.pieceSpriteGroup.addChild(pieceSprite);
+                    }else {
+                        pieceSprite = this.createPieceView(sideType, pieceType);
+                    }
+
 
                     pieceSprite.position = this.getPositionForFileRank(fileRank);
                     this.setPieceSpriteForFileRank(fileRank, pieceSprite);
