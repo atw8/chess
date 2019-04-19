@@ -49,6 +49,7 @@ export class WaitingNode extends PIXI.Container{
         tween.start();
 
 
+
         let textStyleOptions : PIXI.TextStyleOptions = {};
         textStyleOptions.fontFamily = "Helvetica";
         textStyleOptions.fontSize = this.m_size;
