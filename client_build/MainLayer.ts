@@ -11,21 +11,22 @@ import {ChessGameStateEnum} from "../shared/engine/ChessGameStateEnum";
 import {ChessEngine} from "../shared/engine/ChessEngine";
 import {WinStateEnum} from "../shared/engine/WinStateEnum";
 import {LanguageHelper, LanguageKey} from "./LanguageHelper";
+import {ControllerTest} from "./controller/ControllerTest";
+import {ControllerAbstract} from "./controller/ControllerAbstract";
 
 
 export class MainLayer extends PIXI.Container {
     private uiBoardView : BoardView;
     private uiTimePanels : { [key : number] : TimePanel};
 
-    private controller : Controller;
+    private controller : ControllerAbstract;
 
     private uiWaitingNode : WaitingNode;
 
     constructor(){
         super();
 
-        this.controller = new Controller();
-        this.controller.setParentView(this);
+        this.controller = new ControllerTest();
         //this.controller.setParentView(this);
 
         this.uiBoardView = new BoardView(400, this.controller);
@@ -47,8 +48,6 @@ export class MainLayer extends PIXI.Container {
         this.uiTimePanels[SideType.BLACK].position.x = this.uiBoardView.position.x + this.uiBoardView.width/2 - this.uiTimePanels[SideType.BLACK].width/2;
 
 
-        this.controller.setBoardView(this.uiBoardView);
-
 
         //Add the uiWaitingNode
         this.uiWaitingNode = new WaitingNode(40);
@@ -60,6 +59,8 @@ export class MainLayer extends PIXI.Container {
 
 
 
+
+        this.controller.setParentBoardView(this, this.uiBoardView);
 
 
         /*

@@ -1,6 +1,6 @@
 import {POINT_COLORS} from "./PointColorCons";
 
-import {getNameForImageTag, ImageTag} from "../ImageTag";
+import {ImageTag} from "../ImageTag";
 import {SimpleGame} from "../app";
 
 
@@ -19,7 +19,7 @@ export class PointColorNode extends PIXI.Sprite {
                 break;
         }
 
-        super(PIXI.Texture.from(getNameForImageTag(key)));
+        super(PIXI.Texture.from(key));
 
         let scaleX = (squareWidth/this.width)*0.8;
         let scaleY = (squareHeight/this.height)*0.8;

@@ -38,6 +38,8 @@ export enum ImageTag {
     null = "",
 }
 
+
+/*
 export function getNameForImageTag(imageTag : ImageTag):string{
     let ret : string = "";
     switch(imageTag){
@@ -123,6 +125,7 @@ export function getNameForImageTag(imageTag : ImageTag):string{
 
     return ret;
 }
+*/
 
 export function getLocationForImageTag(imageTag : ImageTag):string{
     let ret : string = "";

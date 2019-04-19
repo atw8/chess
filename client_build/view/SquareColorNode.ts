@@ -1,6 +1,6 @@
 import {SQUARE_COLORS} from "./SquareColorCons";
 
-import {getNameForImageTag, ImageTag} from "../ImageTag";
+import {ImageTag} from "../ImageTag";
 import {SimpleGame} from "../app";
 
 
@@ -19,7 +19,7 @@ export class SquareColorNode extends PIXI.Sprite{
                 key = ImageTag.squareRed;
                 break;
         }
-        super(PIXI.Texture.from(getNameForImageTag(key)));
+        super(PIXI.Texture.from(key));
 
 
         this.anchor.set(0.5, 0.5);

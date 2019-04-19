@@ -1,7 +1,7 @@
 import {SideType} from "../../shared/engine/SideType";
 import {PieceType} from "../../shared/engine/PieceType";
 
-import {getNameForImageTag, ImageTag} from "../ImageTag";
+import {ImageTag} from "../ImageTag";
 import {SimpleGame} from "../app";
 
 
@@ -13,7 +13,7 @@ export class PieceView extends PIXI.Sprite {
     private sideType : SideType;
     private pieceType : PieceType;
 
-    private static getKeyForSideTypePieceType(sideType : SideType, pieceType : PieceType) : string{
+    private static getKeyForSideTypePieceType(sideType : SideType, pieceType : PieceType) : ImageTag{
         let key : ImageTag = ImageTag.null;
         switch(sideType){
             case SideType.WHITE:
@@ -62,7 +62,7 @@ export class PieceView extends PIXI.Sprite {
                 break;
         }
 
-        return getNameForImageTag(key);
+        return key;
     }
 
     constructor(sideType : SideType, pieceType : PieceType, squareWidth : number, squareHeight : number){

@@ -1,5 +1,5 @@
 import {SimpleGame} from "./app";
-import {getLocationForImageTag, getNameForImageTag, ImageTag} from "./ImageTag";
+import {getLocationForImageTag, ImageTag} from "./ImageTag";
 
 export class LogoLayer extends PIXI.Container {
     private logo : PIXI.Sprite;
@@ -7,7 +7,7 @@ export class LogoLayer extends PIXI.Container {
     constructor(){
         super();
 
-        this.logo = PIXI.Sprite.fromImage(getNameForImageTag(ImageTag.logo));
+        this.logo = PIXI.Sprite.fromImage(ImageTag.logo);
         this.logo.anchor.set(0.5, 0.5);
 
         let logoScaleX = SimpleGame.getWidth()/this.logo.width;
