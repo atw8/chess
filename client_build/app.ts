@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import {getNameForImageTag, getLocationForImageTag, ImageTag} from "./ImageTag";
+import {getLocationForImageTag, ImageTag} from "./ImageTag";
 import {LogoLayer} from "./LogoLayer";
 import {MainLayer} from "./MainLayer";
 
@@ -24,7 +24,7 @@ export class SimpleGame extends PIXI.Application{
     }
 
     private constructor(){
-        super();
+        super({transparent : true});
         document.body.appendChild(this.view);
 
         let imageTags : ImageTag[] = [];
@@ -65,7 +65,7 @@ export class SimpleGame extends PIXI.Application{
 
         for(let i = 0; i < imageTags.length; i++){
             let imageTag = imageTags[i];
-            PIXI.loader.add(getNameForImageTag(imageTag), getLocationForImageTag(imageTag));
+            PIXI.loader.add(imageTag, getLocationForImageTag(imageTag));
         }
         PIXI.loader.load(this.onLoad.bind(this));
     };
