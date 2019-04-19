@@ -1110,6 +1110,10 @@ export class OnRoomMakeMoveBroadcastMessage extends ServerClientMessage {
 
         let onRoomMakeMoveBroadcastMsg : OnRoomMakeMoveBroadcastMessage = new OnRoomMakeMoveBroadcastMessage(json.roomId, json.sanMove, json.moveTimeStamp);
         onRoomMakeMoveBroadcastMsg.superCreateFromJson(json);
+        onRoomMakeMoveBroadcastMsg.roomState = json.roomState;
+        onRoomMakeMoveBroadcastMsg.chessGameState = json.chessGameState;
+
+
         return onRoomMakeMoveBroadcastMsg;
     }
 }
