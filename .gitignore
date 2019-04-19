@@ -122,3 +122,7 @@
 /shared/gameTime/GameTimeManager.js.map
 /shared/RoomStateEnum.js
 /shared/RoomStateEnum.js.map
+/client_build/controller/ControllerAbstract.js
+/client_build/controller/ControllerAbstract.js.map
+/client_build/controller/ControllerTest.js
+/client_build/controller/ControllerTest.js.map
