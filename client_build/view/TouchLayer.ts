@@ -1,16 +1,16 @@
-import {Controller} from "./../controller/Controller";
 import {SimpleGame} from "../app";
 import InteractionData = PIXI.interaction.InteractionData;
 import InteractionEvent = PIXI.interaction.InteractionEvent;
+import {ControllerAbstract} from "../controller/ControllerAbstract";
 
 export class TouchLayer{
-    private controller : Controller;
+    private controller : ControllerAbstract;
 
     private identifier : number | null = null;
 
     private isEnabled : boolean;
 
-    constructor(controller : Controller){
+    constructor(controller : ControllerAbstract){
         this.controller = controller;
 
 
