@@ -12,6 +12,8 @@ import {FairyLeaper} from "./Fairy/FairyLeaper";
 import {FairyRider} from "./Fairy/FairyRider";
 import {CastleType} from "./CastleType";
 import {WinStateEnum} from "./WinStateEnum";
+import {type} from "os";
+import update = TWEEN.update;
 
 interface PromotionStruct {
     "isPromotion" : boolean;
@@ -70,6 +72,19 @@ export class ChessEngine extends  AbstractEngine {
         rank = rank + 1;
 
         return new FileRank(fileNumber, rank);
+    }
+    public static isFileRankLegal(pos : FileRank) : boolean{
+        return ( pos.x >= 1 && pos.x <= ChessEngine.getNumOfFiles() && pos.y >= 1 && pos.y <= ChessEngine.getNumOfRanks() );
+    }
+    public static getClosestLegalFileRank(inFileRank : FileRank, outFileRank ?: FileRank): FileRank {
+        if(typeof (outFileRank) == "undefined"){
+            outFileRank =  inFileRank.clone();
+        }
+
+        outFileRank.x = Math.max(1, Math.min(ChessEngine.getNumOfFiles(), inFileRank.x));
+        outFileRank.y = Math.max(1, Math.min(ChessEngine.getNumOfRanks(), inFileRank.y));
+
+        return outFileRank;
     }
 
 
@@ -1400,7 +1415,7 @@ export class ChessEngine extends  AbstractEngine {
     public doMoveSan(sanMove : string):boolean{
         let moveClass = this.getMoveClassForCurrentBoardAndSanMove(sanMove);
         if(moveClass !== null){
-            this.doMove(moveClass);
+            this.doMove(moveClass, true, true);
         }
 
         return (moveClass !== null);
@@ -1409,14 +1424,14 @@ export class ChessEngine extends  AbstractEngine {
     public doMoveUCI(uciMove : string):boolean{
         let moveClass = this.getMoveClassForUCIMove(uciMove);
         if(moveClass !== null){
-            this.doMove(moveClass);
+            this.doMove(moveClass, true, true);
         }
 
         return (moveClass !== null);
     }
 
 
-    public doMove(moveClass : MoveClass){
+    public doMove(moveClass : MoveClass, generateData : boolean = true, updateGameState : boolean = true){
         super.doMove(moveClass);
 
         //Update the move number
@@ -1441,19 +1456,70 @@ export class ChessEngine extends  AbstractEngine {
         //Figure out if an en passant square occured
         this.updateEnPassantSquare();
 
-        this.updateGameState();
+        if(updateGameState){
+            this.updateGameState();
+        }
 
 
-        this.uciMoves.push(this.getUCIMoveForMoveClass(moveClass));
-        this.sanMoves.push(this.getSANMoveForLastMoveClass());
+        if(generateData){
+            this.uciMoves.push(this.getUCIMoveForMoveClass(moveClass));
+            console.log("the uciMove is " + this.getLastUCIMove());
 
-        this.fenStrings.push(this.getFenStrFromCurrentBoard());
+            this.sanMoves.push(this.getSANMoveForLastMoveClass());
+            console.log("the sanMove is " + this.getLastSanMove());
 
-        console.log("the uciMove is " + this.getLastUCIMove());
-        console.log("the sanMove is " + this.getLastSanMove());
-        console.log("the fenStr is " + this.getLastFenStr());
+            this.fenStrings.push(this.getFenStrFromCurrentBoard());
+            console.log("the fenStr is " + this.getLastFenStr());
+        }
     }
 
+    public undoMove(generateData : boolean, updateGameState : boolean){
+        super.undoMove();
+
+        if(this.getMoveTurn() == SideType.WHITE){
+            this.moveNumber = this.moveNumber - 1
+        }
+
+        this.setMoveTurn(ChessEngine.getOppositeSideType(this.getMoveTurn()));
+
+        //Decrements the half move clock
+        this.halfMoveClockVector.pop();
+
+        //Figure out if an en passant square occured
+        this.updateEnPassantSquare();
+
+        if(updateGameState) {
+            this.updateGameState();
+        }
+
+
+        if(generateData){
+            this.uciMoves.pop();
+
+            this.sanMoves.pop();
+
+            this.fenStrings.pop();
+        }
+    }
+
+
+
+    /*
+--Update the move number
+    self:flipMoveTurn()
+    if self:getMoveTurn() == SideType.BLACK then
+    self.moveNumber = self.moveNumber - 1
+    end
+
+--Figure out if an en passant square occured
+    self:updateEnPassantSquare()
+
+    if isUpdateStateResultCheck then
+    self:updateStateResultCheck()
+    end
+    end
+
+*/
 
 //the logic of moving pieces
     public isMoveLegal(moveClass : MoveClass, isCheckGameState : boolean):boolean{
@@ -1464,8 +1530,7 @@ export class ChessEngine extends  AbstractEngine {
         }
 
         let isInFakeCheck = false;
-        super.doMove(moveClass);
-        this.setMoveTurn(ChessEngine.getOppositeSideType(this.getMoveTurn()));
+        this.doMove(moveClass, false, false);
 
         let royalSquares = this.getRoyalPieceSquares(ChessEngine.getOppositeSideType(this.getMoveTurn()));
         for(let i = 0; i < royalSquares.length; i++){
@@ -1474,9 +1539,7 @@ export class ChessEngine extends  AbstractEngine {
                 isInFakeCheck = true;
             }
         }
-
-        this.setMoveTurn(ChessEngine.getOppositeSideType(this.getMoveTurn()));
-        super.undoMove();
+        this.undoMove(false, false);
 
         let isCastlingIllegal = false;
         let isCastlingMove = this.isCastlingMove(moveClass);
@@ -2136,15 +2199,11 @@ export class ChessEngine extends  AbstractEngine {
         return ret;
     }
     public getSANMoveForCurrentBoardAndMoveClass(moveClass : MoveClass):string{
-        super.doMove(moveClass);
-        this.setMoveTurn(ChessEngine.getOppositeSideType(this.getMoveTurn()));
-        this.updateGameState();
+        this.doMove(moveClass, false, true);
 
         let str = this.getSANMoveForLastMoveClass();
 
-        this.setMoveTurn(ChessEngine.getOppositeSideType(this.getMoveTurn()));
-        super.undoMove();
-        this.updateGameState();
+        this.undoMove(false, true);
 
         return str;
     }
@@ -2173,8 +2232,7 @@ export class ChessEngine extends  AbstractEngine {
             let numOfFileAmbiguous = 0;
             let numOfRankAmbiguous = 0;
 
-            super.undoMove();
-            this.setMoveTurn(ChessEngine.getOppositeSideType(this.getMoveTurn()));
+            this.undoMove(false, false);
 
             let piece = <PieceModel>this.getPieceForFileRank(moveClass.originFileRank);
             let pieceType = piece.getPieceType();
@@ -2197,8 +2255,7 @@ export class ChessEngine extends  AbstractEngine {
                 }
             }
 
-            this.setMoveTurn(ChessEngine.getOppositeSideType(this.getMoveTurn()));
-            super.doMove(moveClass);
+            this.doMove(moveClass, false, false);
 
 
             if(pieceType != PieceType.PAWN){
@@ -2516,4 +2573,6 @@ export class ChessEngine extends  AbstractEngine {
     public getLastFenStr():string{
         return this.fenStrings[this.fenStrings.length - 1];
     }
+
+
 }

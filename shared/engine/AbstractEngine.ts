@@ -146,7 +146,17 @@ export class AbstractEngine {
 
     public isFileRankLegal(pos : FileRank) : boolean{
         return ( pos.x >= 1 && pos.x <= this.getNumOfFiles() && pos.y >= 1 && pos.y <= this.getNumOfRanks() );
-    };
+    }
+    public getClosestLegalFileRank(inFileRank : FileRank, outFileRank ?: FileRank): FileRank {
+        if(typeof (outFileRank) == "undefined"){
+            outFileRank =  inFileRank.clone();
+        }
+
+        outFileRank.x = Math.max(1, Math.min(this.getNumOfFiles(), inFileRank.x));
+        outFileRank.y = Math.max(1, Math.min(this.getNumOfRanks(), inFileRank.y));
+
+        return outFileRank;
+    }
     public getPieceForFileRank( pos : FileRank):PieceModel|null{
         let ret = null;
         if(this.isFileRankLegal(pos)){
@@ -685,7 +695,7 @@ export class AbstractEngine {
 
 
 
-    public doMove(moveClass : MoveClass){
+    public doMove(moveClass : MoveClass, ... rest :any){
         this.moveClasses.push(moveClass);
 
         for(let i = 0; i < moveClass.getLength(); i++){
@@ -709,7 +719,7 @@ export class AbstractEngine {
         }
     };
 
-    public undoMove(){
+    public undoMove(... rest :any){
         let moveClass = this.moveClasses[this.moveClasses.length - 1];
         this.moveClasses.pop();
 
