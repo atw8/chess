@@ -1,6 +1,6 @@
 import {SideType} from "./SideType";
 import {PieceType} from "./PieceType";
-import {MoveClass} from "./MoveClass";
+
 import {FileRank} from "./FileRank";
 import {PieceModel} from "./PieceModel";
 import {Fairy} from "./Fairy/Fairy";
@@ -8,6 +8,9 @@ import {FairyType} from "./Fairy/FairyType";
 import {FairyStupid} from "./Fairy/FairyStupid";
 import {FairyLeaper} from "./Fairy/FairyLeaper";
 import {FairyRider} from "./Fairy/FairyRider";
+import {MoveClass} from "./MoveClass";
+
+
 
 
 export class AbstractEngine {
@@ -215,14 +218,102 @@ export class AbstractEngine {
     };
 
 
-    public getMoveClassForOriginDest(originFileRank : FileRank, destFileRank : FileRank) : MoveClass{
-        let moveClass = new MoveClass(originFileRank, destFileRank);
 
-        moveClass.pushChange(originFileRank, this.getPieceForFileRank(originFileRank), null);
-        moveClass.pushChange(destFileRank, this.getPieceForFileRank(destFileRank), this.getPieceForFileRank(originFileRank));
+    public getPieceForFileRankMoveClass(fileRank : FileRank, moveClass : MoveClass):PieceModel | null{
+        let ret : PieceModel | null;
+
+        let change = moveClass.getLastChangeForFileRank(fileRank);
+        if(change == null){
+            ret = this.getPieceForFileRank(fileRank);
+        }else {
+            ret = change.destPiece;
+        }
+
+        return ret;
+    }
+
+    public getMoveClassForMovePieces(originDest : {originFileRank : FileRank, destFileRank : FileRank}[], moveClass : MoveClass): MoveClass{
+        let changes : MoveClass.ChangeInterface[] = [];
+
+        for(let i = 0; i < originDest.length; i++){
+            let originFileRank : FileRank = originDest[i].originFileRank;
+            let destFileRank : FileRank = originDest[i].destFileRank;
+
+
+            let originPiece = this.getPieceForFileRankMoveClass(originFileRank, moveClass);
+            let destPiece = this.getPieceForFileRankMoveClass(destFileRank, moveClass);
+
+
+            changes.push({fileRank : originFileRank,
+                originPiece : originPiece,
+                destPiece : null});
+
+            //Add the originFileRank
+            let isAddOriginChange : boolean = true;
+            for(let j = 0; j < originDest.length && isAddOriginChange; j++){
+                if(FileRank.isEqual(originFileRank, originDest[j].destFileRank)){
+                    isAddOriginChange = false;
+                }
+            }
+
+            if(isAddOriginChange){
+                changes.push({fileRank : originFileRank,
+                    originPiece : originPiece,
+                    destPiece : null});
+            }
+
+
+            //Add the destFileRank
+            changes.push({fileRank : destFileRank,
+                originPiece : destPiece,
+                destPiece : originPiece});
+        }
+
+        for(let i = 0; i < changes.length; i++){
+            moveClass.pushChange(changes[i]);
+        }
 
         return moveClass;
-    };
+    }
+    public getMoveClassForMovePiece(originFileRank : FileRank, destFileRank : FileRank, moveClass ?: MoveClass): MoveClass {
+        if(typeof(moveClass) == "undefined"){
+            moveClass = new MoveClass(originFileRank, destFileRank);
+        }
+
+        let originPiece = this.getPieceForFileRankMoveClass(originFileRank, moveClass);
+        let destPiece = this.getPieceForFileRankMoveClass(destFileRank, moveClass);
+
+        if(!FileRank.isEqual(originFileRank, destFileRank)){
+            moveClass.pushChange({fileRank : originFileRank,
+                originPiece : originPiece,
+                destPiece : null});
+        }
+
+        moveClass.pushChange({fileRank : destFileRank,
+            originPiece : destPiece,
+            destPiece : originPiece});
+
+
+        return moveClass;
+    }
+
+    public getMoveClassAddRemovePiece(fileRank : FileRank, pieceModel : PieceModel | null, moveClass ?: MoveClass): MoveClass {
+        if(typeof(moveClass) == "undefined"){
+            moveClass = new MoveClass(fileRank, fileRank);
+        }
+
+        let change = {
+            fileRank : fileRank,
+            originPiece : this.getPieceForFileRankMoveClass(fileRank, moveClass),
+            destPiece : pieceModel
+        };
+
+        moveClass.pushChange(change);
+
+
+        return moveClass;
+    }
+    /*
     public getMoveClassesForOriginDestinations(originFileRank : FileRank, destFileRanks : FileRank[], moveClasses : MoveClass[]){
         for(let i = 0; i < destFileRanks.length; i++){
             let destFileRank = destFileRanks[i];
@@ -231,22 +322,11 @@ export class AbstractEngine {
             moveClasses.push(moveClass);
         }
     };
+    */
 
 
 
     //Helper functions to deal with the different fairies
-    public getDestFileRankFromOriginFileRankMoveVector(oldFileRank : FileRank, moveVectors : FileRank[]) :FileRank[]{
-        let newFileRanks = [];
-
-        for(let i = 0; i < moveVectors.length; i++){
-            let moveVector = moveVectors[i];
-            newFileRanks.push(FileRank.addFileRank(oldFileRank, moveVector));
-        }
-
-        return newFileRanks;
-    };
-
-
     public isRay(origin : FileRank, dest : FileRank, vector : {x : number, y : number}) : boolean{
         let originX = origin.x;
         let originY = origin.y;
@@ -443,7 +523,9 @@ export class AbstractEngine {
             }
         }
 
-        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
+        for(let i = 0; i < destFileRanks.length; i++){
+            moveClasses.push(this.getMoveClassForMovePiece(originFileRank, destFileRanks[i]));
+        }
     }
 
 
@@ -486,7 +568,9 @@ export class AbstractEngine {
         }
 
 
-        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
+        for(let i = 0; i < destFileRanks.length; i++){
+            moveClasses.push(this.getMoveClassForMovePiece(originFileRank, destFileRanks[i]));
+        }
     }
 
 
@@ -511,7 +595,9 @@ export class AbstractEngine {
             }
         }
 
-        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses)
+        for(let i = 0; i < destFileRanks.length; i++){
+            moveClasses.push(this.getMoveClassForMovePiece(originFileRank, destFileRanks[i]));
+        }
     }
     public getNormalMovesForFairyLeaper(originFileRank : FileRank, destFileRank : FileRank | null, fairyLeaper : FairyLeaper, moveClasses : MoveClass[]){
         let func : (fileRank : FileRank) => boolean = this.pruneFileRankNormal.bind(this, destFileRank);
@@ -573,7 +659,9 @@ export class AbstractEngine {
             }
         }
 
-        this.getMoveClassesForOriginDestinations(originFileRank, destFileRanks, moveClasses);
+        for(let i = 0; i < destFileRanks.length; i++){
+            moveClasses.push(this.getMoveClassForMovePiece(originFileRank, destFileRanks[i]));
+        }
     }
 
     public getNormalMovesForFairyStupid(originFileRank : FileRank, destFileRank : FileRank | null, fairyStupid : FairyStupid , moveClasses : MoveClass[]){
@@ -642,12 +730,12 @@ export class AbstractEngine {
 
         let startPos = pos1.clone();
         if(!leftInclusive){
-            startPos.addFileRank(gradVec);
+            startPos = FileRank.addFileRank(startPos, gradVec);
         }
 
         let endPos = pos2.clone();
         if(!rightInclusive){
-            endPos.subFileRank(gradVec);
+            endPos = FileRank.subFileRank(endPos, gradVec);
         }
 
         {
@@ -664,7 +752,8 @@ export class AbstractEngine {
         let ret = [];
         while(!FileRank.isEqual(startPos, endPos)){
             ret.push(startPos);
-            startPos.addFileRank(gradVec);
+
+            startPos = FileRank.addFileRank(startPos, gradVec);
         }
         ret.push(startPos);
 
@@ -754,7 +843,10 @@ export class AbstractEngine {
             let originPiece = change["originPiece"];
             let destPiece = change["destPiece"];
 
-            ret.pushChange(fileRank, destPiece, originPiece);
+
+            ret.pushChange({fileRank : fileRank,
+                originPiece : destPiece,
+                destPiece : originPiece});
         }
 
         return ret;
@@ -773,11 +865,9 @@ export class AbstractEngine {
             for(let i = 0; i < moveClass.getLength(); i++){
                 let change = moveClass.get(i);
 
-                let fileRank = change["fileRank"];
-                let originPiece = change["originPiece"];
-                let destPiece = change["destPiece"];
-
-                ret.pushChange(fileRank, destPiece, originPiece);
+                ret.pushChange({fileRank : change["fileRank"],
+                    originPiece : change["originPiece"],
+                    destPiece : change["destPiece"]});
             }
         }
 

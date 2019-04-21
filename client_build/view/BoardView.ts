@@ -28,28 +28,6 @@ let MOVING_SPEED_NORMAL = 0.001;
 
 
 
-interface AddStruct {
-    fileRank : FileRank;
-    piece : PieceModel;
-
-    sprite : PieceView | null;
-}
-
-interface RemoveStruct {
-    fileRank: FileRank;
-    piece: PieceModel;
-
-    sprite: PieceView | null;
-}
-
-interface MoveStruct {
-    originPiece : PieceModel;
-    destPiece : PieceModel;
-    originFileRank : FileRank;
-    destFileRank : FileRank;
-
-    sprite: PieceView | null;
-}
 
 
 
@@ -894,197 +872,6 @@ export class BoardView extends PIXI.Graphics {
 
 
 
-    public getRemoveAddMoveStructs(moveClass : MoveClass):{removeStructs : RemoveStruct[], addStructs : AddStruct[], moveStructs : MoveStruct[]} {
-        //move class is a board centric structure
-        //we need to change it into a piece centric structure
-
-        let originHashPieces : { hash : number, piece : PieceModel | null}[] = [];
-        let destHashPieces : { hash : number, piece : PieceModel | null}[] = [];
-        {
-            let _originPieces : { [key : number] : PieceModel | null} = {};
-            let _destPieces : { [key : number] : PieceModel | null} = {};
-            for(let i = 0; i < moveClass.getLength(); i++){
-                let change = moveClass.get(i);
-
-                let fileRank = change.fileRank;
-                let originPiece = change.originPiece;
-                let destPiece = change.destPiece;
-
-                let hash = ChessEngine.getHashForFileRank(fileRank);
-
-                if( !(hash in _originPieces)){
-                    _originPieces[hash] = originPiece;
-                }
-
-                _destPieces[hash] = destPiece;
-            }
-
-            for(let _hash in _originPieces){
-                let hash = Number(_hash);
-                let originHashPiece = { hash : hash, piece : _originPieces[hash]};
-
-                originHashPieces.push(originHashPiece);
-            }
-            for(let _hash in _destPieces){
-                let hash = Number(_hash);
-                let destHashPiece = { hash : hash, piece : _destPieces[hash]};
-
-                destHashPieces.push(destHashPiece);
-            }
-        }
-
-        let makeMoveStructs = (compareFunction : (originPiece : PieceModel, destPiece : PieceModel) => boolean) =>{
-            let canMakeMoveStructs = true;
-            while(canMakeMoveStructs) {
-                canMakeMoveStructs = false;
-
-                let moveStruct : MoveStruct | null = null;
-                let i = 0;
-                while( (moveStruct == null) && (i < originHashPieces.length) ){
-                    let originHashPiece = originHashPieces[i];
-                    let originPiece = originHashPiece.piece;
-                    let originHash = originHashPiece.hash;
-
-                    if(originPiece != null){
-                        let j = 0;
-                        while( (moveStruct == null) && (j < destHashPieces.length) ) {
-                            let destHashPiece = destHashPieces[j];
-                            let destPiece = destHashPiece.piece;
-                            let destHash = destHashPiece.hash;
-
-                            if(destPiece != null){
-                                if (compareFunction(originPiece, destPiece)) {
-                                    originHashPieces.splice(i, 1);
-                                    destHashPieces.splice(j, 1);
-
-                                    moveStruct = {
-                                        originPiece : originPiece,
-                                        destPiece : destPiece,
-                                        originFileRank : ChessEngine.getFileRankForHash(originHash),
-                                        destFileRank : ChessEngine.getFileRankForHash(destHash),
-                                        sprite : null
-                                    };
-                                }
-
-                            }
-
-                            j = j + 1;
-                        }
-                    }
-
-
-                    i = i + 1;
-                }
-
-
-                if(moveStruct != null){
-                    moveStructs.push(moveStruct);
-                    canMakeMoveStructs = true;
-                }
-            }
-        };
-        let removeStructs: RemoveStruct[] = [];
-        let addStructs: AddStruct[] = [];
-        let moveStructs: MoveStruct[] = [];
-
-
-
-
-        let compareFunctionExact = (removePiece : PieceModel, addPiece : PieceModel) => {
-            return PieceModel.isEqualTo(removePiece, addPiece);
-        };
-
-        let compareFunctionSide = (removePiece : PieceModel, addPiece : PieceModel) => {
-            return removePiece.getSideType() == addPiece.getSideType();
-        };
-
-        let compareFunctionPiece = (removePiece : PieceModel, addPiece : PieceModel) => {
-            return removePiece.getPieceType() == addPiece.getPieceType();
-        };
-
-        let compareFunctionStupid = (removePiece : PieceModel, addPiece : PieceModel) => {
-            return true;
-        };
-
-        makeMoveStructs(compareFunctionExact);
-        makeMoveStructs(compareFunctionSide);
-        makeMoveStructs(compareFunctionPiece);
-        makeMoveStructs(compareFunctionStupid);
-
-        for(let i = 0; i < originHashPieces.length; i++){
-            let originHashPiece = originHashPieces[i];
-            if(originHashPiece.piece != null){
-                let removeStruct : RemoveStruct = {
-                    piece : originHashPiece.piece,
-                    fileRank : ChessEngine.getFileRankForHash(originHashPiece.hash),
-                    sprite : null
-                };
-
-                removeStructs.push(removeStruct);
-            }
-        }
-        for(let i = 0; i < destHashPieces.length; i++){
-            let destHashPiece = destHashPieces[i];
-            if(destHashPiece.piece != null){
-                let addStruct : AddStruct = {
-                    piece : destHashPiece.piece,
-                    fileRank : ChessEngine.getFileRankForHash(destHashPiece.hash),
-                    sprite : null
-                };
-
-                addStructs.push(addStruct);
-            }
-        }
-
-        return {removeStructs : removeStructs, addStructs : addStructs, moveStructs : moveStructs};
-    }
-
-
-    /*
-    local removeStructs = {}
-    local addStructs = {}
-    local moveStructs = {}
-    removeStructs, addStructs, moveStructs = self:getRemoveAddMoveStructs(legalMoves[1])
-
-
-    local function normalizePromote()
-    local function choosePieceCallBack(moveClass)
-    self:moveGame(moveClass)
-    end
-
-    local sideType = self.model:getPieceForFileRank(legalMoves[1].originFileRank):getSideType()
-
-    self.promotePieceCallback(legalMoves, choosePieceCallBack, sideType, self.model)
-    end
-
-    if #moveStructs == 0 then
-    normalizePromote()
-    else
-    local moveStruct = moveStructs[1]
-    local removeStruct = moveStruct.removeStruct
-    local addStruct = moveStruct.addStruct
-    local piece = addStruct.piece
-
-
-    local pieceSprite = self:getPieceSpriteForFileRank(removeStruct.fileRank)
-
-    local positionFrom = nil
-    local positionTo = nil
-    if self:isMovingSprite(pieceSprite) then
-    positionFrom = cc.p(self:getPositionForFileRank(removeStruct.fileRank))
-    else
-    positionFrom = cc.p(pieceSprite:getPosition())
-    end
-
-    positionTo = cc.p(self:getPositionForFileRank(addStruct.fileRank))
-    local actionMovingType = ActionMovingTypes.MOVE
-
-
-    self:addMovingSprite(pieceSprite, positionFrom, positionTo, actionMovingType, normalizePromote)
-    end
-
-    end
-    */
 
 
     private normalizePromote(legalMoves : MoveClass[]){
@@ -1104,11 +891,31 @@ export class BoardView extends PIXI.Graphics {
         }
         this.removeAllSquares();
 
+        let removeAddMoveStructs : MoveClass.RemoveAddMoveStruct = moveClass.getRemoveAddMoveMoveStruct(false);
 
-        let removeAddMoveStructs = this.getRemoveAddMoveStructs(moveClass);
-        let removeStructs = removeAddMoveStructs["removeStructs"];
-        let addStructs = removeAddMoveStructs["addStructs"];
-        let moveStructs = removeAddMoveStructs["moveStructs"];
+
+
+
+
+        // @ts-ignore
+        let removeStructs : ({sprite : PieceView | null} & MoveClass.RemoveStruct)[] = removeAddMoveStructs.removeStructs;
+        for(let i = 0; i < removeStructs.length; i++){
+            removeStructs[i].sprite = null;
+        }
+
+        // @ts-ignore
+        let addStructs : ({sprite : PieceView | null} & MoveClass.AddStruct)[] = removeAddMoveStructs.addStructs;
+        for(let i = 0; i < addStructs.length; i++){
+            addStructs[i].sprite = null;
+        }
+
+        // @ts-ignore
+        let moveStructs : ({sprite : PieceView | null} & MoveClass.MoveStruct)[] = removeAddMoveStructs.moveStructs;
+        for(let i = 0; i < moveStructs.length; i++){
+            moveStructs[i].sprite = null;
+        }
+
+
 
 
         if(isStrictMove){
@@ -1214,7 +1021,7 @@ export class BoardView extends PIXI.Graphics {
 
 
         let moveStructCounter = 0;
-        let globalMoveCallback = (moveStruct : MoveStruct | null) => {
+        let globalMoveCallback = (moveStruct : ({sprite : PieceView | null} & MoveClass.MoveStruct) | null) => {
             if(moveStruct != null) {
                 moveStructCounter = moveStructCounter + 1;
 
