@@ -413,7 +413,7 @@ export class ChessEngine extends  AbstractEngine {
                 }
                 beginFenStr += "/pppppppp/8/8/8/8/PPPPPPPP/";
                 for(let i = 1; i <= ChessEngine.getNumOfFiles(); i++){
-                    beginFenStr += ChessEngine.convertPieceModelToFenChar({sideType : SideType.BLACK, pieceType : beginArray[i]});
+                    beginFenStr += ChessEngine.convertPieceModelToFenChar({sideType : SideType.WHITE, pieceType : beginArray[i]});
                 }
                 beginFenStr += " w KQkq - 0 1";
 
@@ -1876,7 +1876,7 @@ export class ChessEngine extends  AbstractEngine {
         let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
 
         if(isPromotionMove.isPromotion){
-            uciMove = uciMove + ChessEngine.convertPieceModelToFenChar(<PieceModel.Interface>isPromotionMove.promotionPieceModel);
+            uciMove = uciMove + ChessEngine.convertPieceModelToFenChar({sideType : SideType.WHITE, pieceType : (<PieceModel.Interface>isPromotionMove.promotionPieceModel).pieceType});
         }
 
         return uciMove;
@@ -1920,7 +1920,7 @@ export class ChessEngine extends  AbstractEngine {
                 let promotionStruct : ChessEngine.PromotionStruct = ChessEngine.isPromotionMove(legalMove);
 
                 if(promotionStruct.isPromotion){
-                    if(PieceModel.isEqualTo(promotePieceModel, <PieceModel.Interface>promotionStruct.promotionPieceModel)){
+                    if(promotePieceModel.pieceType == (<PieceModel.Interface>promotionStruct.promotionPieceModel).pieceType){
                         ret = legalMove;
                     }
                 }
