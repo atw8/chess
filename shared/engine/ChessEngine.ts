@@ -12,14 +12,30 @@ import {FairyLeaper} from "./Fairy/FairyLeaper";
 import {FairyRider} from "./Fairy/FairyRider";
 import {CastleType} from "./CastleType";
 import {WinStateEnum} from "./WinStateEnum";
-import {type} from "os";
-import update = TWEEN.update;
+import MoveStruct = MoveClass.MoveStruct;
 
-interface PromotionStruct {
-    "isPromotion" : boolean;
-    "pieceType" ?: PieceType;
-    "sideType" ?: SideType;
-};
+
+export namespace ChessEngine {
+    export interface PromotionStruct {
+        "isPromotion" : boolean;
+        "promotionPieceModel" ?: PieceModel.Interface;
+    }
+
+
+    export interface CastlingStruct {
+        "isCastling" : boolean;
+        "sideType" ?: SideType;
+        "castleType" ?: CastleType;
+    }
+
+
+    export interface TwoPawnMoveStruct {
+        "isTwoPawn" : boolean;
+        "enPassantSquare" ?: FileRank
+    }
+}
+
+
 
 export class ChessEngine extends  AbstractEngine {
     private initParam : {isChess960 : boolean, beginFenStr : string};
@@ -393,11 +409,11 @@ export class ChessEngine extends  AbstractEngine {
 
                 let beginFenStr = "";
                 for(let i = 1; i <= ChessEngine.getNumOfFiles(); i++){
-                    beginFenStr += ChessEngine.sideTypePieceTypeToFenChar(SideType.BLACK, beginArray[i]);
+                    beginFenStr += ChessEngine.convertPieceModelToFenChar({sideType : SideType.BLACK, pieceType : beginArray[i]});
                 }
                 beginFenStr += "/pppppppp/8/8/8/8/PPPPPPPP/";
                 for(let i = 1; i <= ChessEngine.getNumOfFiles(); i++){
-                    beginFenStr += ChessEngine.sideTypePieceTypeToFenChar(SideType.WHITE, beginArray[i]);
+                    beginFenStr += ChessEngine.convertPieceModelToFenChar({sideType : SideType.BLACK, pieceType : beginArray[i]});
                 }
                 beginFenStr += " w KQkq - 0 1";
 
@@ -427,7 +443,7 @@ export class ChessEngine extends  AbstractEngine {
 
 
                 if(c === "p" || c === "n" || c === "b" || c === "r" || c === "q" || c === "k" || c === "P" || c === "N" || c === "B" || c === "R" || c === "Q" || c === "K"){
-                    let piece = <PieceModel>ChessEngine.fenCharToSideTypePieceType(c);
+                    let piece = <PieceModel>ChessEngine.convertFenCharToPieceModel(c);
                     let fileRank = new FileRank(fileNumber, rank);
 
 
@@ -473,7 +489,7 @@ export class ChessEngine extends  AbstractEngine {
             for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
                 for(let i = 0; i < pieceSet.length; i++){
                     let pType = pieceSet[i];
-                    if(c == ChessEngine.sideTypePieceTypeToFenChar(sideType, pType)){
+                    if(c == ChessEngine.convertPieceModelToFenChar({sideType : sideType, pieceType : pType})){
                         sType = sideType;
                         if(pType == PieceType.KING){
                             cType = CastleType.KING_SIDE;
@@ -600,194 +616,10 @@ export class ChessEngine extends  AbstractEngine {
     };
 
 
-    public static fenCharToSideTypePieceType(char : string) : PieceModel | null{
-        let sideType : SideType | null = null;
-        let pieceType : PieceType | null = null;
-
-        switch (char){
-            case "P":
-                sideType = SideType.WHITE;
-                pieceType = PieceType.PAWN;
-                break;
-            case "N":
-                sideType = SideType.WHITE;
-                pieceType = PieceType.KNIGHT;
-                break;
-            case "B":
-                sideType = SideType.WHITE;
-                pieceType = PieceType.BISHOP;
-                break;
-            case "R":
-                sideType = SideType.WHITE;
-                pieceType = PieceType.ROOK;
-                break;
-            case "Q":
-                sideType = SideType.WHITE;
-                pieceType = PieceType.QUEEN;
-                break;
-            case "K":
-                sideType = SideType.WHITE;
-                pieceType = PieceType.KING;
-                break;
-            case "p":
-                sideType = SideType.BLACK;
-                pieceType = PieceType.PAWN;
-                break;
-            case "n":
-                sideType = SideType.BLACK;
-                pieceType = PieceType.KNIGHT;
-                break;
-            case "b":
-                sideType = SideType.BLACK;
-                pieceType = PieceType.BISHOP;
-                break;
-            case "r":
-                sideType = SideType.BLACK;
-                pieceType = PieceType.ROOK;
-                break;
-            case "q":
-                sideType = SideType.BLACK;
-                pieceType = PieceType.QUEEN;
-                break;
-            case "k":
-                sideType = SideType.BLACK;
-                pieceType = PieceType.KING;
-                break;
-        }
-
-        let ret : PieceModel | null;
-        if(sideType == null || pieceType == null){
-            ret = null;
-        }else {
-            ret = new PieceModel(pieceType, sideType);
-        }
-
-        return ret;
-    };
 
 
 
-    public static sideTypePieceTypeToFenChar(sideType : SideType, pieceType : PieceType):string{
-        let char:string = "";
 
-        switch(sideType){
-            case SideType.WHITE:
-                switch(pieceType){
-                    case PieceType.PAWN:
-                        char = "P";
-                        break;
-                    case PieceType.KNIGHT:
-                        char = "N";
-                        break;
-                    case PieceType.BISHOP:
-                        char = "B";
-                        break;
-                    case PieceType.ROOK:
-                        char = "R";
-                        break;
-                    case PieceType.QUEEN:
-                        char = "Q";
-                        break;
-                    case PieceType.KING:
-                        char = "K";
-                        break;
-                }
-            break;
-            case SideType.BLACK:
-                switch(pieceType){
-                    case PieceType.PAWN:
-                        char = "p";
-                        break;
-                    case PieceType.KNIGHT:
-                        char = "n";
-                        break;
-                    case PieceType.BISHOP:
-                        char = "b";
-                        break;
-                    case PieceType.ROOK:
-                        char = "r";
-                        break;
-                    case PieceType.QUEEN:
-                        char = "q";
-                        break;
-                    case PieceType.KING:
-                        char = "k";
-                        break;
-                }
-            break;
-        }
-
-        return char;
-    };
-
-
-    public static convertFileToFileNumber(file : string) : number | null{
-        let fileNumber = null;
-
-        switch (file){
-            case "a":
-                fileNumber = 1;
-                break;
-            case "b":
-                fileNumber = 2;
-                break;
-            case "c":
-                fileNumber = 3;
-                break;
-            case "d":
-                fileNumber = 4;
-                break;
-            case "e":
-                fileNumber = 5;
-                break;
-            case "f":
-                fileNumber = 6;
-                break;
-            case "g":
-                fileNumber = 7;
-                break;
-            case "h":
-                fileNumber = 8;
-                break;
-        }
-
-        return fileNumber;
-    };
-
-
-    public static convertFileNumberToFile(fileNumber : number):string|null{
-        let file = null;
-
-        switch (fileNumber){
-            case 1:
-                file = "a";
-                break;
-            case 2:
-                file = "b";
-                break;
-            case 3:
-                file = "c";
-                break;
-            case 4:
-                file = "d";
-                break;
-            case 5:
-                file = "e";
-                break;
-            case 6:
-                file = "f";
-                break;
-            case 7:
-                file = "g";
-                break;
-            case 8:
-                file = "h";
-                break;
-        }
-
-
-        return file;
-    }
 
 
     public updateEnPassantSquare(){
@@ -795,305 +627,16 @@ export class ChessEngine extends  AbstractEngine {
         if(this.moveClasses.length === 0){
             this.enPassantSquare = this.fenStrEnPassant;
         }else {
-            let isLastMoveTwoPawnMove = this.isLastMoveTwoPawnMove();
+            let isLastMoveTwoPawnMove = ChessEngine.isTwoPawnMove(this.moveClasses[this.moveClasses.length - 1]);
 
-            if(isLastMoveTwoPawnMove["isTwoPawnMove"]){
-                this.enPassantSquare = isLastMoveTwoPawnMove["enPassantSquare"];
-            }
-        }
-    }
-
-
-    public isLastMoveTwoPawnMove():{ "isTwoPawnMove" : boolean, "enPassantSquare" : FileRank | null}{
-        let ret : { "isTwoPawnMove" : boolean, "enPassantSquare" : FileRank | null}  = { "isTwoPawnMove" : false, "enPassantSquare" : null};
-
-        if(this.moveClasses.length === 0){
-            ret["isTwoPawnMove"] = false;
-            ret["enPassantSquare"] = null;
-        }else {
-            let moveClass = this.moveClasses[this.moveClasses.length - 1];
-            ret = ChessEngine.isTwoPawnMove(moveClass);
-        }
-
-        return ret;
-    }
-    public static isTwoPawnMove(moveClass : MoveClass):{ "isTwoPawnMove" : boolean, "enPassantSquare" : FileRank | null}{
-        let ret :{ "isTwoPawnMove" : boolean, "enPassantSquare" : FileRank | null} = { "isTwoPawnMove" : false, "enPassantSquare" : null};;
-
-        if(moveClass.getLength() === 2){
-            let change1 = moveClass.get(0);
-            let change2 = moveClass.get(1);
-
-            let fileRankFrom = change1["fileRank"];
-            let fileRankTo = change2["fileRank"];
-
-            let pieceFrom = change1["originPiece"];
-            let pieceTo = change2["destPiece"];
-
-            if((pieceFrom !== null) && (pieceTo !== null)){
-                ret["isTwoPawnMove"] = true;
-                ret["isTwoPawnMove"] = ret["isTwoPawnMove"] && (pieceFrom.getPieceType() === PieceType.PAWN);
-                ret["isTwoPawnMove"] = ret["isTwoPawnMove"] && PieceModel.isEqualTo(pieceFrom, pieceTo);
-                ret["isTwoPawnMove"] = ret["isTwoPawnMove"] && (fileRankFrom.x === fileRankTo.x);
-                ret["isTwoPawnMove"] = ret["isTwoPawnMove"] && (Math.abs(fileRankFrom.y - fileRankTo.y) === 2);
-
-                if(ret["isTwoPawnMove"]){
-                    ret["enPassantSquare"] = new FileRank(fileRankFrom.x, (fileRankFrom.y + fileRankTo.y) / 2);
-                }
-            }
-        }
-
-        return ret;
-    }
-
-
-
-    public isLastMoveCastlingMove():{"isCastlingMove": boolean, "sideType": SideType | null, "castleType": CastleType | null}{
-        let ret : {"isCastlingMove": boolean, "sideType": SideType | null, "castleType": CastleType | null}  = { "isCastlingMove" : false, "sideType" : null, "castleType" : null};;
-
-        if(this.moveClasses.length === 0){
-            ret["isCastlingMove"] = false;
-            ret["sideType"] = null;
-            ret["castleType"] = null;
-        }else {
-            let moveClass = this.moveClasses[this.moveClasses.length - 1];
-            ret = this.isCastlingMove(moveClass);
-        }
-
-        return ret;
-    }
-
-
-    public isCastlingMove(moveClass : MoveClass):{isCastlingMove: boolean, sideType: SideType | null, castleType: CastleType | null}{
-        let ret = false;
-        let sideType = null;
-        let castleType = null;
-
-        if(moveClass.getLength() === 4){
-            let change1 = moveClass.get(0);
-            let change2 = moveClass.get(1);
-            let change3 = moveClass.get(2);
-            let change4 = moveClass.get(3);
-
-            let change1Origin = change1["originPiece"];
-            let change1Dest = change1["destPiece"];
-            let change1FileRank = change1["fileRank"];
-
-            let change2Origin = change2["originPiece"];
-            let change2Dest = change2["destPiece"];
-            let change2FileRank = change2["fileRank"];
-
-            let change3Origin = change3["originPiece"];
-            let change3Dest = change3["destPiece"];
-            let change3FileRank = change3["fileRank"];
-
-            let change4Origin = change4["originPiece"];
-            let change4Dest = change4["destPiece"];
-            let change4FileRank = change4["fileRank"];
-
-            if(change1Origin !== null && change1Dest === null && change2Origin === null && change2Dest !== null && change3Origin !== null && change3Dest === null && change4Origin === null && change4Dest !== null){
-                if(PieceModel.isEqualTo(change1Origin, change2Dest) && PieceModel.isEqualTo(change3Origin, change4Dest)){
-                    for(let sType = SideType.FIRST_SIDE; sType <= SideType.LAST_SIDE; sType++){
-                        let kingOriginCastle = this.getKingOriginCastle(sType);
-                        if(kingOriginCastle != null){
-                            if(FileRank.isEqual(kingOriginCastle, change1FileRank)){
-                                sideType = sType;
-                            }
-                        }
-                    }
-
-                    if(sideType !== null){
-                        for(let cType = CastleType.FIRST_CASTLE; cType <= CastleType.LAST_CASTLE; cType++){
-                            let rookOriginFileRank = this.getRookOriginCastle(sideType, cType);
-                            if(rookOriginFileRank != null){
-                                if(FileRank.isEqual(rookOriginFileRank, change3FileRank)){
-                                    castleType = cType;
-                                }
-                            }
-                        }
-                    }
-
-
-                    if(sideType !== null && castleType !== null){
-                        ret = true;
-                    }else {
-                        ret = false;
-                        sideType = null;
-                        castleType = null;
-                    }
-                }
-            }
-        }
-
-        return {isCastlingMove: ret, sideType: sideType, castleType: castleType};
-    }
-
-
-
-
-    public isLastMovePromotionMove():PromotionStruct{
-        let ret : PromotionStruct;
-
-        if(this.moveClasses.length !== 0){
-            let moveClass = this.moveClasses[this.moveClasses.length - 1];
-            ret = ChessEngine.isPromotionMove(moveClass);
-        }else {
-            ret = {"isPromotion" : false};
-        }
-
-        return ret;
-    }
-
-    public static isPromotionMove(moveClass : MoveClass):PromotionStruct{
-        let ret : PromotionStruct = {"isPromotion" : false};
-
-        let numCounter : { [key : number] : number} = {};
-        numCounter[SideType.WHITE] = 0;
-        numCounter[SideType.BLACK] = 0;
-
-        let pieceTypeChanges : { [key : number] : { [key : number] : number}} = {};
-        pieceTypeChanges[SideType.WHITE] = {};
-        pieceTypeChanges[SideType.BLACK] = {};
-
-        for(let pieceType = PieceType.FIRST_PIECE; pieceType <= PieceType.LAST_PIECE; ++pieceType){
-            pieceTypeChanges[SideType.WHITE][pieceType] = 0;
-            pieceTypeChanges[SideType.BLACK][pieceType] = 0;
-        }
-
-        for(let i = 0; i < moveClass.getLength(); i++) {
-            let change = moveClass.get(i);
-
-            let changeOrigin =  change.originPiece;
-            let changeDest = change.destPiece;
-
-            if(changeOrigin !== null){
-                let pieceType = changeOrigin.getPieceType();
-                let sideType = changeOrigin.getSideType();
-
-                numCounter[sideType] = numCounter[sideType] - 1;
-                pieceTypeChanges[sideType][pieceType] = pieceTypeChanges[sideType][pieceType] - 1;
+            if(isLastMoveTwoPawnMove.isTwoPawn){
+                this.enPassantSquare = <FileRank>isLastMoveTwoPawnMove["enPassantSquare"];
             }
 
-            if(changeDest !== null){
-                let pieceType = changeDest.getPieceType();
-                let sideType = changeDest.getSideType();
-
-                numCounter[sideType] = numCounter[sideType] + 1;
-                pieceTypeChanges[sideType][pieceType] = pieceTypeChanges[sideType][pieceType] + 1;
-            }
         }
-
-        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            if(numCounter[sideType] == 0){
-                for(let pieceType = PieceType.FIRST_PIECE; pieceType <= PieceType.LAST_PIECE; ++pieceType){
-                    if(pieceTypeChanges[sideType][pieceType] > 0){
-                        ret.isPromotion = true;
-                        ret.sideType = sideType;
-                        ret.pieceType = pieceType;
-                    }
-                }
-            }
-        }
-
-        return ret;
     }
 
 
-    private static captureReverseCaptureHelper(moveClass : MoveClass) : { [key : number] : number } {
-        let wbChanges : { [key : number] : number }  = {};
-        wbChanges[SideType.WHITE] = 0;
-        wbChanges[SideType.BLACK] = 0;
-
-        for(let i = 0; i < moveClass.getLength(); i++){
-            let change = moveClass.get(i);
-            let originPiece = change.originPiece;
-            let destPiece = change.destPiece;
-
-            if(originPiece != null){
-                wbChanges[originPiece.getSideType()] = wbChanges[originPiece.getSideType()] - 1;
-            }
-
-            if(destPiece != null){
-                wbChanges[destPiece.getSideType()] = wbChanges[destPiece.getSideType()] + 1;
-            }
-        }
-
-        return wbChanges;
-    }
-    public static isReverseCaptureMove(moveClass : MoveClass):boolean {
-        let wbChanges = ChessEngine.captureReverseCaptureHelper(moveClass);
-
-        return (wbChanges[SideType.WHITE] > 0) || (wbChanges[SideType.BLACK] > 0);
-    }
-    public static isCaptureMove(moveClass : MoveClass):boolean{
-        let wbChanges = ChessEngine.captureReverseCaptureHelper(moveClass);
-
-        return (wbChanges[SideType.WHITE] < 0) || (wbChanges[SideType.BLACK] < 0);
-    }
-
-
-    public isLastMoveWithPieceTypeSideType(pieceType : PieceType, sideType : SideType):boolean {
-        let ret : boolean;
-
-        let lastMoveClass : MoveClass | null = this.getLastMoveClass();
-        if(lastMoveClass == null){
-            ret = false;
-        }else {
-            ret = ChessEngine.isMoveWithPieceTypeSideType(lastMoveClass, pieceType, sideType);
-        }
-
-
-        return ret;
-    }
-
-    public static isMoveWithPieceTypeSideType(moveClass : MoveClass, pieceType : PieceType, sideType : SideType):boolean {
-        let ret : boolean = false;
-        if(moveClass.getLength() > 0) {
-            let change = moveClass.get(1);
-
-            let changeOrigin = change.originPiece;
-            if (changeOrigin != null) {
-                let _pieceType = changeOrigin.getPieceType();
-                let _sideType = changeOrigin.getSideType();
-
-                ret = (pieceType == _pieceType)  && (sideType == _sideType);
-            }
-        }
-
-        return ret;
-    }
-
-
-    public isLastMoveWithPieceType(pieceType : PieceType):boolean {
-        let ret : boolean;
-
-        let lastMoveClass : MoveClass | null = this.getLastMoveClass();
-
-        if(lastMoveClass == null){
-            ret = false;
-        }else {
-            ret = ChessEngine.isMoveWithPieceType(lastMoveClass, pieceType);
-        }
-
-        return ret;
-    }
-
-    public static isMoveWithPieceType(moveClass : MoveClass, pieceType : PieceType):boolean {
-        let ret : boolean = false;
-        if(moveClass.getLength() > 0) {
-            let change = moveClass.get(1);
-
-            let changeOrigin = change.originPiece;
-            if (changeOrigin != null) {
-                let _pieceType = changeOrigin.getPieceType();
-                let _sideType = changeOrigin.getSideType();
-
-                ret = (pieceType == _pieceType);
-            }
-        }
-
-        return ret;
-    }
 
     public getIsForfeit(sideType : SideType) : boolean{
         return this.m_isForfeit[sideType];
@@ -1545,11 +1088,11 @@ export class ChessEngine extends  AbstractEngine {
         let isCastlingMove = this.isCastlingMove(moveClass);
 
         //isCastlingMove, sideType, castleType = self.isCastlingMove(moveClass)
-        if(isCastlingMove["isCastlingMove"]){
+        if(isCastlingMove.isCastling){
             this.setMoveTurn(ChessEngine.getOppositeSideType(this.getMoveTurn()));
 
-            let kingOrigin = this.getKingOriginCastle(<SideType>isCastlingMove["sideType"]);
-            let kingDest = this.getKingDestCastle(<SideType>isCastlingMove["sideType"], <CastleType>isCastlingMove["castleType"]);
+            let kingOrigin = this.getKingOriginCastle(<SideType>isCastlingMove.sideType);
+            let kingDest = this.getKingDestCastle(<SideType>isCastlingMove.sideType, <CastleType>isCastlingMove.castleType);
             let checkSquares = this.getFileRankList(<FileRank>kingOrigin, kingDest, true, true);
             for(let i = 0; i < checkSquares.length; i++){
                 let checkSquare = checkSquares[i];
@@ -1687,12 +1230,13 @@ export class ChessEngine extends  AbstractEngine {
 
             //En passant capture
             this.dealWithEnPassant(moveClasses, originPiece, originFileRank, destFileRank);
+
+            //Promote pawns
+            this.dealWithPawnPromotion(moveClasses);
         }else if(originPiece.getPieceType() === PieceType.KING){
             this.dealWithCastling(moveClasses, originPiece, originFileRank, destFileRank);
         }
 
-        //Promote pawns
-        this.dealWithPawnPromotion(moveClasses);
 
         return moveClasses;
     }
@@ -1823,10 +1367,14 @@ export class ChessEngine extends  AbstractEngine {
 
             let enPassantCapturePiece = this.getPieceForFileRank(enPassantCaptureFileRank);
 
+
+
             let enPassantMoveClass = new MoveClass(originFileRank, enPassantFileRank);
-            enPassantMoveClass.pushChange(originFileRank, originPiece, null);
-            enPassantMoveClass.pushChange(enPassantCaptureFileRank, enPassantCapturePiece, null);
-            enPassantMoveClass.pushChange(enPassantFileRank, null, originPiece);
+            this.getMoveClassForMovePiece(originFileRank, enPassantFileRank, enPassantMoveClass);
+            this.getMoveClassAddRemovePiece(enPassantCaptureFileRank, null, enPassantMoveClass);
+            //let enPassantMoveClass = this.getMoveClassForMovePiece(originFileRank, enPassantFileRank);
+            //this.getMoveClassForCapturePiece(enPassantCaptureFileRank, enPassantMoveClass);
+
 
             moveClasses.push(enPassantMoveClass);
         }
@@ -1859,24 +1407,31 @@ export class ChessEngine extends  AbstractEngine {
                 if(addPromoteType){
                     destPiece = <PieceModel>destPiece;
 
-                    change["destPiece"] = new PieceModel(PieceType.KNIGHT, destPiece.getSideType());
+
 
                     let promotionPieceTypes = [];
-
-                    //promotionPieceTypes.push(PieceType.KNIGHT)
+                    promotionPieceTypes.push(PieceType.KNIGHT);
                     promotionPieceTypes.push(PieceType.BISHOP);
                     promotionPieceTypes.push(PieceType.ROOK);
                     promotionPieceTypes.push(PieceType.QUEEN);
 
+                    moveClasses.splice(index, 1);
+
                     for(let j = 0; j < promotionPieceTypes.length; j++){
                         let promotionPieceType = promotionPieceTypes[j];
 
-                        let moveClassClone = moveClass.clone();
-                        let moveClassCloneChange = moveClass.get(i);
-                        moveClassCloneChange["destPiece"] = new PieceModel(promotionPieceType, destPiece.getSideType());
 
-                        moveClasses.push(moveClassClone);
+                        let moveClassClone = moveClass.clone();
+                        this.getMoveClassAddRemovePiece(fileRank, new PieceModel(promotionPieceType, destPiece.getSideType()), moveClassClone);
+
+                        ChessEngine.isPromotionMove(moveClassClone);
+
+
+                        moveClasses.splice(index, 0, moveClassClone);
+
+                        index = index + 4;
                     }
+
                 }else{
                     index = index + 1;
                 }
@@ -1936,16 +1491,12 @@ export class ChessEngine extends  AbstractEngine {
                         castleMove = new MoveClass(kingOriginFileRank, kingDestFileRank);
                     }
 
-                    castleMove.pushChange(kingDestFileRank, this.getPieceForFileRank(kingDestFileRank), kingPiece);
-                    castleMove.pushChange(rookDestFileRank, this.getPieceForFileRank(rookDestFileRank), rookPiece);
+                    let originDest : {originFileRank : FileRank, destFileRank : FileRank}[] = [];
+                    originDest.push({originFileRank : kingOriginFileRank, destFileRank : kingDestFileRank});
+                    originDest.push({originFileRank : rookOriginFileRank, destFileRank : rookDestFileRank});
 
-                    if(!(FileRank.isEqual(kingOriginFileRank, kingDestFileRank) || FileRank.isEqual(kingOriginFileRank, rookDestFileRank))){
-                        castleMove.pushChange(kingOriginFileRank, kingPiece, null);
-                    }
+                    this.getMoveClassForMovePieces(originDest, castleMove);
 
-                    if(!(FileRank.isEqual(rookOriginFileRank, kingDestFileRank) || FileRank.isEqual(rookOriginFileRank, rookDestFileRank))){
-                        castleMove.pushChange(rookOriginFileRank, rookPiece, null);
-                    }
 
                     moveClasses.push(castleMove);
                 }
@@ -2084,7 +1635,7 @@ export class ChessEngine extends  AbstractEngine {
             let promotionPieceType : PieceType | null = null;
             {
                 let lastChar = sanMove[sanMove.length - 1];
-                let piece : PieceModel | null = ChessEngine.fenCharToSideTypePieceType(lastChar);
+                let piece : PieceModel | null = ChessEngine.convertFenCharToPieceModel(lastChar);
 
                 if(piece != null){
                     promotionPieceType = piece.getPieceType();
@@ -2130,7 +1681,7 @@ export class ChessEngine extends  AbstractEngine {
             if(sanMove.length == 0){
                 pieceType = PieceType.PAWN;
             }else {
-                let piece = <PieceModel>ChessEngine.fenCharToSideTypePieceType(sanMove);
+                let piece = <PieceModel>ChessEngine.convertFenCharToPieceModel(sanMove);
                 pieceType = piece.getPieceType();
             }
 
@@ -2176,10 +1727,10 @@ export class ChessEngine extends  AbstractEngine {
             }else {
                 for(let i = 0; i < moveClasses.length; i++){
                     let moveClass = moveClasses[i];
-                    let isPromotionMove : PromotionStruct = ChessEngine.isPromotionMove(moveClass);
+                    let isPromotionMove : ChessEngine.PromotionStruct = ChessEngine.isPromotionMove(moveClass);
 
                     if(isPromotionMove.isPromotion){
-                        if(promotionPieceType == isPromotionMove.pieceType){
+                        if(promotionPieceType == (<PieceModel.Interface>isPromotionMove.promotionPieceModel).pieceType){
                             retMove = moveClass;
                         }
                     }
@@ -2217,9 +1768,9 @@ export class ChessEngine extends  AbstractEngine {
 
 
         let castlingMove = this.isCastlingMove(moveClass);
-        if(castlingMove["isCastlingMove"]){
-            let sType = <SideType>castlingMove["sideType"];
-            let cType = <CastleType>castlingMove["castleType"];
+        if(castlingMove.isCastling){
+            let sType = <SideType>castlingMove.sideType;
+            let cType = <CastleType>castlingMove.castleType;
 
             if(cType == CastleType.KING_SIDE){
                 str = "O-O";
@@ -2259,7 +1810,7 @@ export class ChessEngine extends  AbstractEngine {
 
 
             if(pieceType != PieceType.PAWN){
-                str = ChessEngine.sideTypePieceTypeToFenChar(SideType.WHITE, pieceType);
+                str = ChessEngine.convertPieceModelToFenChar({sideType : SideType.WHITE, pieceType : pieceType});
             }
 
             if(isAmbiguous){
@@ -2283,7 +1834,7 @@ export class ChessEngine extends  AbstractEngine {
             let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
             if(isPromotionMove.isPromotion){
                 str = str + "=";
-                str = str + ChessEngine.sideTypePieceTypeToFenChar(SideType.WHITE, <PieceType>isPromotionMove.pieceType);
+                str = str + ChessEngine.convertPieceModelToFenChar({sideType : SideType.WHITE, pieceType : (<PieceModel.Interface>isPromotionMove.promotionPieceModel).pieceType});
             }
         }
 
@@ -2325,7 +1876,7 @@ export class ChessEngine extends  AbstractEngine {
         let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
 
         if(isPromotionMove.isPromotion){
-            uciMove = uciMove + ChessEngine.sideTypePieceTypeToFenChar(SideType.WHITE, <PieceType>isPromotionMove.pieceType);
+            uciMove = uciMove + ChessEngine.convertPieceModelToFenChar(<PieceModel.Interface>isPromotionMove.promotionPieceModel);
         }
 
         return uciMove;
@@ -2333,81 +1884,48 @@ export class ChessEngine extends  AbstractEngine {
 
     public getMoveClassForUCIMove(uciMove : string):MoveClass | null {
         //checking whether this uciMove is valid
-        if(uciMove.length !== 4 && uciMove.length !== 5){
+
+        let uciPattern = new RegExp("^([a-h][1-8])([a-h][1-8])([nbqk]?)$");
+        let uciPatternResult : RegExpExecArray | null = uciPattern.exec(uciMove);
+
+        if(uciPatternResult == null){
             return null;
         }
 
-        let file1 = uciMove[0];
-        let fileNumber1 = ChessEngine.convertFileToFileNumber(file1);
+        let fileRankFromStr = uciPatternResult[1];
+        let fileRankToStr = uciPatternResult[2];
+        let promoteFenChar = uciPatternResult[3];
 
-        if(fileNumber1 == null){
+
+        let fileRankFrom = ChessEngine.convertFileRankStrToFileRank(fileRankFromStr);
+        let fileRankTo = ChessEngine.convertFileRankStrToFileRank(fileRankToStr);
+        let promotePieceModel = ChessEngine.convertFenCharToPieceModel(promoteFenChar);
+
+        if(fileRankFrom == null || fileRankTo == null){
             return null;
         }
 
-        let rank1 = parseInt(uciMove[1]);
-        if(isNaN(rank1)){
-            return null;
-        }
 
-        if(rank1 < 1 || rank1 > this.getNumOfRanks()){
-            return null;
-        }
+        let legalMoves = this.getLegalMoves(fileRankFrom, fileRankTo, false);
 
-        let fileRank1 = new FileRank(fileNumber1, rank1);
+        let ret : MoveClass | null = null;
 
-
-        let file2 = uciMove[2];
-        let fileNumber2 = ChessEngine.convertFileToFileNumber(file2);
-
-        if(fileNumber2 == null){
-            return null;
-        }
-
-        let rank2 = parseInt(uciMove[3]);
-        if(isNaN(rank2)){
-            return null;
-        }
-
-        if(rank2 < 1 || rank2 > this.getNumOfRanks()){
-            return null;
-        }
-
-        let fileRank2 = new FileRank(fileNumber2, rank2);
-
-
-        let legalMoves = this.getLegalMoves(fileRank1, fileRank2, false);
-
-
-        let ret = null;
-        if(legalMoves.length == 1){
-            if(uciMove.length !== 4){
-                return null;
+        if(promotePieceModel == null){
+            if(legalMoves.length == 1){
+                ret = legalMoves[0];
             }
-
-            ret = legalMoves[0];
         }else {
-            if(uciMove.length !== 5){
-                return null;
-            }
+            for(let i = 0; i < legalMoves.length; i++){
+                let legalMove = legalMoves[i];
+                let promotionStruct : ChessEngine.PromotionStruct = ChessEngine.isPromotionMove(legalMove);
 
-            let c = uciMove[5];
-            let sideTypePieceType = ChessEngine.fenCharToSideTypePieceType(c);
-            if(sideTypePieceType == null){
-                return null;
-            }else {
-                for(let i = 0; i < legalMoves.length; i++){
-                    let legalMove = legalMoves[i];
-
-                    let isPromotionMove = ChessEngine.isPromotionMove(legalMove);
-                    if(isPromotionMove.isPromotion){
-                        if(PieceModel.isEqualTo(sideTypePieceType, isPromotionMove)){
-                            ret = legalMove
-                        }
+                if(promotionStruct.isPromotion){
+                    if(PieceModel.isEqualTo(promotePieceModel, <PieceModel.Interface>promotionStruct.promotionPieceModel)){
+                        ret = legalMove;
                     }
                 }
             }
         }
-
         return ret;
     }
 
@@ -2427,7 +1945,8 @@ export class ChessEngine extends  AbstractEngine {
                         fenStr += piecePlacementInt.toString();
                         piecePlacementInt = 0;
                     }
-                    fenStr += ChessEngine.sideTypePieceTypeToFenChar(piece.getSideType(), piece.getPieceType());
+                    fenStr += ChessEngine.convertPieceModelToFenChar(piece);
+
                 }else if(piece == null){
                     piecePlacementInt = piecePlacementInt + 1;
                 }
@@ -2462,10 +1981,10 @@ export class ChessEngine extends  AbstractEngine {
                     let char :string = "";
                     switch(castleType){
                         case CastleType.KING_SIDE:
-                            char = ChessEngine.sideTypePieceTypeToFenChar(sideType, PieceType.KING);
+                            char = ChessEngine.convertPieceModelToFenChar({sideType : sideType, pieceType : PieceType.KING});
                             break;
                         case CastleType.QUEEN_SIDE:
-                            char = ChessEngine.sideTypePieceTypeToFenChar(sideType, PieceType.QUEEN);
+                            char = ChessEngine.convertPieceModelToFenChar({sideType : sideType, pieceType : PieceType.QUEEN});
                             break;
                     }
 
@@ -2575,4 +2094,430 @@ export class ChessEngine extends  AbstractEngine {
     }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public static isTwoPawnMove(moveClass : MoveClass):ChessEngine.TwoPawnMoveStruct{
+        let ret : ChessEngine.TwoPawnMoveStruct = {"isTwoPawn" : false};
+
+        let removeAddMoveStruct = moveClass.getRemoveAddMoveMoveStruct(true);
+
+        if(removeAddMoveStruct.removeStructs.length != 0 ||
+            removeAddMoveStruct.addStructs.length != 0 ||
+            removeAddMoveStruct.moveStructs.length != 1){
+
+            return ret;
+        }
+
+        let moveStruct = removeAddMoveStruct.moveStructs[0];
+
+        if(moveStruct.destPiece.getPieceType() != PieceType.PAWN){
+            return ret;
+        }
+        if(moveStruct.originFileRank.x != moveStruct.destFileRank.x){
+            return ret;
+        }
+        if(Math.abs(moveStruct.destFileRank.y - moveStruct.originFileRank.y) != 2){
+            return ret
+        }
+
+        ret.isTwoPawn = true;
+        ret.enPassantSquare = new FileRank(moveStruct.originFileRank.x,
+            (moveStruct.originFileRank.y + moveStruct.destFileRank.y)/2);
+
+        return ret;
+    }
+
+
+
+
+
+    public isCastlingMove(moveClass : MoveClass):ChessEngine.CastlingStruct{
+        let ret : ChessEngine.CastlingStruct = {"isCastling" : false};
+
+        let removeAddMoveStruct = moveClass.getRemoveAddMoveMoveStruct(true);
+        if(removeAddMoveStruct.removeStructs.length != 0
+            || removeAddMoveStruct.addStructs.length != 0
+            || removeAddMoveStruct.moveStructs.length != 2){
+
+            return ret;
+        }
+
+
+
+        let kingMoveStruct : MoveStruct | null = null;
+        let rookMoveStruct : MoveStruct | null = null;
+
+
+        let moveStructs = removeAddMoveStruct.moveStructs;
+        for(let i = 0; i < moveStructs.length; i++){
+            if(moveStructs[i].destPiece.getPieceType() == PieceType.KING){
+                kingMoveStruct = moveStructs[i];
+            }else if(moveStructs[i].destPiece.getPieceType() == PieceType.ROOK){
+                rookMoveStruct = moveStructs[i];
+            }
+        }
+
+
+        if(kingMoveStruct == null){
+            return ret;
+        }
+        if(rookMoveStruct == null){
+            return ret;
+        }
+
+
+        let sideType : SideType | null = null;
+        let castleType : CastleType | null = null;
+
+        for(let sType = SideType.FIRST_SIDE; sType <= SideType.LAST_SIDE; sType++){
+            let kingOriginCastle = this.getKingOriginCastle(sType);
+            if(kingOriginCastle != null){
+                if(FileRank.isEqual(kingOriginCastle, kingMoveStruct.originFileRank)){
+                    sideType = sType;
+                }
+            }
+        }
+        //this.getKingOriginCastle(sideType);
+        //this.getKingDestCastle(sideType, castleType);
+        //this.getRookOriginCastle(sideType, castleType);
+        //this.getRookDestCastle(sideType, castleType);
+        if(sideType != null){
+            for(let cType = CastleType.FIRST_CASTLE; cType <= CastleType.LAST_CASTLE; cType++){
+                let isKingDest : boolean = false;
+                let isRookOrigin : boolean = false;
+                let isRookDest : boolean = false;
+
+                let kingDestCastle = this.getKingDestCastle(sideType, cType);
+                if(kingDestCastle != null){
+                    if(FileRank.isEqual(kingDestCastle, kingMoveStruct.destFileRank)){
+                        isKingDest = true;
+                    }
+                }
+                let rookOriginCastle = this.getRookOriginCastle(sideType, cType);
+                if(rookOriginCastle != null){
+                    if(FileRank.isEqual(rookOriginCastle, rookMoveStruct.originFileRank)){
+                        isRookOrigin = true;
+                    }
+                }
+                let rookDestCastle = this.getRookDestCastle(sideType, cType);
+                if(rookDestCastle != null){
+                    if(FileRank.isEqual(rookDestCastle, rookMoveStruct.destFileRank)){
+                        isRookDest = true;
+                    }
+                }
+
+                if(isKingDest && isRookOrigin && isRookDest){
+                    castleType = cType;
+                }
+            }
+        }
+
+        if(sideType != null && castleType != null){
+            ret.isCastling = true;
+            ret.sideType = sideType;
+            ret.castleType = castleType;
+        }
+
+        return ret;
+    }
+
+
+
+
+
+
+    public static isPromotionMove(moveClass : MoveClass):ChessEngine.PromotionStruct{
+        let ret : ChessEngine.PromotionStruct = {"isPromotion" : false};
+
+        let removeAddMoveStruct = moveClass.getRemoveAddMoveMoveStruct(true);
+
+        if(removeAddMoveStruct.addStructs.length != 1){
+            return ret;
+        }
+
+        let addStruct = removeAddMoveStruct.addStructs[0];
+
+        ret.isPromotion = true;
+        ret.promotionPieceModel = {pieceType : addStruct.piece.getPieceType(), sideType : addStruct.piece.getSideType()};
+
+
+
+        return ret;
+    }
+
+    public static isCaptureMove(moveClass : MoveClass):boolean{
+        let removeAddMoveStruct : MoveClass.RemoveAddMoveStruct = moveClass.getRemoveAddMoveMoveStruct(true);
+
+        return removeAddMoveStruct.removeStructs > removeAddMoveStruct.addStructs;
+    }
+
+
+    public static isMoveWithPieceTypeSideType(moveClass : MoveClass, pieceType : PieceType, sideType : SideType):boolean {
+        let removeAddMoveStruct = moveClass.getRemoveAddMoveMoveStruct(true);
+
+        if(removeAddMoveStruct.moveStructs.length != 1){
+            return false;
+        }
+        let moveStruct = removeAddMoveStruct.moveStructs[0];
+        let piece = moveStruct.destPiece;
+
+        return piece.getPieceType() == pieceType && piece.getSideType() == sideType;
+    }
+
+
+    public static isMoveWithPieceType(moveClass : MoveClass, pieceType : PieceType):boolean {
+        let removeAddMoveStruct = moveClass.getRemoveAddMoveMoveStruct(true);
+
+        if(removeAddMoveStruct.moveStructs.length != 1){
+            return false;
+        }
+        let moveStruct = removeAddMoveStruct.moveStructs[0];
+        let piece = moveStruct.destPiece;
+
+        return piece.getPieceType() == pieceType;
+    }
+
+
+
+
+
+
+    public static convertFenCharToPieceModel(char : string) : PieceModel | null{
+        let sideType : SideType | null = null;
+        let pieceType : PieceType | null = null;
+
+        switch (char){
+            case "P":
+                sideType = SideType.WHITE;
+                pieceType = PieceType.PAWN;
+                break;
+            case "N":
+                sideType = SideType.WHITE;
+                pieceType = PieceType.KNIGHT;
+                break;
+            case "B":
+                sideType = SideType.WHITE;
+                pieceType = PieceType.BISHOP;
+                break;
+            case "R":
+                sideType = SideType.WHITE;
+                pieceType = PieceType.ROOK;
+                break;
+            case "Q":
+                sideType = SideType.WHITE;
+                pieceType = PieceType.QUEEN;
+                break;
+            case "K":
+                sideType = SideType.WHITE;
+                pieceType = PieceType.KING;
+                break;
+            case "p":
+                sideType = SideType.BLACK;
+                pieceType = PieceType.PAWN;
+                break;
+            case "n":
+                sideType = SideType.BLACK;
+                pieceType = PieceType.KNIGHT;
+                break;
+            case "b":
+                sideType = SideType.BLACK;
+                pieceType = PieceType.BISHOP;
+                break;
+            case "r":
+                sideType = SideType.BLACK;
+                pieceType = PieceType.ROOK;
+                break;
+            case "q":
+                sideType = SideType.BLACK;
+                pieceType = PieceType.QUEEN;
+                break;
+            case "k":
+                sideType = SideType.BLACK;
+                pieceType = PieceType.KING;
+                break;
+        }
+
+        let ret : PieceModel | null;
+        if(sideType == null || pieceType == null){
+            ret = null;
+        }else {
+            ret = new PieceModel(pieceType, sideType);
+        }
+
+        return ret;
+    };
+
+
+
+    public static convertPieceModelToFenChar(pieceModel : PieceModel.Interface):string{
+        let char:string = "";
+
+        switch(pieceModel.sideType){
+            case SideType.WHITE:
+                switch(pieceModel.pieceType){
+                    case PieceType.PAWN:
+                        char = "P";
+                        break;
+                    case PieceType.KNIGHT:
+                        char = "N";
+                        break;
+                    case PieceType.BISHOP:
+                        char = "B";
+                        break;
+                    case PieceType.ROOK:
+                        char = "R";
+                        break;
+                    case PieceType.QUEEN:
+                        char = "Q";
+                        break;
+                    case PieceType.KING:
+                        char = "K";
+                        break;
+                }
+                break;
+            case SideType.BLACK:
+                switch(pieceModel.pieceType){
+                    case PieceType.PAWN:
+                        char = "p";
+                        break;
+                    case PieceType.KNIGHT:
+                        char = "n";
+                        break;
+                    case PieceType.BISHOP:
+                        char = "b";
+                        break;
+                    case PieceType.ROOK:
+                        char = "r";
+                        break;
+                    case PieceType.QUEEN:
+                        char = "q";
+                        break;
+                    case PieceType.KING:
+                        char = "k";
+                        break;
+                }
+                break;
+        }
+
+        return char;
+    };
+
+
+    public static convertFileToFileNumber(file : string) : number | null{
+        let fileNumber = null;
+
+        switch (file){
+            case "a":
+                fileNumber = 1;
+                break;
+            case "b":
+                fileNumber = 2;
+                break;
+            case "c":
+                fileNumber = 3;
+                break;
+            case "d":
+                fileNumber = 4;
+                break;
+            case "e":
+                fileNumber = 5;
+                break;
+            case "f":
+                fileNumber = 6;
+                break;
+            case "g":
+                fileNumber = 7;
+                break;
+            case "h":
+                fileNumber = 8;
+                break;
+        }
+
+        return fileNumber;
+    };
+
+
+    public static convertFileNumberToFile(fileNumber : number):string|null{
+        let file = null;
+
+        switch (fileNumber){
+            case 1:
+                file = "a";
+                break;
+            case 2:
+                file = "b";
+                break;
+            case 3:
+                file = "c";
+                break;
+            case 4:
+                file = "d";
+                break;
+            case 5:
+                file = "e";
+                break;
+            case 6:
+                file = "f";
+                break;
+            case 7:
+                file = "g";
+                break;
+            case 8:
+                file = "h";
+                break;
+        }
+
+
+        return file;
+    }
+
+    public static convertFileRankStrToFileRank(fileRankStr : string): FileRank | null {
+        if(fileRankStr.length != 2){
+            return null;
+        }
+
+        let file = fileRankStr[0];
+        let rank = parseInt(fileRankStr[1]);
+        if(isNaN(rank)){
+            return null;
+        }
+
+        let fileNumber = ChessEngine.convertFileToFileNumber(file);
+
+        if(fileNumber == null || rank == null){
+            return null;
+        }
+
+        return new FileRank(fileNumber, rank);
+    }
+    public static convertFileRankToFileRankStr(fileRank : FileRank): string {
+        let fileNumber = fileRank.x;
+        let file = this.convertFileNumberToFile(fileNumber);
+
+        let rank = fileRank.y;
+
+        return fileNumber + rank.toString();
+    }
+
+
 }
+
+
+
