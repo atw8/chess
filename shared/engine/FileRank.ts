@@ -12,10 +12,12 @@ export class FileRank {
     }
 
 
+    /*
     public addFileRank(fileRank2 : FileRank):void{
         this.x += fileRank2.x;
         this.y += fileRank2.y;
     }
+    */
     public static addFileRank(fileRank1 : FileRank, fileRank2 : FileRank):FileRank {
         return new FileRank(fileRank1.x + fileRank2.x, fileRank1.y + fileRank2.y);
     }
@@ -24,10 +26,12 @@ export class FileRank {
     public static subFileRank(fileRank1 : FileRank, fileRank2 : FileRank):FileRank {
         return new FileRank(fileRank1.x - fileRank2.x, fileRank1.y - fileRank2.y);
     }
+    /*
     public subFileRank(fileRank2 : FileRank):void{
         this.x -= fileRank2.x;
         this.y -= fileRank2.y;
     }
+    */
 
     public static isEqual(fileRank1 : FileRank, fileRank2 : FileRank):boolean{
         return fileRank1.x == fileRank2.x && fileRank1.y == fileRank2.y;
