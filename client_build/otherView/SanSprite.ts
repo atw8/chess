@@ -34,7 +34,7 @@ export class SanSprite extends PIXI.Container{
 
 
 
-        let piece : PieceModel | null = ChessEngine.fenCharToSideTypePieceType(firstChar);
+        let piece : PieceModel | null = ChessEngine.convertFenCharToPieceModel(firstChar);
         if(piece == null || piece.getSideType() == SideType.BLACK){
             this.pieceType = PieceType.PAWN;
             this.sanText = this.sanStr;

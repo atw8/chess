@@ -6,6 +6,8 @@ import {PieceView} from "./PieceView";
 import InteractionData = PIXI.interaction.InteractionData;
 import InteractionEvent = PIXI.interaction.InteractionEvent;
 
+import {PieceModel} from "../../shared/engine/PieceModel";
+
 export class PromotePieceLayer extends PIXI.Graphics{
     private moveClasses : MoveClass[];
     private m_height : number;
@@ -26,7 +28,11 @@ export class PromotePieceLayer extends PIXI.Graphics{
             let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
 
             if(isPromotionMove.isPromotion) {
-                let pieceSprite = new PieceView(<SideType>isPromotionMove.sideType, <PieceType>isPromotionMove.pieceType, this.m_height, this.m_height);
+                let sideType = (<PieceModel.Interface>isPromotionMove.promotionPieceModel).sideType;
+                let pieceType = (<PieceModel.Interface>isPromotionMove.promotionPieceModel).pieceType;
+
+
+                let pieceSprite = new PieceView(sideType, pieceType, this.m_height, this.m_height);
 
                 pieceSprite.interactive = true;
                 pieceSprite.buttonMode = true;

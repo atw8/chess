@@ -1,9 +1,19 @@
 import {SideType} from "./SideType";
 import {PieceType} from "./PieceType";
 
-export class PieceModel {
-    private pieceType : PieceType;
-    private sideType : SideType;
+
+export namespace PieceModel {
+    export interface Interface {
+        pieceType : PieceType;
+        sideType : SideType;
+    }
+
+
+}
+
+export class PieceModel implements PieceModel.Interface{
+    public pieceType : PieceType;
+    public sideType : SideType;
 
     private numOfTimesAdded : number;
     private numOfTimesRemoved : number;
@@ -67,7 +77,7 @@ export class PieceModel {
 
 
 
-    public static isEqualTo(pieceModel1 : any, pieceModel2 : any) : boolean {
+    public static isEqualTo(pieceModel1 : PieceModel.Interface, pieceModel2 : PieceModel.Interface) : boolean {
         return pieceModel1.pieceType == pieceModel2.pieceType && pieceModel1.sideType == pieceModel2.sideType;
     }
 }
