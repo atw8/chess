@@ -29,11 +29,13 @@ export class PositionManager {
     public update(dt : number){
         let finishCallbacks: (() => void)[] = [];
 
+        let updateTimeStamp = Date.now();
+
         let index = 0;
         while(index < this.movingSprites.length){
             let movingSprite = this.movingSprites[index];
 
-            if (!movingSprite.tween.update(TWEEN.now())) {
+            if (!movingSprite.tween.update(updateTimeStamp)) {
                 movingSprite.tween.stop();
                 this.movingSprites.splice(index, 1);
 
@@ -46,8 +48,7 @@ export class PositionManager {
         }
 
         for (let i = 0; i < finishCallbacks.length; i++) {
-            let finishCallback = finishCallbacks[i];
-            finishCallback();
+            finishCallbacks[i]();
         }
 
 
@@ -59,6 +60,7 @@ export class PositionManager {
         let diffPosition = new PIXI.Point(endPosition.x - startPosition.x, endPosition.y - startPosition.y);
 
         let duration = Math.sqrt(Math.pow(diffPosition.x, 2) + Math.pow(diffPosition.y, 2))/speed;
+        duration = Math.round(duration);
 
         let lastDelta = 0;
 
@@ -71,7 +73,7 @@ export class PositionManager {
             lastDelta = o.delta;
         });
 
-        tween.start(TWEEN.now());
+        tween.start(Date.now());
 
         this.movingSprites.push({sprite : sprite, tween : tween, finishCallback : finishCallback, endPosition : endPosition.clone()});
     }
@@ -87,9 +89,18 @@ export class PositionManager {
                 movingSprite.tween.stop();
 
                 this.movingSprites.splice(index, 1);
+
+                if(movingSprite.finishCallback != null){
+                    finishCallbacks.push(movingSprite.finishCallback);
+                }
+
             }else {
                 index += 1;
             }
+        }
+
+        for(let i = 0; i < finishCallbacks.length; i++){
+            finishCallbacks[i]();
         }
     }
 
