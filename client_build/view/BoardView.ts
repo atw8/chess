@@ -216,13 +216,19 @@ export class BoardView extends PIXI.Graphics {
     public moveToPieceSpriteGroup(pieceView : PieceView){
         pieceView.setNormal();
 
-        pieceView.parent.removeChild(pieceView);
+        if(pieceView.parent != null){
+            pieceView.parent.removeChild(pieceView);
+        }
+
         this.pieceSpriteGroup.addChild(pieceView);
     }
     public moveToMovingSpriteGroup(pieceView : PieceView){
         pieceView.setMoving();
 
-        pieceView.parent.removeChild(pieceView);
+        if(pieceView.parent != null){
+            pieceView.parent.removeChild(pieceView);
+        }
+
         this.movingSpriteGroup.addChild(pieceView);
     }
 
@@ -710,7 +716,7 @@ export class BoardView extends PIXI.Graphics {
                     let pieceSprite : PieceView;
                     if(rememPieceMap[sideType][pieceType].length > 0){
                         pieceSprite = <PieceView>rememPieceMap[sideType][pieceType].pop();
-                        this.pieceSpriteGroup.addChild(pieceSprite);
+                        this.moveToPieceSpriteGroup(pieceSprite);
                     }else {
                         pieceSprite = this.createPieceView({sideType : sideType, pieceType : pieceType});
                     }
