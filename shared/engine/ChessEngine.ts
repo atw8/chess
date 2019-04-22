@@ -1016,7 +1016,7 @@ export class ChessEngine extends  AbstractEngine {
         }
     }
 
-    public undoMove(generateData : boolean, updateGameState : boolean){
+    public undoMove(generateData : boolean = true, updateGameState : boolean = true){
         super.undoMove();
 
         if(this.getMoveTurn() == SideType.WHITE){
@@ -1382,33 +1382,34 @@ export class ChessEngine extends  AbstractEngine {
 
     public dealWithPawnPromotion(moveClasses : MoveClass[]){
         let index = 0;
+
+
         while(index < moveClasses.length){
             let moveClass = moveClasses[index];
-            for(let i = 0; i < moveClass.getLength(); i++){
-                let change = moveClass.get(i);
+            let removeAddMoveStruct = moveClass.getRemoveAddMoveMoveStruct(true);
 
-                let fileRank = change["fileRank"];
-                let originPiece = change["originPiece"];
-                let destPiece = change["destPiece"];
+
+
+
+            if(removeAddMoveStruct.moveStructs.length == 1){
+                let moveStruct = removeAddMoveStruct.moveStructs[0];
+
+
+                let pieceType = moveStruct.destPiece.getPieceType();
+                let sideType = moveStruct.destPiece.getSideType();
+
+                let destFileRank = moveStruct.destFileRank;
 
                 let addPromoteType = false;
-
-                if(destPiece !== null){
-                    if(destPiece.getPieceType() === PieceType.PAWN){
-                        if(destPiece.getSideType() === SideType.WHITE && fileRank.y === this.getNumOfRanks()){
-                            addPromoteType = true;
-                        }else if(destPiece.getSideType() === SideType.BLACK && fileRank.y === 1){
-                            addPromoteType = true;
-                        }
+                if(pieceType == PieceType.PAWN){
+                    if(sideType == SideType.WHITE && destFileRank.y == this.getNumOfRanks()){
+                        addPromoteType = true;
+                    }else if(sideType == SideType.BLACK && destFileRank.y == 1){
+                        addPromoteType = true;
                     }
                 }
 
-
                 if(addPromoteType){
-                    destPiece = <PieceModel>destPiece;
-
-
-
                     let promotionPieceTypes = [];
                     promotionPieceTypes.push(PieceType.KNIGHT);
                     promotionPieceTypes.push(PieceType.BISHOP);
@@ -1422,20 +1423,20 @@ export class ChessEngine extends  AbstractEngine {
 
 
                         let moveClassClone = moveClass.clone();
-                        this.getMoveClassAddRemovePiece(fileRank, new PieceModel(promotionPieceType, destPiece.getSideType()), moveClassClone);
-
-                        ChessEngine.isPromotionMove(moveClassClone);
-
+                        this.getMoveClassAddRemovePiece(destFileRank, new PieceModel(promotionPieceType, sideType), moveClassClone);
 
                         moveClasses.splice(index, 0, moveClassClone);
 
                         index = index + 4;
                     }
-
-                }else{
+                }else {
                     index = index + 1;
                 }
+
+            }else {
+                index = index + 1;
             }
+
         }
     }
 
@@ -1596,96 +1597,101 @@ export class ChessEngine extends  AbstractEngine {
 
 
     public getMoveClassForCurrentBoardAndSanMove(sanMove : string):MoveClass | null {
-        let retMove: MoveClass | null = null;
+        let ret: MoveClass | null = null;
 
         let sideType = this.getMoveTurn();
 
+
         console.debug("parsing sanMove ", sanMove);
-        //Remove all the charectars at the end of the string
-        let isBreak = false;
-        do {
-            isBreak = true;
 
-            let lastChar = sanMove[sanMove.length - 1];
-            if(lastChar == "#" || lastChar == "+" || lastChar == "!" || lastChar == "?"){
-                isBreak = false;
-                sanMove = sanMove.slice(0, -1);
+        let piecePattern : RegExp;
+        let kingCastlePattern : RegExp;
+        let queenCastlePattern : RegExp;
+        {
+            let annotationExpr = "[\#\+\!\?]*";
+
+            kingCastlePattern = new RegExp("^O-O" + annotationExpr + "$");
+            queenCastlePattern = new RegExp("^O-O-O" + annotationExpr + "$");
+
+
+            let pieceType = "([NBRQK])?";
+            let fileFrom = "([a-h])?";
+            let rankFrom = "([1-8])?";
+            let isCapture = "(x)?";
+            let fileRankTo = "([a-h][1-8])";
+            let promotionPieceType = "(?:=([NBRQ]))?";
+
+
+            let str = "^"  + pieceType + fileFrom + rankFrom + isCapture + fileRankTo + promotionPieceType + annotationExpr + "$";
+            piecePattern = new RegExp(str);
+        }
+
+
+        if(kingCastlePattern.test(sanMove) || queenCastlePattern.test(sanMove)){
+            let castleType : CastleType = CastleType.KING_SIDE;
+            if(kingCastlePattern.test(sanMove)){
+                castleType = CastleType.KING_SIDE;
+            }else if(queenCastlePattern.test(sanMove)){
+                castleType = CastleType.QUEEN_SIDE;
             }
-        }while(!isBreak);
 
-
-        if (sanMove == "O-O" || sanMove == "O-O-O"){ //CastlingType
-            let castleType: CastleType = CastleType.KING_SIDE;
-            if (sanMove == "O-O") {
-                castleType = CastleType.KING_SIDE
-            } else if (sanMove == "O-O-O") {
-                castleType = CastleType.QUEEN_SIDE
-            }
 
 
             let kingOrigin = <FileRank>this.getKingOriginCastle(sideType);
-            let kingDest = this.getKingDestCastle(sideType, <CastleType>castleType);
+            let kingDest = this.getKingDestCastle(sideType, castleType);
 
             let legalMove = this.getLegalMoves(kingOrigin, kingDest, false);
             if (legalMove.length == 1) {
-                retMove = legalMove[0]
+                ret = legalMove[0]
             }
         }else {
-            //Extract the promotion piece
+            let sanPatternResult = piecePattern.exec(sanMove);
+            if(sanPatternResult == null){
+                return null;
+            }
+
+
+            let pieceType : PieceType;
+            {
+                let _pieceType = sanPatternResult[1];
+
+                if(_pieceType == undefined){
+                    pieceType = PieceType.PAWN;
+                }else {
+                    pieceType = (<PieceModel>ChessEngine.convertFenCharToPieceModel(_pieceType)).pieceType;
+                }
+            }
+
+            let fileNumberFrom : number | null = null;
+            {
+                let _fileFrom = sanPatternResult[2];
+                if(_fileFrom != undefined){
+                    fileNumberFrom = ChessEngine.convertFileToFileNumber(_fileFrom);
+                }
+            }
+
+            let rankFrom : number | null = null;
+            {
+                let _rankFrom = sanPatternResult[3];
+                if(_rankFrom != undefined){
+                    rankFrom = parseInt(_rankFrom);
+                }
+            }
+
+            let isCapture : boolean = sanPatternResult[4] != undefined;
+
+            let fileRankTo = <FileRank> ChessEngine.convertFileRankStrToFileRank(sanPatternResult[5]);
+
             let promotionPieceType : PieceType | null = null;
             {
-                let lastChar = sanMove[sanMove.length - 1];
-                let piece : PieceModel | null = ChessEngine.convertFenCharToPieceModel(lastChar);
-
-                if(piece != null){
-                    promotionPieceType = piece.getPieceType();
-                    sanMove = sanMove.slice(0, -1);
+                let _promotionPieceType = sanPatternResult[6];
+                if(_promotionPieceType != undefined){
+                    promotionPieceType = (<PieceModel>ChessEngine.convertFenCharToPieceModel(_promotionPieceType)).pieceType;
                 }
             }
-            //Extract the destination fileRank
-            let destFileRank : FileRank;
-            {
-                let file = sanMove[sanMove.length - 2];
-                let rank = Number(sanMove[sanMove.length - 1]);
-
-                destFileRank = new FileRank(<number>ChessEngine.convertFileToFileNumber(file), rank);
-
-                sanMove = sanMove.slice(0, -1);
-                sanMove = sanMove.slice(0, -1);
-            }
-            //Get rid of unwanted x
-            if(sanMove[sanMove.length - 1] == "x"){
-                sanMove = sanMove.slice(0, -1);
-            }
 
 
-            //Extract the origin file rank
-            let originFileNumber :number | null = null;
-            let originRank : number | null = null;
-            if(sanMove.length > 0){
-                let _originRank = Number(sanMove[sanMove.length - 1]);
-                if(!isNaN(_originRank)){
-                    originRank = _originRank;
-                    sanMove = sanMove.slice(0, -1);
-                }
-
-                let _originFile = sanMove[sanMove.length - 1];
-                originFileNumber = ChessEngine.convertFileToFileNumber(_originFile);
-                if(originFileNumber != null){
-                    sanMove = sanMove.slice(0, -1);
-                }
-
-            }
-            //Extract the piecetype
-            let pieceType : PieceType;
-            if(sanMove.length == 0){
-                pieceType = PieceType.PAWN;
-            }else {
-                let piece = <PieceModel>ChessEngine.convertFenCharToPieceModel(sanMove);
-                pieceType = piece.getPieceType();
-            }
-
-
+            //Logic of getting the pieces
             let squarePieces : FileRank[] = this.getSquaresBySideTypePieceType(sideType, pieceType);
             let newSquarePieces : FileRank[] = [];
 
@@ -1694,14 +1700,14 @@ export class ChessEngine extends  AbstractEngine {
 
                 let insertNewSquare = true;
 
-                if(originFileNumber != null){
-                    if(originFileNumber != squarePiece.x){
+                if(fileNumberFrom != null){
+                    if(fileNumberFrom != squarePiece.x){
                         insertNewSquare = false;
                     }
                 }
 
-                if(originRank != null){
-                    if(originRank != squarePiece.y){
+                if(rankFrom != null){
+                    if(rankFrom != squarePiece.y){
                         insertNewSquare = false;
                     }
                 }
@@ -1714,31 +1720,48 @@ export class ChessEngine extends  AbstractEngine {
             squarePieces = newSquarePieces;
 
 
-            let moveClasses : MoveClass[] = [];
+            let legalMoves : MoveClass[] = [];
             for(let i = 0; i < squarePieces.length; i++){
                 let squarePiece = squarePieces[i];
-                let legalMoves = this.getLegalMoves(squarePiece, destFileRank, false);
 
-                moveClasses = moveClasses.concat(legalMoves);
+                legalMoves = legalMoves.concat(this.getLegalMoves(squarePiece, fileRankTo, false));
             }
 
-            if(moveClasses.length == 1){
-                retMove = moveClasses[0]
+
+            if(promotionPieceType == null){
+                if(legalMoves.length == 1){
+                    ret = legalMoves[0];
+                }
             }else {
-                for(let i = 0; i < moveClasses.length; i++){
-                    let moveClass = moveClasses[i];
+                for(let i = 0; i < legalMoves.length; i++){
+                    let legalMove = legalMoves[i];
+                    let promotionStruct : ChessEngine.PromotionStruct = ChessEngine.isPromotionMove(legalMove);
+
+                    if(promotionStruct.isPromotion){
+                        if(promotionPieceType == (<PieceModel.Interface>promotionStruct.promotionPieceModel).pieceType){
+                            ret = legalMove;
+                        }
+                    }
+                }
+            }
+
+            if(legalMoves.length == 1){
+                ret = legalMoves[0];
+            }else {
+                for(let i = 0; i < legalMoves.length; i++){
+                    let moveClass = legalMoves[i];
                     let isPromotionMove : ChessEngine.PromotionStruct = ChessEngine.isPromotionMove(moveClass);
 
                     if(isPromotionMove.isPromotion){
                         if(promotionPieceType == (<PieceModel.Interface>isPromotionMove.promotionPieceModel).pieceType){
-                            retMove = moveClass;
+                            ret = moveClass;
                         }
                     }
                 }
             }
         }
 
-        return retMove
+        return ret
     }
 
     public getSANMovesForCurrentBoardAndMoveClasses(moveClasses : MoveClass[]):string[]{
@@ -1876,7 +1899,7 @@ export class ChessEngine extends  AbstractEngine {
         let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
 
         if(isPromotionMove.isPromotion){
-            uciMove = uciMove + ChessEngine.convertPieceModelToFenChar({sideType : SideType.WHITE, pieceType : (<PieceModel.Interface>isPromotionMove.promotionPieceModel).pieceType});
+            uciMove = uciMove + ChessEngine.convertPieceModelToFenChar({sideType : SideType.BLACK, pieceType : (<PieceModel.Interface>isPromotionMove.promotionPieceModel).pieceType});
         }
 
         return uciMove;
@@ -1885,7 +1908,7 @@ export class ChessEngine extends  AbstractEngine {
     public getMoveClassForUCIMove(uciMove : string):MoveClass | null {
         //checking whether this uciMove is valid
 
-        let uciPattern = new RegExp("^([a-h][1-8])([a-h][1-8])([nbqk]?)$");
+        let uciPattern = new RegExp("^([a-h][1-8])([a-h][1-8])([nbrq])?$");
         let uciPatternResult : RegExpExecArray | null = uciPattern.exec(uciMove);
 
         if(uciPatternResult == null){
@@ -1899,7 +1922,14 @@ export class ChessEngine extends  AbstractEngine {
 
         let fileRankFrom = ChessEngine.convertFileRankStrToFileRank(fileRankFromStr);
         let fileRankTo = ChessEngine.convertFileRankStrToFileRank(fileRankToStr);
-        let promotePieceModel = ChessEngine.convertFenCharToPieceModel(promoteFenChar);
+        let promotionPieceType : null | PieceType = null;
+        {
+
+            let _promotionPieceType = ChessEngine.convertFenCharToPieceModel(promoteFenChar);
+            if(_promotionPieceType != null){
+                promotionPieceType = _promotionPieceType.pieceType;
+            }
+        }
 
         if(fileRankFrom == null || fileRankTo == null){
             return null;
@@ -1910,7 +1940,7 @@ export class ChessEngine extends  AbstractEngine {
 
         let ret : MoveClass | null = null;
 
-        if(promotePieceModel == null){
+        if(promotionPieceType == null){
             if(legalMoves.length == 1){
                 ret = legalMoves[0];
             }
@@ -1920,7 +1950,7 @@ export class ChessEngine extends  AbstractEngine {
                 let promotionStruct : ChessEngine.PromotionStruct = ChessEngine.isPromotionMove(legalMove);
 
                 if(promotionStruct.isPromotion){
-                    if(promotePieceModel.pieceType == (<PieceModel.Interface>promotionStruct.promotionPieceModel).pieceType){
+                    if(promotionPieceType == (<PieceModel.Interface>promotionStruct.promotionPieceModel).pieceType){
                         ret = legalMove;
                     }
                 }
