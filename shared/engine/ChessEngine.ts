@@ -38,7 +38,7 @@ export namespace ChessEngine {
 
 
 export class ChessEngine extends  AbstractEngine {
-    private initParam : {isChess960 : boolean, beginFenStr : string};
+    public initParam : {isChess960 : boolean, beginFenStr : string};
 
     private captureFairy:{ [key in SideType] : { [key in PieceType] : Fairy}};
     private normalFairy : { [key in SideType] : { [key in PieceType] : Fairy}};
