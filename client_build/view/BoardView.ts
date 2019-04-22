@@ -202,13 +202,14 @@ export class BoardView extends PIXI.Graphics {
     }
 
 
-    public createPieceView(sideType : SideType, pieceType : PieceType):PieceView{
-        let pieceSprite = new PieceView(sideType, pieceType, this.getSquareWidth(), this.getSquareHeight());
+    public createPieceView(pieceModel : PieceModel.Interface):PieceView{
+        let pieceSprite = new PieceView(pieceModel, this.getSquareWidth(), this.getSquareHeight());
         pieceSprite.buttonMode = true;
         this.pieceSpriteGroup.addChild(pieceSprite);
 
         return pieceSprite;
     }
+
     public removePieceView(pieceView : PieceView){
         pieceView.parent.removeChild(pieceView);
     }
@@ -711,7 +712,7 @@ export class BoardView extends PIXI.Graphics {
                         pieceSprite = <PieceView>rememPieceMap[sideType][pieceType].pop();
                         this.pieceSpriteGroup.addChild(pieceSprite);
                     }else {
-                        pieceSprite = this.createPieceView(sideType, pieceType);
+                        pieceSprite = this.createPieceView({sideType : sideType, pieceType : pieceType});
                     }
 
 
@@ -928,7 +929,7 @@ export class BoardView extends PIXI.Graphics {
                 {
                     let pieceSprite = this.getPieceSpriteForFileRank(fileRank);
                     if(pieceSprite == null){
-                        pieceSprite = this.createPieceView(piece.getSideType(), piece.getPieceType());
+                        pieceSprite = this.createPieceView(piece);
                         pieceSprite.position = this.getPositionForFileRank(fileRank)
                         this.setPieceSpriteForFileRank(fileRank, pieceSprite);
                     }
@@ -936,7 +937,7 @@ export class BoardView extends PIXI.Graphics {
 
 
                 let pieceSprite = <PieceView>this.getPieceSpriteForFileRank(fileRank);
-                pieceSprite.setPiece(piece.getSideType(), piece.getPieceType());
+                pieceSprite.setPiece(piece);
                 removeStruct.sprite = pieceSprite;
 
                 this.setPieceSpriteForFileRank(fileRank, null);
@@ -953,12 +954,12 @@ export class BoardView extends PIXI.Graphics {
 
                 let pieceSprite = this.getPieceSpriteForFileRank(originFileRank);
                 if(pieceSprite == null){
-                    pieceSprite = this.createPieceView(originPiece.getSideType(), originPiece.getPieceType());
+                    pieceSprite = this.createPieceView(originPiece);
                     pieceSprite.position = this.getPositionForFileRank(originFileRank);
                     this.setPieceSpriteForFileRank(originFileRank, pieceSprite);
                 }
 
-                pieceSprite.setPiece(originPiece.getSideType(), originPiece.getPieceType());
+                pieceSprite.setPiece(originPiece);
 
                 moveStruct.sprite = pieceSprite;
 
@@ -1002,7 +1003,7 @@ export class BoardView extends PIXI.Graphics {
 
 
 
-                let pieceSprite = this.createPieceView(piece.getSideType(), piece.getPieceType());
+                let pieceSprite = this.createPieceView(piece);
                 pieceSprite.position = this.getPositionForFileRank(fileRank);
 
                 pieceSprite.visible = false;
@@ -1029,7 +1030,7 @@ export class BoardView extends PIXI.Graphics {
                 let destPiece = moveStruct.destPiece;
 
                 if(isStrictMove){
-                    (<PieceView>moveStruct.sprite).setPiece(destPiece.getSideType(), destPiece.getPieceType());
+                    (<PieceView>moveStruct.sprite).setPiece(destPiece);
                 }
             }
 

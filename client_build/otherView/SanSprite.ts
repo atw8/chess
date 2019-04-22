@@ -44,7 +44,7 @@ export class SanSprite extends PIXI.Container{
         }
 
         if(this.pieceType != PieceType.PAWN){
-            this.uiPieceView = new PieceView(this.sideType, this.pieceType, this.m_height, this.m_height);
+            this.uiPieceView = new PieceView({sideType : this.sideType, pieceType : this.pieceType}, this.m_height, this.m_height);
 
             this.uiPieceView.anchor.set(0.0, 0.5);
             this.uiPieceView.position.set(0.0, -this.uiPieceView.height*0.15);

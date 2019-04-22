@@ -43,7 +43,7 @@ export class MoveClass{
     public originFileRank : FileRank;
     public destFileRank : FileRank;
 
-    public changeSequence : MoveClass.ChangeInterface[];
+    private changeSequence : MoveClass.ChangeInterface[];
 
     private removeAddMoveStructs : {[key : number] : MoveClass.RemoveAddMoveStruct} = {};
 

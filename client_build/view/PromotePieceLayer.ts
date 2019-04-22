@@ -28,11 +28,7 @@ export class PromotePieceLayer extends PIXI.Graphics{
             let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
 
             if(isPromotionMove.isPromotion) {
-                let sideType = (<PieceModel.Interface>isPromotionMove.promotionPieceModel).sideType;
-                let pieceType = (<PieceModel.Interface>isPromotionMove.promotionPieceModel).pieceType;
-
-
-                let pieceSprite = new PieceView(sideType, pieceType, this.m_height, this.m_height);
+                let pieceSprite = new PieceView(<PieceModel.Interface>isPromotionMove.promotionPieceModel, this.m_height, this.m_height);
 
                 pieceSprite.interactive = true;
                 pieceSprite.buttonMode = true;

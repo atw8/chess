@@ -25,7 +25,7 @@ export class TimePanel extends PIXI.Graphics {
         this.m_size = m_size;
 
 
-        this.uiPieceView = new PieceView(this.sideType, PieceType.PAWN, this.m_size, this.m_size);
+        this.uiPieceView = new PieceView({sideType : this.sideType, pieceType : PieceType.PAWN}, this.m_size, this.m_size);
         this.addChild(this.uiPieceView);
 
 

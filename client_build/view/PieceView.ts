@@ -3,6 +3,7 @@ import {PieceType} from "../../shared/engine/PieceType";
 
 import {ImageTag} from "../ImageTag";
 import {SimpleGame} from "../app";
+import {PieceModel} from "../../shared/engine/PieceModel";
 
 
 export class PieceView extends PIXI.Sprite {
@@ -10,21 +11,21 @@ export class PieceView extends PIXI.Sprite {
     private m_squareWidth : number;
     private m_squareHeight : number;
 
-    private sideType : SideType;
-    private pieceType : PieceType;
+
+    private pieceModel : PieceModel.Interface;
 
     public getSideType():SideType{
-        return this.sideType;
+        return this.pieceModel.sideType;
     }
     public getPieceType():PieceType{
-        return this.pieceType;
+        return this.pieceModel.pieceType;
     }
 
-    private static getKeyForSideTypePieceType(sideType : SideType, pieceType : PieceType) : ImageTag{
+    private static getKeyForPieceModel(pieceModel : PieceModel.Interface){
         let key : ImageTag = ImageTag.null;
-        switch(sideType){
+        switch(pieceModel.sideType){
             case SideType.WHITE:
-                switch(pieceType){
+                switch(pieceModel.pieceType){
                     case PieceType.PAWN:
                         key = ImageTag.white_pawn;
                         break;
@@ -46,7 +47,7 @@ export class PieceView extends PIXI.Sprite {
                 }
                 break;
             case SideType.BLACK:
-                switch(pieceType){
+                switch(pieceModel.pieceType){
                     case PieceType.PAWN:
                         key = ImageTag.black_pawn;
                         break;
@@ -72,11 +73,11 @@ export class PieceView extends PIXI.Sprite {
         return key;
     }
 
-    constructor(sideType : SideType, pieceType : PieceType, squareWidth : number, squareHeight : number){
-        super(PIXI.Texture.from(PieceView.getKeyForSideTypePieceType(sideType, pieceType)));
+    constructor(pieceModel : PieceModel.Interface, squareWidth : number, squareHeight : number){
+        super(PIXI.Texture.from(PieceView.getKeyForPieceModel(pieceModel)));
 
-        this.sideType = sideType;
-        this.pieceType = pieceType;
+        this.pieceModel = {sideType : pieceModel.sideType, pieceType : pieceModel.pieceType};
+
 
         this.m_squareWidth = squareWidth;
         this.m_squareHeight = squareHeight;
@@ -88,15 +89,14 @@ export class PieceView extends PIXI.Sprite {
         this.setNormal();
     }
 
-    public setPiece(sideType : SideType, pieceType : PieceType){
-        if(sideType == this.sideType && pieceType == this.pieceType){
+    public setPiece(pieceModel : PieceModel.Interface){
+        if(PieceModel.isEqualTo(pieceModel, this.pieceModel)){
             return;
         }
-        this.sideType = sideType;
-        this.pieceType = pieceType;
 
-        this.texture = PIXI.Texture.from(PieceView.getKeyForSideTypePieceType(this.sideType, this.pieceType));
+        this.pieceModel = {sideType : pieceModel.sideType, pieceType : pieceModel.pieceType};
 
+        this.texture = PIXI.Texture.from(PieceView.getKeyForPieceModel(this.pieceModel));
     }
 
     public setNormal(){
