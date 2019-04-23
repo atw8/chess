@@ -1,6 +1,5 @@
 /node_modules/
-/client_dist/bundle.js
-/client_dist/bundle.js.map
+/client_dist/
 /shared/engine/AbstractEngine.js
 /shared/engine/AbstractEngine.js.map
 /client_build/view/viewInterface/AbstractViewInterface.js
