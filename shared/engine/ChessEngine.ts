@@ -263,6 +263,11 @@ export class ChessEngine extends  AbstractEngine {
 
             this.pawn2MoveFairy[SideType.BLACK] = blackFairyStupid;
         }
+
+        //SET THE KINGS TO ROYAL PIECES
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            this.setPieceToRoyal(sideType, PieceType.KING);
+        }
     };
 
 
@@ -348,6 +353,27 @@ export class ChessEngine extends  AbstractEngine {
         return colorType;
     }
 
+    public updateEnPassantSquare(){
+        this.enPassantSquare = null;
+        if(this.moveClasses.length === 0){
+            this.enPassantSquare = this.fenStrEnPassant;
+        }else {
+            let isLastMoveTwoPawnMove = ChessEngine.isTwoPawnMove(this.moveClasses[this.moveClasses.length - 1]);
+
+            if(isLastMoveTwoPawnMove.isTwoPawn){
+                this.enPassantSquare = <FileRank>isLastMoveTwoPawnMove["enPassantSquare"];
+            }
+
+        }
+    }
+
+
+
+
+
+
+
+
     public init(initParam ?: {isChess960 ?: boolean, beginFenStr ?: string}){
         if(initParam == undefined){
             initParam = {};
@@ -428,47 +454,72 @@ export class ChessEngine extends  AbstractEngine {
 
         this.outitModel();
 
-        //SET THE KINGS TO ROYAL PIECES
-        this.setPieceToRoyal(SideType.WHITE, PieceType.KING);
-        this.setPieceToRoyal(SideType.BLACK, PieceType.KING);
 
-        
-        let splitFenString = this.initParam["beginFenStr"].split(" ");
+
+
+        let fenStrRegExp :RegExp;
+        {
+            let piecePlacementStr = "((?:[pnbrqkPNBRQK12345678]+\/){7}[pnbrqkPNBRQK12345678]+)";
+            let sideTypeStr = "([wb])";
+            let castlingStr = "((?:[KABCDEFGH]?[QABCDEFGH]?[kabcdefgh]?[qabcdefgh]?)|-)";
+            let enPassantStr = "((?:[abcdefgh][12345678])|-)";
+            let halfMoveStr = "(\\d+)";
+            let moveNumberStr = "(\\d+)";
+
+
+            let str = "^" + piecePlacementStr + " " + sideTypeStr + " " + castlingStr + " " + enPassantStr + " " + halfMoveStr + " " + moveNumberStr + "$";
+            fenStrRegExp = new RegExp(str);
+        }
+        /*
+        if(fenStrRegExp.test(this.initParam["beginFenStr"])){
+            console.debug("success");
+        }
+        */
+
+        let fenStrResult : RegExpExecArray | null = fenStrRegExp.exec(this.initParam["beginFenStr"]);
+        if(fenStrResult == null){
+            return;
+        }
+
+
+
         //set the board from fenString
         {
-            let fileNumber = 1;
-            let rank = this.getNumOfRanks();
-            for(let i = 0; i < splitFenString[0].length; i++){
-                let c = splitFenString[0][i];
+            let piecePlacementStr = fenStrResult[1];
 
+            let regex = new RegExp("[pnbrqkPNBRQK12345678]+", "g");
+            let regexMatch = <RegExpMatchArray>piecePlacementStr.match(regex);
 
-                if(c === "p" || c === "n" || c === "b" || c === "r" || c === "q" || c === "k" || c === "P" || c === "N" || c === "B" || c === "R" || c === "Q" || c === "K"){
-                    let piece = <PieceModel>ChessEngine.convertFenCharToPieceModel(c);
-                    let fileRank = new FileRank(fileNumber, rank);
+            for(let i = 0; i < regexMatch.length; i++){
+                let rank = this.getNumOfRanks() - i;
 
+                let fileNumber = 1;
+                for(let j = 0; j < regexMatch[i].length; j++){
+                    let c = regexMatch[i][j];
 
-                    this.setPieceForFileRank(fileRank, piece);
-                    fileNumber = fileNumber + 1;
-                }else if(c === "1" || c === "2" || c === "3" || c === "4" || c === "5" || c === "6" || c === "7" || c === "8"){
-                    fileNumber = fileNumber + parseInt(c);
-                }else if(c === "/"){
-                    fileNumber = 1;
-                    rank = rank - 1;
+                    let piece = ChessEngine.convertFenCharToPieceModel(c);
+                    if(piece != null){
+                        let fileRank = new FileRank(fileNumber, rank);
+
+                        this.setPieceForFileRank(fileRank, piece);
+                        fileNumber += 1;
+                    }else {
+                        fileNumber += parseInt(c);
+
+                    }
                 }
             }
         }
 
 
-
         //set the moveturn from the fenString
-        {
-            let c = splitFenString[1];
-            if(c === "w"){
-                this.setMoveTurn(SideType.WHITE);
-            }else if(c === "b"){
-                this.setMoveTurn(SideType.BLACK);
-            }
+        if(fenStrResult[2] === "w"){
+            this.setMoveTurn(SideType.WHITE);
+        }else if(fenStrResult[2] === "b"){
+            this.setMoveTurn(SideType.BLACK);
         }
+
+
 
         //set the castling rights from the fenString
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
@@ -479,11 +530,18 @@ export class ChessEngine extends  AbstractEngine {
         }
 
 
-        for(let i = 0; i < splitFenString[2].length; i++){
-            let c = splitFenString[2][i];
+
+
+        for(let i = 0; i < fenStrResult[3].length; i++){
+            let c = fenStrResult[3][i];
+
+            if(c == "-"){
+                continue;
+            }
 
             let sType : SideType | null = null;
             let cType : CastleType | null = null;
+
 
             let pieceSet : PieceType[] = [PieceType.KING, PieceType.QUEEN];
             for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
@@ -500,16 +558,13 @@ export class ChessEngine extends  AbstractEngine {
                 }
             }
 
-
             if(sType == null || cType == null){
-                let lowerC = c.toLowerCase();
-
-                let fileNumber = ChessEngine.convertFileToFileNumber(lowerC);
+                let fileNumber = ChessEngine.convertFileToFileNumber(c.toLowerCase());
                 if(fileNumber == null){
                     continue;
                 }
 
-                let sideType : SideType = c.toLowerCase() == c ? SideType.WHITE : SideType.BLACK;
+                let sideType : SideType = c.toLowerCase() != c ? SideType.WHITE : SideType.BLACK;
 
                 let fenStrKingOriginFileNumber = this.fenStrKingOriginFileNumber[sideType];
 
@@ -526,71 +581,70 @@ export class ChessEngine extends  AbstractEngine {
                     continue;
                 }
 
-                this.fenStrCastling[sideType][castleType] = true;
-                this.fenStrRookOriginFileNumber[sideType][castleType] = fileNumber;
-            }else {
+                sType = sideType;
+                cType = castleType;
+                this.fenStrRookOriginFileNumber[sType][cType] = fileNumber;
+            }
+
+
+            if(sType != null && cType != null){
                 this.fenStrCastling[sType][cType] = true;
             }
-        }
 
-        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++) {
-            for (let castleType = CastleType.FIRST_CASTLE; castleType <= CastleType.LAST_CASTLE; castleType++) {
-                if(this.fenStrCastling[sideType][castleType]){
-                    if(this.fenStrRookOriginFileNumber[sideType][castleType] == null){
-                        let rookSquares = this.getSquaresBySideTypePieceType(sideType, PieceType.ROOK);
-                        let fileNumber : number | null = null;
-                        for(let i = 0; i < rookSquares.length; i++){
-                            let rookSquare : FileRank = rookSquares[i];
-                            if(rookSquare.y == this.getRookOriginRank(sideType)){
-                                if(fileNumber == null){
-                                    fileNumber = rookSquares[i].x;
-                                }else {
-                                    if(castleType == CastleType.QUEEN_SIDE){
-                                        fileNumber = Math.min(fileNumber, rookSquares[i].x);
-                                    }else if(castleType == CastleType.KING_SIDE){
-                                        fileNumber = Math.max(fileNumber, rookSquares[i].x);
-                                    }
+
+            if(this.fenStrCastling[sType][cType]){
+                if(this.fenStrRookOriginFileNumber[sType][cType] == null){
+                    let rookSquares = this.getSquaresBySideTypePieceType(sType, PieceType.ROOK);
+                    let fileNumber : number | null = null;
+                    for(let i = 0; i < rookSquares.length; i++){
+                        let rookSquare : FileRank = rookSquares[i];
+                        if(rookSquare.y == this.getRookOriginRank(sType)){
+                            if(fileNumber == null){
+                                fileNumber = rookSquares[i].x;
+                            }else {
+                                if(cType == CastleType.QUEEN_SIDE){
+                                    fileNumber = Math.min(fileNumber, rookSquares[i].x);
+                                }else if(cType == CastleType.KING_SIDE){
+                                    fileNumber = Math.max(fileNumber, rookSquares[i].x);
                                 }
                             }
-
                         }
 
-                        this.fenStrRookOriginFileNumber[sideType][castleType] = fileNumber;
                     }
+
+                    this.fenStrRookOriginFileNumber[sType][cType] = fileNumber;
                 }
             }
         }
 
 
-
-
         //Set the en passant fileRank from the fenString
-        {
-            if(splitFenString[3] === "-"){
-                this.fenStrEnPassant = null;
-            }else {
-                let file = splitFenString[3][0];
-                let fileNumber = <number>ChessEngine.convertFileToFileNumber(file);
-
-                let rank = parseInt(splitFenString[3][1]);
-                this.fenStrEnPassant = new FileRank(fileNumber, rank)
-            }
+        if(fenStrResult[4] == "-"){
+            this.fenStrEnPassant = null;
+        }else {
+            this.fenStrEnPassant = <FileRank>ChessEngine.convertFileRankStrToFileRank(fenStrResult[4]);
         }
 
 
         //set the half move clock vector from the fenstring
         this.halfMoveClockVector = [];
-        this.halfMoveClockVector.push(parseInt(splitFenString[4]));
+        this.halfMoveClockVector.push(parseInt(fenStrResult[5]));
 
         //set the full move number from the fenstring
-        this.moveNumber = parseInt(splitFenString[5]);
+        this.moveNumber = parseInt(fenStrResult[6]);
+
+
+
+
+
+
+
+
 
         this.updateEnPassantSquare();
 
-        this.fenStrings.push(this.initParam["beginFenStr"]);
+        this.fenStrings.push(this.getFenStrFromCurrentBoard());
 
-
-        console.debug(this.getFenStrFromCurrentBoard());
 
         // @ts-ignore
         this.m_isLoseByTime = {};
@@ -614,27 +668,6 @@ export class ChessEngine extends  AbstractEngine {
         this.m_gameState = ChessGameStateEnum.NORMAL;
         this.updateGameState();
     };
-
-
-
-
-
-
-
-
-    public updateEnPassantSquare(){
-        this.enPassantSquare = null;
-        if(this.moveClasses.length === 0){
-            this.enPassantSquare = this.fenStrEnPassant;
-        }else {
-            let isLastMoveTwoPawnMove = ChessEngine.isTwoPawnMove(this.moveClasses[this.moveClasses.length - 1]);
-
-            if(isLastMoveTwoPawnMove.isTwoPawn){
-                this.enPassantSquare = <FileRank>isLastMoveTwoPawnMove["enPassantSquare"];
-            }
-
-        }
-    }
 
 
 
