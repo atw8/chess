@@ -87,8 +87,8 @@
 /client_build/LocalStorageManager.js.mapjs.map
 /client_build/LogoLayer.js
 /client_build/LogoLayer.js.map
-/client_build/MainLayer.js
-/client_build/MainLayer.js.map
+/client_build/ChooseGameLayereLayer.js
+/client_build/ChooseGameLayer.js.mapLayer.js.map
 /.idea/misc.xml
 /.idea/modules.xml
 /client_build/controller/SocketClientInterface.js
@@ -125,3 +125,4 @@
 /client_build/controller/ControllerAbstract.js.map
 /client_build/controller/ControllerTest.js
 /client_build/controller/ControllerTest.js.map
+*.js.map
