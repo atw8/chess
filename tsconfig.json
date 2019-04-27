@@ -6,7 +6,9 @@
         "noImplicitAny": true,
         "strictNullChecks": true,
         "removeComments": false,
-        "allowJs": true
+        "allowJs": true,
+        "typeRoots": ["node_modules/@types"]
     },
     "exclude": ["node_modules"]
+
 }
