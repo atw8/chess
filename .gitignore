@@ -7,11 +7,3 @@
 /.idea/modules.xml
 /.idea/vcs.xml
 /.idea/workspace.xml
-
-#Exclude all the .js and .js.map files under client_build, server, and shared folders
-/client_build/**/.js.map
-/client_build/**/.js
-/server/**/.js.map
-/server/**/.js
-/shared/**/.js.map
-/shared/**/.js
