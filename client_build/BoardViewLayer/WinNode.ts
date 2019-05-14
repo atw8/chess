@@ -3,12 +3,15 @@ import {ChessEngine} from "../../shared/engine/ChessEngine";
 import {ChessGameResultEnum} from "../../shared/engine/ChessGameResultEnum";
 import {SimpleGame} from "../app";
 import {LanguageHelper, LanguageKey} from "../LanguageHelper";
+import * as PIXI from "pixi.js";
 
 export class WinNode extends PIXI.Graphics {
     private m_size : number;
 
     private uiTopText : PIXI.Text;
     private uiBottomText : PIXI.Text;
+
+    private uiOkButton : PIXI.Graphics;
 
     constructor(m_size : number, chessGameState : ChessGameStateEnum) {
         super();
@@ -114,7 +117,7 @@ export class WinNode extends PIXI.Graphics {
         let textStyleOptions : PIXI.TextStyleOptions = {};
         textStyleOptions.fontSize = this.m_size;
         textStyleOptions.fontFamily = "Helvetica";
-        textStyleOptions.fill = "0x000000";
+        textStyleOptions.fill = SimpleGame.getBlackColor();
         textStyleOptions.fontWeight = "bold";
         this.uiTopText = new PIXI.Text(textTop, textStyleOptions);
         this.uiTopText.anchor.set(0.5, 0.5);
@@ -122,12 +125,61 @@ export class WinNode extends PIXI.Graphics {
 
 
         textStyleOptions.fontSize = Math.round(this.m_size*0.6);
-        textStyleOptions.fill = "0xFBE2B2";
+        textStyleOptions.fill = SimpleGame.getLightBrownColor();
         this.uiBottomText = new PIXI.Text(textBottom, textStyleOptions);
         this.uiBottomText.anchor.set(0.5, 0.5);
         this.addChild(this.uiBottomText);
 
-        SimpleGame.arrangeVertically([this.uiTopText, this.uiBottomText]);
+
+        /*
+            public static getLightBrownColor():number{
+        return 0xFBE2B2;
+    }
+    public static getDarkBrownColor():number{
+        return 0xA66325;
+    }
+    public static getWhiteColor():number{
+        return 0xFFFFFF;
+    }
+    public static getBlackColor():number{
+        return 0x000000;
+    }
+
+         */
+
+
+
+        this.uiOkButton = new PIXI.Graphics();
+        {
+            let textStyleOptions : PIXI.TextStyleOptions = {};
+            textStyleOptions.fontSize = this.m_size;
+            textStyleOptions.fontFamily = "Helvetica";
+            textStyleOptions.fill = SimpleGame.getBlackColor();
+            textStyleOptions.fontWeight = "bold";
+
+            let uiOkText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.Ok), textStyleOptions);
+            uiOkText.anchor.set(0.5, 0.5);
+
+
+            let width = uiOkText.width*1.2;
+            let height = uiOkText.height*1.2;
+
+            this.uiOkButton.beginFill(SimpleGame.getWhiteColor(), 1.0);
+            this.uiOkButton.lineStyle(5,  SimpleGame.getBlackColor(), 1.0);
+            this.uiOkButton.drawRoundedRect(-width/2, -height/2, width, height, 4);
+
+            this.uiOkButton.addChild(uiOkText);
+            //uiOkText.position.x = 0;//this.uiOkButton.width/2;
+            //uiOkText.position.y = this.uiOkButton.height/2;
+        }
+
+        this.addChild(this.uiOkButton);
+
+
+
+
+
+        SimpleGame.arrangeVertically([this.uiTopText, this.uiBottomText, this.uiOkButton]);
 
         //this.uiBottomText.position.x = this.uiTopText.position.x - this.uiTopText.width/2 + this.uiBottomText.width/2;
 
@@ -149,11 +201,20 @@ export class WinNode extends PIXI.Graphics {
         this.uiTopText.position.x = -_width/(2*padding) + this.uiTopText.width/2;
         this.uiBottomText.position.x = -_width/(2*padding) + this.uiBottomText.width/2;
 
+        this.uiOkButton.position.x = _width/(2*padding) - this.uiOkButton.width/2;
 
 
+        let onUp = ()=>{
+            this.uiOkButton.scale.set(1.0, 1.0);
+        };
+        let onDown = ()=>{
+            this.uiOkButton.scale.set(0.9, 0.9);
+        };
+        let onClick = ()=>{
+            console.log("hello world");
+        };
 
-
-
+        SimpleGame.addBtnProperties(this.uiOkButton, onUp, onDown, onClick);
     }
 
 }

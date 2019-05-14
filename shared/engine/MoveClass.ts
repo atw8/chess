@@ -1,7 +1,6 @@
 import {PieceModel} from "./PieceModel";
 import {FileRank} from "./FileRank";
 import {ChessEngine} from "./ChessEngine";
-import {PieceView} from "../../client_build/view/PieceView";
 
 
 export namespace MoveClass {

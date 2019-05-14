@@ -4,8 +4,8 @@ import * as SocketIO from "socket.io";
 import {RoomServer} from "./RoomServer";
 
 import {
-    ClientServerMessage, ErrorCode, MessageType, OnRoomGetListMessage, OnRoomJoinMessage,
-    OnUserLoginGuestMessage, OnRoomMakeMoveMessage, OpRoomGetListMessage, OpRoomJoinMessage,
+    ClientServerMessage, ErrorCode, MessageType, OnRoomJoinMessage,
+    OnUserLoginGuestMessage, OnRoomMakeMoveMessage, OpRoomJoinMessage,
     OpUserLoginGuestMessage, OpRoomMakeMoveMessage,
     ServerClientMessage
 } from "./../shared/MessageTypes";
@@ -42,7 +42,6 @@ export class SocketServerAgent {
         socket.on(MessageType.OpLoginGuest, this.OpLoginGuest.bind(this, socket));
 
 
-        socket.on(MessageType.OpRoomGetList, this.OpGetRoomList.bind(this, socket));
         socket.on(MessageType.OpRoomJoin, this.OpJoinRoom.bind(this, socket));
         socket.on(MessageType.OpRoomMakeMove, this.OpRoomMakeMove.bind(this, socket));
     }
@@ -89,25 +88,9 @@ export class SocketServerAgent {
         this.playerIdSocketMap.set(playerId, socket);
         this.socketPlayerIdMap.set(socket, playerId);
 
-        onUserLoginGuestMsg.roomId = this.roomServer.getRoomIdForPlayerId(playerId);
-
+        onUserLoginGuestMsg.roomIds = this.roomServer.getRoomIdsForPlayerId(playerId);
 
         this.emitMessage(socket, opUserLoginGuestMsg, onUserLoginGuestMsg);
-    }
-
-    public OpGetRoomList(socket : SocketIO.Socket, message : string){
-        /*
-        console.log("SocketServerAgent.OpGetRoomList");
-        let opGetRoomsListMessage : OpRoomGetListMessage | null = OpRoomGetListMessage.createFromString(message);
-        if(opGetRoomsListMessage == null){
-            return;
-        }
-
-
-        let onGetRoomListMessage : OnRoomGetListMessage = new OnRoomGetListMessage([]);
-        onGetRoomListMessage.roomIds = this.roomServer.getRoomIdList();
-        this.emitMessage(socket, opGetRoomsListMessage, onGetRoomListMessage);
-        */
     }
 
     public OpJoinRoom(socket : SocketIO.Socket, message : string){

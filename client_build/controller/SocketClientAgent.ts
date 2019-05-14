@@ -79,7 +79,6 @@ export class SocketClientAgent {
         this.socket.on("disconnect", this.OnDisconnect.bind(this));
 
         this.socket.on(MessageType.OnLoginGuest, this.OnLoginGuest.bind(this));
-        this.socket.on(MessageType.OnRoomGetList, this.OnGetRoomList.bind(this));
 
         this.socket.on(MessageType.OnRoomJoin, this.OnRoomJoin.bind(this));
         this.socket.on(MessageType.OnRoomJoinBroadcast, this.OnRoomJoinBroadcast.bind(this));
@@ -195,37 +194,24 @@ export class SocketClientAgent {
         this.playerId = onLoginGuestMessage.playerId;
 
 
-        this.OpRoomJoin(onLoginGuestMessage.roomId);
+
+        for(let i = 0; i < onLoginGuestMessage.roomIds.length; i++){
+            let roomId = onLoginGuestMessage.roomIds[i];
+            this.OpRoomJoin({roomId : roomId})
+        }
 
         this.socketClientInterface.OnLoginGuest(onLoginGuestMessage);
     }
 
 
-    public OpGetRoomList(){
-        /*
-        let opGetRoomListMessage : OpRoomGetListMessage = new OpRoomGetListMessage();
-
-        this.emitClientServerMessage(opGetRoomListMessage);
-        */
-    }
-    public OnGetRoomList(message : string){
-        /*
-        let onGetRoomListMessage : OnRoomGetListMessage | null = OnRoomGetListMessage.createFromString(message);
-        if(onGetRoomListMessage == null){
-            return;
-        }
 
 
-        this.updateLatencyTimeDiff(onGetRoomListMessage);
-
-        this.socketClientInterface.OnRoomGetList(onGetRoomListMessage);
-        */
-    }
-
-
-    public OpRoomJoin(roomId ?: number){
-        console.debug("OpRoomJoin ", roomId);
-        let opRoomJoinMsg : OpRoomJoinMessage  = new OpRoomJoinMessage(roomId);
+    public OpRoomJoin(opRoomJoinMsgParams : { roomId ?: number, roomInitConfig ?: RoomInitConfig}){
+        //console.debug("OpRoomJoin ", roomId);
+        let opRoomJoinMsg : OpRoomJoinMessage  = new OpRoomJoinMessage();
+        opRoomJoinMsg.roomId = opRoomJoinMsgParams.roomId;
+        opRoomJoinMsg.roomInitConfig = opRoomJoinMsgParams.roomInitConfig;
+        //opRoomJoinMsg.roomInitConfig = roomInitConfig;
 
         this.emitClientServerMessage(opRoomJoinMsg);
     }
@@ -298,6 +284,7 @@ export class SocketClientAgent {
                 roomStateConfig.chessGameState = onRoomMakeMoveMsg.chessGameState;
             }
         }
+
         this.socketClientInterface.OnRoomMakeMove(onRoomMakeMoveMsg);
     }
     public OnRoomMakeMoveBroadcast(message : string){

@@ -1,9 +1,10 @@
 import {MoveClass} from "../../shared/engine/MoveClass";
-import {MainLayer} from "../MainLayer";
-import {BoardView} from "../view/BoardView";
+import {BoardView} from "../BoardViewLayer/BoardView";
+import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
+import {LogoLayer} from "../LogoLayer";
 
 export interface ControllerAbstract {
-    setParentBoardView(uiParentView : MainLayer, uiBoardView : BoardView):void;
+    setParentBoardView(uiParentView : ParentBoardView, uiBoardView : BoardView):void;
 
     //Boardview related rubbish
     notifyMove(moveClass : MoveClass):void;

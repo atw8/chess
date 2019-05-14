@@ -9,7 +9,6 @@ import {
     OnUserLoginGuestMessage
 } from "./../../shared/MessageTypes";
 
-import {SocketClientInterface} from "./SocketClientInterface";
 import {ControllerAbstract} from "./ControllerAbstract";
 
 import {BoardView} from "../BoardViewLayer/BoardView";
@@ -25,15 +24,13 @@ import {GameTimeManager} from "../../shared/gameTime/GameTimeManager";
 import {DomainMapStruct} from "../../shared/DomainMapStruct";
 import {ChessGameStateEnum} from "../../shared/engine/ChessGameStateEnum";
 import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
-import {LogoLayer} from "../LogoLayer";
+import {ControllerOuter} from "./ControllerOuter";
 
 
-export class Controller implements SocketClientInterface, ControllerAbstract{
-    private socketClientAgent : SocketClientAgent;
-
+export class ControllerInner implements ControllerAbstract{
     private roomId : number;
+    private controllerOuter : ControllerOuter;
 
-    private uiLogoLayer : LogoLayer;
     private uiBoardView : BoardView;
     private uiParentView : ParentBoardView;
     private chessEngine : ChessEngine;
@@ -44,11 +41,11 @@ export class Controller implements SocketClientInterface, ControllerAbstract{
 
     private uiTouchLayer : TouchLayer;
 
-    constructor(){
-        this.socketClientAgent = new SocketClientAgent(this);
-        this.chessEngine = new ChessEngine();
+    constructor(roomId : number, controllerOuter : ControllerOuter){
+        this.roomId = roomId;
+        this.controllerOuter = controllerOuter;
 
-        //this.gameTimeManager;
+        this.chessEngine = new ChessEngine();
 
 
         this.uiTouchLayer = new TouchLayer(this);
@@ -58,10 +55,6 @@ export class Controller implements SocketClientInterface, ControllerAbstract{
     }
 
 
-    public setLogoLayer(uiLogoLayer : LogoLayer){
-        this.uiLogoLayer = uiLogoLayer;
-    }
-
     public setParentBoardView(uiParentView: ParentBoardView, uiBoardView: BoardView): void {
         this.uiParentView = uiParentView;
 
@@ -70,7 +63,6 @@ export class Controller implements SocketClientInterface, ControllerAbstract{
 
         this.synchronizeTouchLayer();
 
-        this.synchronizeTouchLayer();
     }
 
     public synchronizeTouchLayer(){
@@ -86,7 +78,8 @@ export class Controller implements SocketClientInterface, ControllerAbstract{
 
         this.uiBoardView.doMoveAnimation(moveClass, false, false, null);
         let sanMove = this.chessEngine.getSANMoveForCurrentBoardAndMoveClass(moveClass);
-        this.socketClientAgent.OpRoomMakeMove(1, sanMove);
+
+        this.controllerOuter.OpRoomMakeMove(this.roomId, sanMove);
     }
     public notifyPromote(moveClass : MoveClass[]):void{
         this.uiTouchLayer.setIsEnabled(false);
@@ -108,13 +101,8 @@ export class Controller implements SocketClientInterface, ControllerAbstract{
 
     }
     public OnRoomJoin(onRoomJoinMsg : OnRoomJoinMessage){
-        if(!(onRoomJoinMsg.errorCode == ErrorCode.SUCCESS || onRoomJoinMsg.errorCode == ErrorCode.JOIN_ROOM_ALREADY_IN_ROOM)){
-            return;
-        }
-        this.roomId = <number>onRoomJoinMsg.roomId;
-
-        let roomInitConfig = this.socketClientAgent.getRoomInitConfig(this.roomId);
-        let roomStateConfig = this.socketClientAgent.getRoomStateConfig(this.roomId);
+        let roomInitConfig = this.controllerOuter.getRoomInitConfig(this.roomId);
+        let roomStateConfig = this.controllerOuter.getRoomStateConfig(this.roomId);
 
         this.gameTimeManager = new GameTimeManager(roomInitConfig.gameTimeStructs);
 
@@ -147,7 +135,7 @@ export class Controller implements SocketClientInterface, ControllerAbstract{
         this.uiBoardView.updateViewToModel(this.chessEngine);
 
         {
-            let timeStamp = this.socketClientAgent.getServerTimeStamp();
+            let timeStamp = this.controllerOuter.getServerTimeStamp();
             for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
                 this.uiParentView.setTime(sideType, this.gameTimeManager.getCurrentTime(sideType, timeStamp));
             }
@@ -156,7 +144,7 @@ export class Controller implements SocketClientInterface, ControllerAbstract{
 
 
 
-        let mySideType = <SideType>this.sideTypeMapStruct.getKeyForValue(this.socketClientAgent.getPlayerId());
+        let mySideType = <SideType>this.sideTypeMapStruct.getKeyForValue(this.controllerOuter.getPlayerId());
 
         this.uiBoardView.setBoardFacing(mySideType, false);
         //this.gameTimeStructs[SideType.WHITE].start(this.socketClientAgent.getServerTimeStamp());
@@ -208,7 +196,7 @@ export class Controller implements SocketClientInterface, ControllerAbstract{
 
 
     public synchronizeIsWaiting(){
-        let roomStateConfig = this.socketClientAgent.getRoomStateConfig(this.roomId);
+        let roomStateConfig = this.controllerOuter.getRoomStateConfig(this.roomId);
         this.uiParentView.setWaitingNodeVisible(roomStateConfig.roomState != RoomStateEnum.NORMAL);
 
 
@@ -216,7 +204,7 @@ export class Controller implements SocketClientInterface, ControllerAbstract{
         if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
             this.uiTouchLayer.setIsEnabled(false);
         }else {
-            let mySideType = <SideType>this.sideTypeMapStruct.getKeyForValue(this.socketClientAgent.getPlayerId());
+            let mySideType = <SideType>this.sideTypeMapStruct.getKeyForValue(this.controllerOuter.getPlayerId());
 
 
             this.uiTouchLayer.setIsEnabled(this.chessEngine.getMoveTurn() == mySideType);
@@ -224,7 +212,7 @@ export class Controller implements SocketClientInterface, ControllerAbstract{
     }
 
     public OnRoomTimeOutBroadcast(onRoomTimeOutBroadcast : OnRoomTimeOutBroadcastMessage){
-        let roomStateConfig = this.socketClientAgent.getRoomStateConfig(this.roomId);
+        let roomStateConfig = this.controllerOuter.getRoomStateConfig(this.roomId);
         this.gameTimeManager.end(onRoomTimeOutBroadcast.endTimeStamp);
 
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
@@ -237,7 +225,7 @@ export class Controller implements SocketClientInterface, ControllerAbstract{
 
 
     public tick(dt : number):void{
-        let roomStateConfig = this.socketClientAgent.getRoomStateConfig(this.roomId);
+        let roomStateConfig = this.controllerOuter.getRoomStateConfig(this.roomId);
 
         if(roomStateConfig == undefined){
             return;
@@ -249,7 +237,7 @@ export class Controller implements SocketClientInterface, ControllerAbstract{
 
 
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            let currentTime = this.gameTimeManager.getCurrentTime(sideType, this.socketClientAgent.getServerTimeStamp());
+            let currentTime = this.gameTimeManager.getCurrentTime(sideType, this.controllerOuter.getServerTimeStamp());
             this.uiParentView.setTime(sideType, currentTime);
         }
         //console.log("tick ", dt);

@@ -1,6 +1,6 @@
 import {SideType} from "../../shared/engine/SideType";
 import {PieceType} from "../../shared/engine/PieceType";
-import {PieceView} from "../view/PieceView";
+import {PieceView} from "./PieceView";
 import {PieceModel} from "../../shared/engine/PieceModel";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
 

@@ -5,7 +5,7 @@ import {PieceType} from "../../shared/engine/PieceType";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
 import {MoveClass} from "../../shared/engine/MoveClass";
 
-import {PieceView} from "./PieceView";
+import {PieceView} from "../OtherView/PieceView";
 
 import {SquareColorNode} from "./SquareColorNode";
 import {SQUARE_COLORS} from "./SquareColorCons";
@@ -15,7 +15,7 @@ import {POINT_COLORS} from "./PointColorCons";
 
 
 
-import {PositionManager} from "./PositionControl/PositionManager";
+import {PositionManager} from "../PositionManager";
 
 
 import {ImageTag} from "../ImageTag";

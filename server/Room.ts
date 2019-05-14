@@ -24,10 +24,10 @@ export class Room {
     //private playerIdSideTypeMap : {[key : number] : SideType};
     //private sideTypePlayerIdMap : {[key : number] : number};
 
-    private roomServer : RoomServer;
+    public readonly roomServer : RoomServer;
 
-    private roomId : number;
-    private roomInitConfig : RoomInitConfig;
+    public readonly roomId : number;
+    public readonly roomInitConfig : RoomInitConfig;
     //private roomStateConfig : RoomStateConfig;
 
     private sideTypeMapStruct : DomainMapStruct<SideType, number>;
@@ -40,10 +40,11 @@ export class Room {
     private gameTimeManager : GameTimeManager;
 
 
-    constructor(roomServer : RoomServer, roomInitConfig : RoomInitConfig){
+    constructor(roomServer : RoomServer, roomId : number, roomInitConfig : RoomInitConfig){
         this.roomServer = roomServer;
+        this.roomId = roomId;
         this.roomInitConfig = roomInitConfig;
-        this.roomId = this.roomInitConfig.roomId;
+
 
         this.gameTimeManager = new GameTimeManager(this.roomInitConfig.gameTimeStructs);
 
@@ -61,6 +62,10 @@ export class Room {
     public getRoomInitConfig():RoomInitConfig{
         return this.roomInitConfig;
     }
+    public getRoomInitConfigStr():string{
+        return RoomInitConfig.getRoomInitConfigStr(this.roomInitConfig);
+    }
+
     public getRoomStateConfig():RoomStateConfig{
         let roomStateConfig : RoomStateConfig = new RoomStateConfig();
 
@@ -84,6 +89,9 @@ export class Room {
         return roomStateConfig;
     }
 
+    public getRoomId():number{
+        return this.roomId;
+    }
 
 
 
@@ -95,23 +103,34 @@ export class Room {
     */
 
 
+    public canJoinRoom(sideType ?: SideType):boolean{
+        let ret : boolean;
+
+        if(sideType == undefined){
+            ret = this.sideTypeMapStruct.getFreeKeys().length > 0;
+        }else {
+            ret = this.sideTypeMapStruct.getValueForKey(sideType) != undefined;
+        }
+
+        return ret;
+    }
 
     public joinRoom(playerId : number, opJoinRoomMsg : OpRoomJoinMessage, onJoinRoomMsg : OnRoomJoinMessage):void{
         let sideType = opJoinRoomMsg.sideType;
         if(this.sideTypeMapStruct.getKeyForValue(playerId) != undefined){
             onJoinRoomMsg.setErrorCode(ErrorCode.JOIN_ROOM_ALREADY_IN_ROOM);
 
-            sideType = <SideType>this.sideTypeMapStruct.getKeyForValue(playerId)
-        }else if(sideType == undefined){
-            let freeSideTypes : SideType[] = this.sideTypeMapStruct.getFreeKeys();
+            sideType = <SideType>this.sideTypeMapStruct.getKeyForValue(playerId);
+        }else {
+            if(this.canJoinRoom(sideType)){
+                if(sideType == undefined){
+                    let freeSideTypes : SideType[] = this.sideTypeMapStruct.getFreeKeys();
 
-            if(freeSideTypes.length != 0){
-                sideType = freeSideTypes[Math.floor(Math.random()*freeSideTypes.length)];
+                    sideType = freeSideTypes[Math.floor(Math.random()*freeSideTypes.length)];
+                }
             }else {
                 onJoinRoomMsg.setErrorCode(ErrorCode.JOIN_ROOM_ALREADY_HAS_SIDE_TYPE);
             }
-        }else if(this.sideTypeMapStruct.getValueForKey(sideType) != undefined){
-            onJoinRoomMsg.setErrorCode(ErrorCode.JOIN_ROOM_ALREADY_HAS_SIDE_TYPE);
         }
 
 
@@ -126,6 +145,7 @@ export class Room {
         }
 
         if(onJoinRoomMsg.getErrorCode() == ErrorCode.SUCCESS || onJoinRoomMsg.getErrorCode() == ErrorCode.JOIN_ROOM_ALREADY_IN_ROOM){
+            onJoinRoomMsg.roomId = this.roomId;
             onJoinRoomMsg.roomInitConfig = this.getRoomInitConfig();
             onJoinRoomMsg.roomStateConfig = this.getRoomStateConfig();
         }
@@ -135,7 +155,7 @@ export class Room {
         if(onJoinRoomMsg.getErrorCode() == ErrorCode.SUCCESS){
             let oppositePlayerId = this.sideTypeMapStruct.getValueForKey(ChessEngine.getOppositeSideType(<SideType>sideType));
             if(oppositePlayerId != undefined){
-                let onJoinRoomBroadcastMsg = new OnRoomJoinBroadcastMessage(this.roomInitConfig.roomId);
+                let onJoinRoomBroadcastMsg = new OnRoomJoinBroadcastMessage(this.roomId);
                 onJoinRoomBroadcastMsg.sideTypeMap = this.sideTypeMapStruct.getDomainMap();
                 onJoinRoomBroadcastMsg.beginTimeStamp = this.gameTimeManager.getFirstTimeStamp();
                 onJoinRoomBroadcastMsg.chessGameState = this.chessEngine.getGameState();

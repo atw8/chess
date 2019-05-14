@@ -2,7 +2,7 @@ import * as PIXI from 'pixi.js';
 import {SideType} from "../../shared/engine/SideType";
 import {PieceType} from "../../shared/engine/PieceType";
 
-import {PieceView} from "../view/PieceView";
+import {PieceView} from "./PieceView";
 import {SimpleGame} from "../app";
 
 
@@ -74,7 +74,7 @@ export class TimePanel extends PIXI.Graphics {
             text = " \u221E";
         }
 
-        this.uiText.text = text
+        this.uiText.text = text;
     }
 
 

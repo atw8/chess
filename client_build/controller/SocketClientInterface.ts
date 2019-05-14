@@ -1,5 +1,4 @@
 import {
-    OnRoomGetListMessage,
     OnRoomJoinMessage,
     OnUserLoginGuestMessage,
     OnRoomMakeMoveMessage, OnRoomJoinBroadcastMessage, OnRoomMakeMoveBroadcastMessage, OnRoomTimeOutBroadcastMessage
@@ -10,9 +9,6 @@ export interface SocketClientInterface {
     OnDisconnect() : void;
 
     OnLoginGuest(onLoginGuestMsg :OnUserLoginGuestMessage) :void;
-
-    OnRoomGetList(onGetRoomListMsg : OnRoomGetListMessage):void;
-
 
     OnRoomJoin(onRoomJoinMsg : OnRoomJoinMessage):void;
     OnRoomJoinBroadcast(onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage):void;

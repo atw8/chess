@@ -9,9 +9,6 @@ export enum MessageType {
     OpLoginGuest = "OpLoginGuest",
     OnLoginGuest = "OnLoginGuest",
 
-    OpRoomGetList = "OpRoomGetList",
-    OnRoomGetList = "OnGetRoomsList",
-
     OpRoomMakeMove = "OpRoomMakeMove",
     OnRoomMakeMove = "OnRoomMakeMove",
     OnRoomMakeMoveBroadcast = "OnRoomMakeMoveBroadcast",
@@ -22,6 +19,8 @@ export enum MessageType {
 
     OnRoomTimeOutBroadcast = "OnRoomTimeOutBroadcast",
 };
+
+
 
 export enum ErrorCode {
     SUCCESS = 0,
@@ -128,10 +127,10 @@ let validator : Validator;
                     "format" : "GameTimeType",
                 },
                 "totalTime" : {
-                    "type" : "number"
+                    "type" : "integer"
                 },
                 "incrTime" : {
-                    "type" : "number"
+                    "type" : "integer"
                 }
             },
             "required" : ["timeType"]
@@ -143,10 +142,6 @@ let validator : Validator;
             "id" : "/RoomInitConfig",
             "type" : "object",
             "properties" : {
-                "roomId" : {
-                    "type" : "integer",
-                },
-
                 "gameTimeStructs" : {
                     "type" : "object",
                     "additionalProperties": {"$ref": "/GameTimeStruct"},
@@ -160,7 +155,7 @@ let validator : Validator;
                     "type" : "string",
                 }
             },
-            "required" : ["roomId", "gameTimeStructs"]
+            "required" : ["gameTimeStructs"]
         };
         validator.addSchema(roomInitConfig, "/RoomInitConfig");
 
@@ -220,12 +215,14 @@ let validator : Validator;
 
 
 export class RoomInitConfig {
-    public roomId : number;
-
     public gameTimeStructs : { [key in SideType] : {"timeType" : GameTimeType, "totalTime" ?: number, "incrTime" ?: number}};
 
     public isChess960 ?: boolean;
     public beginFenStr ?: string;
+
+    public static getRoomInitConfigStr(roomInitConfig : RoomInitConfig):string{
+        return JSON.stringify(roomInitConfig);
+    }
 
     public static validateSchema(json : any):boolean{
         let validatorResult : ValidatorResult = validator.validate(json, validator.schemas["/RoomInitConfig"]);
@@ -252,8 +249,6 @@ export class RoomInitConfig {
         }
 
         let roomInitConfig : RoomInitConfig = new RoomInitConfig();
-        roomInitConfig.roomId = json.roomId;
-
         roomInitConfig.gameTimeStructs = json.gameTimeStructs;
 
         roomInitConfig.beginFenStr = json.beginFenStr;
@@ -544,7 +539,7 @@ export class OnUserLoginGuestMessage extends ServerClientMessage {
     public guestToken : string;
     public playerId : number;
 
-    public roomId ?: number;
+    public roomIds : number[] = [];
 
     public constructor(){
         super(MessageType.OnLoginGuest);
@@ -564,11 +559,14 @@ export class OnUserLoginGuestMessage extends ServerClientMessage {
                 "playerId" : {
                     "type" : "integer",
                 },
-                "roomId" : {
-                    "type" : "integer",
+                "roomIds" : {
+                    "type" : "array",
+                    "items": {
+                        "type": "number"
+                    }
                 }
             },
-            "required" : ["guestToken", "playerId"],
+            "required" : ["guestToken", "playerId", "roomIds"],
             "$ref": "/ServerClientMessage"
         };
 
@@ -601,6 +599,7 @@ export class OnUserLoginGuestMessage extends ServerClientMessage {
         let onUserLoginGuestMsg : OnUserLoginGuestMessage = new OnUserLoginGuestMessage();
         onUserLoginGuestMsg.guestToken = json.guestToken;
         onUserLoginGuestMsg.playerId = json.playerId;
+        onUserLoginGuestMsg.roomIds = json.roomIds;
         onUserLoginGuestMsg.superCreateFromJson(json);
 
         return onUserLoginGuestMsg;
@@ -609,102 +608,10 @@ export class OnUserLoginGuestMessage extends ServerClientMessage {
 
 
 //RELATED TO ROOM
-//Getting the list of rooms
-export class OpRoomGetListMessage extends ClientServerMessage {
-    /*
-    public constructor(){
-        super(MessageType.OpRoomGetList);
-    }
-
-    public static validateSchema(json : any) : boolean{
-        return validator.validate(json, validator.schemas["/ClientServerMessage"]).valid;
-    }
-
-    public static createFromString(str : string):OpRoomGetListMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            return null;
-        }
-
-        return this.createFromJson(json);
-    }
-    public static createFromJson(json : any):OpRoomGetListMessage | null {
-        if(!this.validateSchema(json)){
-            return null;
-        }
-
-        let opGetRoomsListMessage : OpRoomGetListMessage = new OpRoomGetListMessage();
-        opGetRoomsListMessage.superCreateFromJson(json);
-
-        return opGetRoomsListMessage;
-    }
-    */
-}
-export class OnRoomGetListMessage extends ServerClientMessage {
-    /*
-    public roomIds : number[];
-
-    public constructor(roomIds : number[]){
-        super(MessageType.OnRoomGetList);
-        this.roomIds = roomIds;
-    }
-
-
-    public static validateSchema(json : any): boolean {
-        let schema : Schema = {
-            "id" : "/OnRoomGetListMessage",
-            "type" : "object",
-            "properties" : {
-                "roomIds" : {
-                    "type" : "array",
-                    "items" : {
-                        "type" : "integer"
-                    }
-                }
-            },
-            "required" : ["roomIds"],
-            "$ref": "/ServerClientMessage"
-        };
-
-
-        let validatorResult : ValidatorResult = validator.validate(json, schema);
-        if(!validatorResult.valid){
-            console.log(validatorResult);
-            console.log(validatorResult.valid);
-        }
-
-        return validatorResult.valid;
-    }
-
-    public static createFromString(str : string):OnRoomGetListMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            return null;
-        }
-
-        return this.createFromJson(json);
-    }
-
-    public static createFromJson(json : any):OnRoomGetListMessage | null{
-        if(!this.validateSchema(json)){
-            return null;
-        }
-
-        let onGetRoomsListMessage : OnRoomGetListMessage = new OnRoomGetListMessage(json.roomIds);
-        onGetRoomsListMessage.superCreateFromJson(json);
-
-        return onGetRoomsListMessage;
-    }
-    */
-}
-
 //Related to joining a room
 export class OpRoomJoinMessage extends ClientServerMessage {
     public roomId ?: number;
+    public roomInitConfig ?: RoomInitConfig;
     public sideType ?: SideType;
 
     public constructor(roomId ?: number, sideType ?: SideType){
@@ -723,6 +630,10 @@ export class OpRoomJoinMessage extends ClientServerMessage {
                 },
                 "sideType" : {
                     "type" : "integer"
+                },
+                "roomInitConfig" : {
+                    "type" : "object",
+                    "$ref" : "/RoomInitConfig"
                 }
             },
             "required" : [],
@@ -757,6 +668,9 @@ export class OpRoomJoinMessage extends ClientServerMessage {
 
         let opJoinRoomMessage : OpRoomJoinMessage = new OpRoomJoinMessage(json.roomId, json.sideType);
         opJoinRoomMessage.superCreateFromJson(json);
+        if(json.roomInitConfig != undefined){
+            opJoinRoomMessage.roomInitConfig = <RoomInitConfig>RoomInitConfig.createFromJson(json.roomInitConfig);
+        }
 
         return opJoinRoomMessage;
 
@@ -769,9 +683,13 @@ export class OnRoomJoinMessage extends ServerClientMessage {
     public roomStateConfig ?: RoomStateConfig;
 
 
-    public constructor(roomId ?: number, sideType ?: SideType){
+    public constructor(opRoomJoinMessage ?: OpRoomJoinMessage){
         super(MessageType.OnRoomJoin);
-        this.roomId = roomId;
+
+        if(opRoomJoinMessage != undefined){
+            this.roomId = opRoomJoinMessage.roomId;
+            this.roomInitConfig = opRoomJoinMessage.roomInitConfig;
+        }
     }
 
     public static validateSchema(json : any):boolean{
@@ -820,8 +738,11 @@ export class OnRoomJoinMessage extends ServerClientMessage {
             return null;
         }
 
-        let onJoinRoomMessage : OnRoomJoinMessage = new OnRoomJoinMessage(json.roomId, json.sideType);
+        let onJoinRoomMessage : OnRoomJoinMessage = new OnRoomJoinMessage();
         onJoinRoomMessage.superCreateFromJson(json);
+
+        onJoinRoomMessage.roomId = json.roomId;
+
 
         if(json.roomInitConfig != undefined){
             onJoinRoomMessage.roomInitConfig = <RoomInitConfig>RoomInitConfig.createFromJson(json.roomInitConfig);

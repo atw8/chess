@@ -27,6 +27,8 @@ export enum LanguageKey {
     ZeroOne,
     HalfHalf,
 
+    Ok,
+
 }
 
 export namespace LanguageHelper {
@@ -90,6 +92,9 @@ export namespace LanguageHelper {
                 break;
             case LanguageKey.Waiting:
                 ret = "Waiting";
+                break;
+            case LanguageKey.Ok:
+                ret = "Ok";
                 break;
         }
 
