@@ -8,8 +8,8 @@
 /client_build/app.js.map
 /client_build/view/BoardView.js
 /client_build/view/BoardView.js.map
-/client_build/controller/Controller.js
-/client_build/controller/Controller.js.map
+/client_build/controller/ControllerInnerInner.js
+/client_build/controller/ControllerInner.jserInner.js.map
 /shared/engine/ChessEngine.js
 /shared/engine/ChessEngine.js.map
 /shared/engine/Fairy/Fairy.js
