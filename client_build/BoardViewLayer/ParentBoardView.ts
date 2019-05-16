@@ -71,7 +71,6 @@ export class ParentBoardView extends PIXI.display.Layer {
 
 
 
-        this.showWinNode(ChessGameStateEnum.WHITE_WIN_CHECKMATE);
         /*
         let chessGameStateSet : ChessGameStateEnum[] = [];
         chessGameStateSet.push(ChessGameStateEnum.DRAW_STALEMATE);
@@ -140,8 +139,8 @@ export class ParentBoardView extends PIXI.display.Layer {
         this.uiTimePanels[sideType].setTime(timeMili);
     }
 
-    public showWinNode(chessGameState : ChessGameStateEnum){
-        let uiWinNode = new WinNode(45, chessGameState);
+    public showWinNode(chessGameState : ChessGameStateEnum, okCallback : () => void){
+        let uiWinNode = new WinNode(45, chessGameState, okCallback);
         this.addChild(uiWinNode);
     }
 }

@@ -12,6 +12,7 @@ import {
     RoomInitConfig, RoomStateConfig
 } from "../../shared/MessageTypes";
 import {ControllerInner} from "./ControllerInner";
+import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
 
 export class ControllerOuter implements SocketClientInterface{
     private uiLogoLayer : LogoLayer;
@@ -19,25 +20,42 @@ export class ControllerOuter implements SocketClientInterface{
 
 
     private roomIdMap : { [key : number] : ControllerInner};
+    private roomIdLayerMap : { [key : number] : ParentBoardView};
 
     constructor(uiLogoLayer : LogoLayer){
         this.uiLogoLayer = uiLogoLayer;
         this.socketClientAgent = new SocketClientAgent(this);
 
         this.roomIdMap = {};
+        this.roomIdLayerMap = {};
     }
 
 
 
-    public getOrAddController(roomId : number):ControllerInner{
+
+    public getOrCreateController(roomId : number):ControllerInner{
         if(this.roomIdMap[roomId] == undefined){
             let controllerInner = new ControllerInner(roomId, this);
-            this.uiLogoLayer.addParentBoardView(controllerInner);
+            let parentBoardView = new ParentBoardView(controllerInner);
 
             this.roomIdMap[roomId] = controllerInner;
+            this.roomIdLayerMap[roomId] = parentBoardView;
+
+            this.uiLogoLayer.addLayer(parentBoardView);
         }
 
         return this.roomIdMap[roomId];
+    }
+    public removeController(roomId : number):void{
+        delete this.roomIdMap[roomId];
+
+        let parentBoardView = this.roomIdLayerMap[roomId];
+        if(parentBoardView != undefined){
+            this.uiLogoLayer.removeLayer(parentBoardView);
+        }
+
+        delete this.roomIdLayerMap[roomId];
+
     }
 
 
@@ -67,7 +85,32 @@ export class ControllerOuter implements SocketClientInterface{
     }
 
     public OnLoginGuest(onLoginGuestMsg :OnUserLoginGuestMessage) :void {
+        if(!(onLoginGuestMsg.getErrorCode() == ErrorCode.SUCCESS)){
+            return;
+        }
 
+        let removeRoomIds : number[] = [];
+
+        for(let _roomId in this.roomIdMap){
+            let roomId = parseInt(_roomId);
+
+            let isRemove : boolean = true;
+
+            for(let i = 0; i < onLoginGuestMsg.roomIds.length && isRemove; i++){
+                if(onLoginGuestMsg.roomIds[i] == roomId){
+                    isRemove = false;
+                }
+            }
+
+            if(isRemove){
+                removeRoomIds.push(roomId);
+            }
+        }
+
+        for(let i = 0; i < removeRoomIds.length; i++){
+            let roomId = removeRoomIds[i];
+            this.removeController(roomId);
+        }
     }
 
     public OpRoomJoin(opRoomJoinMsgParams : { roomId ?: number, roomInitConfig ?: RoomInitConfig}){
@@ -80,7 +123,7 @@ export class ControllerOuter implements SocketClientInterface{
 
         let roomId = <number>onRoomJoinMsg.roomId;
 
-        let controller = this.getOrAddController(roomId);
+        let controller = this.getOrCreateController(roomId);
 
         controller.OnRoomJoin(onRoomJoinMsg);
     }
@@ -91,7 +134,7 @@ export class ControllerOuter implements SocketClientInterface{
 
         let roomId = <number>onRoomJoinBroadcastMsg.roomId;
 
-        let controller = this.getOrAddController(roomId);
+        let controller = this.getOrCreateController(roomId);
 
         controller.OnRoomJoinBroadcast(onRoomJoinBroadcastMsg);
     }
@@ -107,7 +150,7 @@ export class ControllerOuter implements SocketClientInterface{
 
         let roomId = <number>onRoomMakeMoveMsg.roomId;
 
-        let controller = this.getOrAddController(roomId);
+        let controller = this.getOrCreateController(roomId);
 
         controller.OnRoomMakeMove(onRoomMakeMoveMsg);
     }
@@ -118,7 +161,7 @@ export class ControllerOuter implements SocketClientInterface{
 
         let roomId = <number>onRoomMakeMoveBroadcastMsg.roomId;
 
-        let controller = this.getOrAddController(roomId);
+        let controller = this.getOrCreateController(roomId);
 
         controller.OnRoomMakeMoveBroadcast(onRoomMakeMoveBroadcastMsg);
     }
@@ -130,7 +173,7 @@ export class ControllerOuter implements SocketClientInterface{
 
         let roomId = <number>onRoomTimeOutBroadcastMsg.roomId;
 
-        let controller = this.getOrAddController(roomId);
+        let controller = this.getOrCreateController(roomId);
 
         controller.OnRoomTimeOutBroadcast(onRoomTimeOutBroadcastMsg);
     }

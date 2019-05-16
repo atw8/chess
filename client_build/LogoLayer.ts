@@ -5,11 +5,6 @@ import {ImageTag} from "./ImageTag";
 import {ControllerOuter} from "./controller/ControllerOuter";
 import {RoomInitConfig} from "../shared/MessageTypes";
 
-import {ParentBoardView} from "./BoardViewLayer/ParentBoardView";
-import {ControllerInner} from "./controller/ControllerInner";
-import {WinNode} from "./BoardViewLayer/WinNode";
-
-import {ChessGameStateEnum} from "../shared/engine/ChessGameStateEnum";
 
 const ScrollLayerSpeed : number = 10;
 
@@ -35,15 +30,13 @@ export class LogoLayer extends PIXI.Container {
 
 
 
-        this.scrollLayer.addLayer(new ChooseGameLayer(this.onClickCallback.bind(this)));
+
         //this.scrollLayer.addLayer(new ChooseGameLayer());
         //this.scrollLayer.addLayer(new ChooseGameLayer());
 
 
         this.points = [];
-
-        this.arrangePoints();
-        this.updatePointTexture();
+        this.addLayer(new ChooseGameLayer(this.onClickCallback.bind(this)));
 
 
         this.controller = new ControllerOuter(this);
@@ -56,8 +49,10 @@ export class LogoLayer extends PIXI.Container {
         */
 
 
+        /*
         let uiWinNode = new WinNode(45, ChessGameStateEnum.WHITE_WIN_CHECKMATE);
         this.addChild(uiWinNode);
+        */
     }
 
 
@@ -66,6 +61,24 @@ export class LogoLayer extends PIXI.Container {
     }
 
 
+    public addLayer(layer : PIXI.DisplayObject){
+        this.scrollLayer.addLayer(layer);
+        this.scrollLayer.goToLayer(layer, true);
+
+        this.arrangePoints();
+        this.updatePointTexture();
+    }
+
+    public removeLayer(layer : PIXI.DisplayObject){
+        let layerIndex = this.scrollLayer.getLayerIndexForLayer(layer);
+        this.scrollLayer.removeLayer(layer);
+        this.scrollLayer.goToLayerIndex(layerIndex - 1, true);
+
+        this.arrangePoints();
+        this.updatePointTexture();
+    }
+
+    /*
     public addParentBoardView(controllerInner : ControllerInner){
         let parentBoardView = new ParentBoardView(controllerInner);
         this.scrollLayer.addLayer(parentBoardView);
@@ -75,6 +88,8 @@ export class LogoLayer extends PIXI.Container {
         this.scrollLayer.goToLayer(parentBoardView, true);
         this.updatePointTexture();
     }
+    */
+
 
 
 
@@ -82,10 +97,12 @@ export class LogoLayer extends PIXI.Container {
         let isArrange : boolean = this.points.length != this.scrollLayer.getNumOfLayers();
 
 
-        for(let i = this.points.length; i < this.scrollLayer.getNumOfLayers(); i++){
+        while(this.points.length < this.scrollLayer.getNumOfLayers()){
             let point = PIXI.Sprite.from(ImageTag.pointOff);
             point.scale.set(2);
             this.addChild(point);
+
+            let pointIndex = this.points.length;
 
             this.points.push(point);
 
@@ -94,14 +111,13 @@ export class LogoLayer extends PIXI.Container {
 
             point.interactive = true;
 
-            point.on("pointerdown", this.onPointDown.bind(this, point, i));
-            point.on("pointerupoutside", this.onPointUp.bind(this, point, i));
-            point.on("pointercancel", this.onPointUp.bind(this, point, i));
+            point.on("pointerdown", this.onPointDown.bind(this, point, pointIndex));
+            point.on("pointerupoutside", this.onPointUp.bind(this, point, pointIndex));
+            point.on("pointercancel", this.onPointUp.bind(this, point, pointIndex));
 
-            point.on("pointerup", this.onPointClick.bind(this, point, i));
+            point.on("pointerup", this.onPointClick.bind(this, point, pointIndex));
         }
-
-        for(let i = this.scrollLayer.getNumOfLayers(); i > this.points.length; i--){
+        while(this.points.length > this.scrollLayer.getNumOfLayers()){
             let point = <PIXI.Sprite>this.points.pop();
             this.removeChild(point);
         }

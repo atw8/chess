@@ -190,7 +190,7 @@ export class ControllerInner implements ControllerAbstract{
         this.synchronizeIsWaiting();
 
         if(this.chessEngine.getGameState() != ChessGameStateEnum.NORMAL){
-            this.uiParentView.showWinNode(this.chessEngine.getGameState());
+            this.uiParentView.showWinNode(this.chessEngine.getGameState(), this.OnRoomFinish.bind(this));
         }
     }
 
@@ -220,7 +220,11 @@ export class ControllerInner implements ControllerAbstract{
         }
 
 
-        this.uiParentView.showWinNode(this.chessEngine.getGameState());
+        this.uiParentView.showWinNode(this.chessEngine.getGameState(), this.OnRoomFinish.bind(this));
+    }
+
+    public OnRoomFinish(){
+        this.controllerOuter.removeController(this.roomId);
     }
 
 
