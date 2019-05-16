@@ -49,8 +49,10 @@ export class RoomServer {
             this.roomIdCounter++;
             roomId = this.roomIdCounter;
 
-            let room = new Room(this, roomId, (<RoomInitConfig>opJoinRoomMessage.roomInitConfig));
-            this.roomContainer.addRoom(room.getRoomId(), room.getRoomInitConfigStr());
+            let roomInitConfig = <RoomInitConfig>opJoinRoomMessage.roomInitConfig;
+
+            let room = new Room(this, roomId, roomInitConfig);
+            this.roomContainer.addRoom(room.getRoomId(), roomInitConfig);
 
             this.roomsMap[roomId] = room;
         }

@@ -57,10 +57,12 @@ export class RoomContainer {
         }
 
     }
-    public addRoom(roomId : number, roomInitConfigStr : string){
+    public addRoom(roomId : number, roomInitConfig : RoomInitConfig){
         if(roomId in this.roomIdRoomInitConfigStrMap){
             return;
         }
+        let roomInitConfigStr = RoomInitConfig.getRoomInitConfigStr(roomInitConfig);
+
 
         this.roomIdRoomInitConfigStrMap[roomId] = roomInitConfigStr;
 

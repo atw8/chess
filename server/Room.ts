@@ -43,12 +43,15 @@ export class Room {
     constructor(roomServer : RoomServer, roomId : number, roomInitConfig : RoomInitConfig){
         this.roomServer = roomServer;
         this.roomId = roomId;
-        this.roomInitConfig = roomInitConfig;
+        //this.roomInitConfig = roomInitConfig;
+        this.roomInitConfig = JSON.parse(JSON.stringify(roomInitConfig));
 
 
         this.gameTimeManager = new GameTimeManager(this.roomInitConfig.gameTimeStructs);
 
         this.chessEngine = new ChessEngine(this.roomInitConfig);
+        this.roomInitConfig.beginFenStr = this.chessEngine.getFirstFenStr();
+
 
         this.sideTypeMapStruct = new DomainMapStruct<SideType, number>([SideType.WHITE, SideType.BLACK]);
 
