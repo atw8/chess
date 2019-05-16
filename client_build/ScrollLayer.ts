@@ -122,7 +122,7 @@ export class ScrollLayer extends PIXI.Container{
     }
 
     public removeLayer(layer: PIXI.DisplayObject){
-        let layerIndex = this.getChildIndex(layer);
+        let layerIndex = this.getLayerIndexForLayer(layer);
 
         this.scrollNode.removeChild(layer);
         this.layers.splice(layerIndex, 1);
