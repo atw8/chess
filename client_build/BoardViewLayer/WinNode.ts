@@ -7,16 +7,18 @@ import * as PIXI from "pixi.js";
 
 export class WinNode extends PIXI.Graphics {
     private m_size : number;
+    private onOkCallback : () => void;
 
     private uiTopText : PIXI.Text;
     private uiBottomText : PIXI.Text;
 
     private uiOkButton : PIXI.Graphics;
 
-    constructor(m_size : number, chessGameState : ChessGameStateEnum) {
+    constructor(m_size : number, chessGameState : ChessGameStateEnum, onOkCallback : () => void) {
         super();
 
         this.m_size = m_size;
+        this.onOkCallback = onOkCallback;
 
 
         let textTopKey : LanguageKey = LanguageKey.Error;
@@ -210,11 +212,8 @@ export class WinNode extends PIXI.Graphics {
         let onDown = ()=>{
             this.uiOkButton.scale.set(0.9, 0.9);
         };
-        let onClick = ()=>{
-            console.log("hello world");
-        };
 
-        SimpleGame.addBtnProperties(this.uiOkButton, onUp, onDown, onClick);
+        SimpleGame.addBtnProperties(this.uiOkButton, onUp, onDown, this.onOkCallback);
     }
 
 }
