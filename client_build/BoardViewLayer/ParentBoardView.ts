@@ -15,7 +15,7 @@ import {PieceType} from "../../shared/engine/PieceType";
 
 export class ParentBoardView extends PIXI.display.Layer {
     private uiBoardView : BoardView;
-    private uiTimePanels : { [key : number] : TimePanel};
+    private uiTimePanels : { [key in SideType] : TimePanel};
 
     private controllerInner : ControllerAbstract;
 
@@ -33,7 +33,7 @@ export class ParentBoardView extends PIXI.display.Layer {
         this.addChild(this.uiBoardView);
         //SimpleGame.debugDraw(this.uiBoardView);
 
-
+        //@ts-ignore
         this.uiTimePanels = {};
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
             let uiTimePanel = new TimePanel(sideType,60);

@@ -22,9 +22,12 @@ export class GameTimeNormal extends GameTimeAbstract {
                 ret += timeStamps[i - 1] - timeStamps[i] + this.incrTime;
             }
         }else if(sideType == SideType.BLACK){
-            for(let i = 0; i < timeStamps.length; i += 2){
+            for(let i = 2; i < timeStamps.length; i += 2){
                 ret += timeStamps[i - 1] - timeStamps[i] + this.incrTime;
             }
+        }
+        if(this.gameTimeManager.getMoveTurn() == sideType){
+            ret += timeStamps[timeStamps.length - 1] - timeStamp;
         }
 
         return ret;
