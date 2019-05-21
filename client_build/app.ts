@@ -9,6 +9,9 @@ import * as TWEEN from '@tweenjs/tween.js'
 import {SideType} from "../shared/engine/SideType";
 import TextStyleOptions = PIXI.TextStyleOptions;
 import {ChooseGameLayer} from './ChooseGameLayer/ChooseGameLayer';
+import {ControllerTest} from "./controller/ControllerTest";
+import {ParentBoardView} from "./BoardViewLayer/ParentBoardView";
+import {ControllerOuter} from "./controller/ControllerOuter";
 
 enum ORIENTATION {
     LANDSCAPE,
@@ -135,6 +138,12 @@ export class SimpleGame extends PIXI.Application{
 
 
         this.runLayer(new LogoLayer());
+        /*
+        let controllerOuter = new ControllerOuter()
+        let controllerTest = new ControllerInner();
+        let parentBoardView = new ParentBoardView(controllerTest);
+        this.runLayer(parentBoardView);
+        */
     }
 
 
@@ -196,7 +205,7 @@ export class SimpleGame extends PIXI.Application{
         spr.on("pointerupoutside", onUp);
         spr.on("pointercancel", onUp);
 
-        spr.on("pointerup", onClick);
+        spr.on("pointerup", () => {onUp();onClick()});
     }
 
     public static arrangeVertically(sprs : (PIXI.Container | number)[]):number{
