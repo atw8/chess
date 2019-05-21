@@ -49,7 +49,7 @@ export class TimePanel extends PIXI.Graphics {
         this.beginFill(0xFBE2B2);
         this.drawRect(-_width/2, -this.height/2, _width, this.height);
 
-        this.lineStyle(1, 0x000000);
+        this.lineStyle(1, SimpleGame.getBlackColor());
         this.moveTo(-_width/2, -this.height/2);
         this.lineTo(_width/2, -this.height/2);
         this.lineTo(_width/2, this.height/2);
