@@ -25,6 +25,7 @@ import {DomainMapStruct} from "../../shared/DomainMapStruct";
 import {ChessGameStateEnum} from "../../shared/engine/ChessGameStateEnum";
 import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
 import {ControllerOuter} from "./ControllerOuter";
+import {PredictPanel} from "../OtherView/PredictPanel";
 
 
 export class ControllerInner implements ControllerAbstract{
@@ -54,15 +55,25 @@ export class ControllerInner implements ControllerAbstract{
         PIXI.ticker.shared.add(this.tick, this);
     }
 
+    public isPredictPanel():boolean{
+        return true;
+    }
+    public predictMovePress(isMyMove : boolean, sanStr : string){
 
-    public setParentBoardView(uiParentView: ParentBoardView, uiBoardView: BoardView): void {
-        this.uiParentView = uiParentView;
+    }
 
-        this.uiBoardView = uiBoardView;
+
+    public setParentBoardView(opts : {uiParentView : ParentBoardView,
+        uiBoardView : BoardView,
+        uiPredictPanel : PredictPanel | null,
+        uiPredictBoardView : BoardView | null}):void{
+
+        this.uiParentView = opts.uiParentView;
+
+        this.uiBoardView = opts.uiBoardView;
         this.uiBoardView.updateViewToModel(null);
 
         this.synchronizeTouchLayer();
-
     }
 
     public synchronizeTouchLayer(){
@@ -72,7 +83,7 @@ export class ControllerInner implements ControllerAbstract{
     }
 
 
-    public notifyMove(moveClass : MoveClass):void{
+    public notifyMove(moveClass : MoveClass, uiBoardView : BoardView):void{
         this.uiTouchLayer.setIsEnabled(false);
 
 
@@ -81,7 +92,7 @@ export class ControllerInner implements ControllerAbstract{
 
         this.controllerOuter.OpRoomMakeMove(this.roomId, sanMove);
     }
-    public notifyPromote(moveClass : MoveClass[]):void{
+    public notifyPromote(moveClass : MoveClass[], uiBoardView : BoardView):void{
         this.uiTouchLayer.setIsEnabled(false);
 
         this.uiParentView.showPromotePieceLayer(moveClass, this.notifyMove.bind(this))
@@ -150,7 +161,7 @@ export class ControllerInner implements ControllerAbstract{
         //this.gameTimeStructs[SideType.WHITE].start(this.socketClientAgent.getServerTimeStamp());
         //this.gameTimeStructs[SideType.BLACK].start(this.socketClientAgent.getServerTimeStamp());
 
-        this.synchronizeIsWaiting();
+        this.syncrhonizeRoomState();
     }
 
     public OnRoomJoinBroadcast(onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage){
@@ -158,7 +169,7 @@ export class ControllerInner implements ControllerAbstract{
         this.sideTypeMapStruct.setDomainMap(onRoomJoinBroadcastMsg.sideTypeMap);
 
 
-        this.synchronizeIsWaiting();
+        this.syncrhonizeRoomState();
     }
 
 
@@ -187,29 +198,11 @@ export class ControllerInner implements ControllerAbstract{
         this.gameTimeManager.doMove(timeStamp);
 
 
-        this.synchronizeIsWaiting();
-
-        if(this.chessEngine.getGameState() != ChessGameStateEnum.NORMAL){
-            this.uiParentView.showWinNode(this.chessEngine.getGameState(), this.OnRoomFinish.bind(this));
-        }
+        this.syncrhonizeRoomState();
     }
 
 
-    public synchronizeIsWaiting(){
-        let roomStateConfig = this.controllerOuter.getRoomStateConfig(this.roomId);
-        this.uiParentView.setWaitingNodeVisible(roomStateConfig.roomState != RoomStateEnum.NORMAL);
 
-
-
-        if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
-            this.uiTouchLayer.setIsEnabled(false);
-        }else {
-            let mySideType = <SideType>this.sideTypeMapStruct.getKeyForValue(this.controllerOuter.getPlayerId());
-
-
-            this.uiTouchLayer.setIsEnabled(this.chessEngine.getMoveTurn() == mySideType);
-        }
-    }
 
     public OnRoomTimeOutBroadcast(onRoomTimeOutBroadcast : OnRoomTimeOutBroadcastMessage){
         let roomStateConfig = this.controllerOuter.getRoomStateConfig(this.roomId);
@@ -220,12 +213,10 @@ export class ControllerInner implements ControllerAbstract{
         }
 
 
-        this.uiParentView.showWinNode(this.chessEngine.getGameState(), this.OnRoomFinish.bind(this));
+        this.syncrhonizeRoomState();
     }
 
-    public OnRoomFinish(){
-        this.controllerOuter.removeController(this.roomId);
-    }
+
 
 
     public tick(dt : number):void{
@@ -249,6 +240,27 @@ export class ControllerInner implements ControllerAbstract{
 
 
 
+    public syncrhonizeRoomState(){
+        let roomStateConfig = this.controllerOuter.getRoomStateConfig(this.roomId);
+        this.uiParentView.setWaitingNodeVisible(roomStateConfig.roomState == RoomStateEnum.START);
+
+
+        if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
+            this.uiTouchLayer.setIsEnabled(false);
+        }else {
+            let mySideType = <SideType>this.sideTypeMapStruct.getKeyForValue(this.controllerOuter.getPlayerId());
+
+            this.uiTouchLayer.setIsEnabled(this.chessEngine.getMoveTurn() == mySideType);
+        }
+
+        if(roomStateConfig.roomState == RoomStateEnum.END){
+            let OnRoomFinish = () =>{
+                this.controllerOuter.removeController(this.roomId);
+            };
+
+            this.uiParentView.showWinNode(roomStateConfig.chessGameState, OnRoomFinish);
+        }
+    }
     /*
     public async OpLoginGuest():MessageOnLogin{
 
