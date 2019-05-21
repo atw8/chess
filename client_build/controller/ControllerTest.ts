@@ -1,124 +1,120 @@
-/*
 import {ControllerAbstract} from "./ControllerAbstract";
-import {BoardView} from "../BoardViewLayer/BoardView";
-import {MoveClass} from "../../shared/engine/MoveClass";
-import {ChessEngine} from "../../shared/engine/ChessEngine";
-import {TouchLayer} from "../BoardViewLayer/TouchLayer";
 import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
-import {LogoLayer} from "../LogoLayer";
+import {MoveClass} from "../../shared/engine/MoveClass";
+import {BoardView} from "../BoardViewLayer/BoardView";
+import {ChessEngine} from "../../shared/engine/ChessEngine";
+import {Matcher} from "anymatch";
+import {PredictPanel} from "../OtherView/PredictPanel";
+import {AbstractEngine} from "../../shared/engine/AbstractEngine";
 
-export class ControllerTest implements ControllerAbstract{
-    private uiLogoLayer : LogoLayer;
+export class ControllerTest implements ControllerAbstract {
     private uiParentView : ParentBoardView;
     private uiBoardView : BoardView;
+    private uiPredictBoardView : BoardView | null;
 
     private chessEngine : ChessEngine;
 
-    private uiTouchLayer : TouchLayer;
+    public setParentBoardView(opts : {uiParentView : ParentBoardView,
+        uiBoardView : BoardView,
+        uiPredictPanel : PredictPanel | null,
+        uiPredictBoardView : BoardView | null}):void{
 
 
-    public setLogoLayer(uiLogoLayer : LogoLayer):void {
-        this.uiLogoLayer = uiLogoLayer;
-    }
+        this.uiParentView = opts.uiParentView;
+        this.uiBoardView = opts.uiBoardView;
+        this.uiPredictBoardView = opts.uiPredictBoardView;
 
-    public setParentBoardView(uiParentView: ParentBoardView, uiBoardView: BoardView): void {
-        this.uiParentView = uiParentView;
-
-        this.uiBoardView = uiBoardView;
         this.chessEngine = new ChessEngine();
-
-
-        //this.chessEngine.init({"isChess960" : false, "beginFenStr" : "r3k2r/1P6/8/8/8/8/8/R3K2R w KQkq - 1 5"});
-
-        //this.chessEngine.init({"isChess960" : false, beginFenStr :"k7/8/8/8/8/4p3/3P4/8 w - - 1 5"});
-        //this.chessEngine.init({"isChess960" : true});
-        this.chessEngine.init({isChess960 : true, beginFenStr :"nbb1kqr1/ppp1ppp1/7r/3p1N1p/3P1n1P/7R/PPP1PPP1/NBB1KQR1 w Kk - 8 7"});
         this.uiBoardView.updateViewToModel(this.chessEngine);
 
+        let moveClasses = this.chessEngine.getAllLegalMoves(null, false);
+        let sanMoves = this.chessEngine.getSANMovesForCurrentBoardAndMoveClasses(moveClasses);
 
 
-        this.uiTouchLayer = new TouchLayer(this);
-        this.uiTouchLayer.setIsEnabled(true);
-
-        this.uiParentView.setWaitingNodeVisible(false);
-
-
-
-
-        {
-            let fenStrRegExp :RegExp;
-            {
-                let piecePlacementStr = "((?:[pnbrqkPNBRQK12345678]+\/){7}[pnbrqkPNBRQK12345678]+)";
-                let sideTypeStr = "([wb])";
-                let castlingStr = "((?:[KABCDEFGH]?[QABCDEFGH]?[kabcdefgh]?[qabcdefgh]?)|-)";
-                let enPassantStr = "((?:[abcdefgh][12345678])|-)";
-                let halfMoveStr = "(\\d)+";
-                let moveNumberStr = "(\\d)+";
-
-
-                let str = "^" + piecePlacementStr + " " + sideTypeStr + " " + castlingStr + " " + enPassantStr + " " + halfMoveStr + " " + moveNumberStr + "$";
-
-                str = "^" + sideTypeStr + " " + halfMoveStr + " " + moveNumberStr + "$";
-                let beginFenStr =  "w 0 1";
-
-
-                let fenStrRegEx = new RegExp(str);
-
-                if(fenStrRegEx.test(beginFenStr)){
-                    alert("IT SUCCEDDED " + beginFenStr);
-                    console.debug("success");
-                }
-            }
-
+        let votedMoves :  { sanStr : string, number : number}[] = [];
+        for(let i = 0; i < sanMoves.length; i++){
+            let number = Math.floor(Math.random()*100);
+            votedMoves.push({sanStr : sanMoves[i], number : number});
         }
+
+        this.uiParentView.setVotedMoves(votedMoves);
+
+        console.log(this.chessEngine.getSanMoves());
+
+        //this.onPredictBoardViewDoMove();
     }
+
+
+
 
     //Boardview related rubbish
-    public notifyMove(moveClass : MoveClass){
-        this.uiTouchLayer.setIsEnabled(true);
+    public notifyMove(moveClass : MoveClass, uiBoardView : BoardView){
 
-
-        let uciMove = this.chessEngine.getUCIMoveForMoveClass(moveClass);
-        moveClass = <MoveClass>this.chessEngine.getMoveClassForUCIMove(uciMove);
-
-        this.chessEngine.doMove(moveClass);
-        this.chessEngine.undoMove();
-
-        //let sanMove = this.chessEngine.getSANMoveForCurrentBoardAndMoveClass(moveClass);
-        //moveClass = <MoveClass>this.chessEngine.getMoveClassForCurrentBoardAndSanMove(sanMove);
-
-
-
-        this.chessEngine.doMove(moveClass);
-
-
-
-        this.chessEngine.doMove(moveClass);
-        this.uiBoardView.doMove(moveClass);
-
-
-        let initParam = {"isChess960" : this.chessEngine.initParam.isChess960,
-            "beginFenStr" : this.chessEngine.getLastFenStr()};
-
-        this.chessEngine.init(initParam);
-        this.uiBoardView.updateViewToModel(this.chessEngine);
     }
 
-    public notifyPromote(moveClasses : MoveClass[]){
-        this.uiTouchLayer.setIsEnabled(false);
+    public notifyPromote(moveClasses : MoveClass[], uiBoardView : BoardView){
 
-        this.uiParentView.showPromotePieceLayer(moveClasses, this.notifyMove.bind(this))
+    }
+
+    //Touch related API
+    public onTouchBegan(point : PIXI.Point){
+
+    }
+    public onTouchMoved(point : PIXI.Point){
+
+    }
+    public onTouchEnded(point : PIXI.Point){
+
     }
 
 
-    public onTouchBegan(worldLocation : PIXI.Point){
-        this.uiBoardView.onTouchBegan(worldLocation, this.chessEngine);
+    private isPredictContinue : boolean = true;
+    public isPredictPanel():boolean{
+        return true;
     }
-    public onTouchMoved(worldLocation : PIXI.Point){
-        this.uiBoardView.onTouchMoved(worldLocation, this.chessEngine);
+    public predictMovePress(isMyMove : boolean, sanMove : string){
+        if(this.uiPredictBoardView == null){
+            return;
+        }
+
+        this.isPredictContinue = false;
+        this.uiPredictBoardView.updateViewToModel(null);
+        this.isPredictContinue = true;
+
+        let _p = () => {
+            if(this.uiPredictBoardView == null){
+                return;
+            }
+            if(!this.isPredictContinue){
+                return;
+            }
+
+
+            this.uiPredictBoardView.updateViewToModel(null);
+
+            let moveClass = this.chessEngine.getMoveClassForCurrentBoardAndSanMove(sanMove);
+            if(moveClass == null){
+                return;
+            }
+
+            this.uiPredictBoardView.doMove(moveClass, _p2)
+        };
+
+        let _p2 = (moveClass : MoveClass) => {
+            if(this.uiPredictBoardView == null){
+                return;
+            }
+            if(!this.isPredictContinue){
+                return;
+            }
+
+            moveClass = AbstractEngine.flipMoveClass(moveClass);
+
+            this.uiPredictBoardView.doMove(moveClass, _p);
+        };
+
+        _p();
     }
-    public onTouchEnded(worldLocation : PIXI.Point){
-        this.uiBoardView.onTouchEnded(worldLocation, this.chessEngine);
-    }
+
+
 }
-*/
