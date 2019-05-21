@@ -7,6 +7,7 @@ import {RoomInitConfig} from "../shared/MessageTypes";
 
 
 const ScrollLayerSpeed : number = 10;
+const DisplayPoints : boolean = false;
 
 export class LogoLayer extends PIXI.Container {
     //private logo : PIXI.Sprite;
@@ -94,6 +95,9 @@ export class LogoLayer extends PIXI.Container {
 
 
     public arrangePoints(){
+        if(!DisplayPoints){
+            return;
+        }
         let isArrange : boolean = this.points.length != this.scrollLayer.getNumOfLayers();
 
 
