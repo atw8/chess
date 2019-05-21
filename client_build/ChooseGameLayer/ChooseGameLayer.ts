@@ -5,6 +5,8 @@ import {ChooseGameButton} from "./ChooseGameButton";
 import {SimpleGame} from "../app";
 import {ImageTag} from "../ImageTag";
 import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
+import {GameTimeStructConfigs} from "../../shared/gameTime/GameTimeManager";
+import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 
 export class ChooseGameLayer extends PIXI.Container {
     private onClickCallback : (roomInitConfig : RoomInitConfig) => void;
@@ -15,32 +17,43 @@ export class ChooseGameLayer extends PIXI.Container {
 
         let roomInitConfigs : RoomInitConfig[] = [];
         {
-            let roomInitConfig = new RoomInitConfig();
-            roomInitConfig.isChess960 = true;
+
+            let roomTypeEnum : RoomTypeEnum = RoomTypeEnum.MULTIPLAYER;
             // @ts-ignore
-            roomInitConfig.gameTimeStructs = {};
-            roomInitConfig.gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.INFINITE};
-            roomInitConfig.gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.INFINITE};
+            let gameTimeStructs : GameTimeStructConfigs = {};
+            gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.INFINITE};
+            gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.INFINITE};
+
+            let roomInitConfig = new RoomInitConfig(roomTypeEnum, gameTimeStructs);
+            roomInitConfig.isChess960 = true;
 
             roomInitConfigs.push(roomInitConfig);
         }
         {
-            let roomInitConfig = new RoomInitConfig();
-            roomInitConfig.isChess960 = true;
+            let roomTypeEnum : RoomTypeEnum = RoomTypeEnum.MULTIPLAYER;
             // @ts-ignore
-            roomInitConfig.gameTimeStructs = {};
-            roomInitConfig.gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.MOVE, totalTime : 1 * 60 * 1000, incrTime : 0};
-            roomInitConfig.gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.MOVE, totalTime : 1 * 60 * 1000, incrTime : 0};
+            let gameTimeStructs : GameTimeStructConfigs = {};
+            gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.MOVE, totalTime : 1 * 60 * 1000, incrTime : 0};
+            gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.MOVE, totalTime : 1 * 60 * 1000, incrTime : 0};
+
+            let roomInitConfig = new RoomInitConfig(roomTypeEnum, gameTimeStructs);
+            roomInitConfig.isChess960 = true;
 
             roomInitConfigs.push(roomInitConfig);
         }
         {
-            let roomInitConfig = new RoomInitConfig();
+            let roomTypeEnum : RoomTypeEnum = RoomTypeEnum.MULTIPLAYER;
+            // @ts-ignore
+            let gameTimeStructs : GameTimeStructConfigs = {};
+            gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.NORMAL, totalTime : 1 * 60 * 1000, incrTime : 5*1000};
+            gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.NORMAL, totalTime : 1 * 60 * 1000, incrTime : 5*1000};
+
+            gameTimeStructs[SideType.WHITE].totalTime = 5*1000;
+            gameTimeStructs[SideType.BLACK].totalTime = 5*1000;
+
+            let roomInitConfig = new RoomInitConfig(roomTypeEnum, gameTimeStructs);
             roomInitConfig.isChess960 = false;
-            // @ts-ignore
-            roomInitConfig.gameTimeStructs = {};
-            roomInitConfig.gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.NORMAL, totalTime : 1 * 60 * 1000, incrTime : 5*1000};
-            roomInitConfig.gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.NORMAL, totalTime : 1 * 60 * 1000, incrTime : 5*1000};
+
 
             roomInitConfigs.push(roomInitConfig);
         }
