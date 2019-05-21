@@ -1166,9 +1166,9 @@ export class ChessEngine extends  AbstractEngine {
 
         let sideType = this.getMoveTurn();
         for(let pieceType = PieceType.FIRST_PIECE; pieceType <= PieceType.LAST_PIECE; pieceType++){
-            let squares = this.getSquaresByPieceType(pieceType);
+            let squares = this.getSquaresBySideTypePieceType(sideType, pieceType);
             for(let j = 0; j < squares.length; j++){
-                ret.concat(this.getLegalMoves(squares[j], destFileRank, isCheckGameState));
+                ret = ret.concat(this.getLegalMoves(squares[j], destFileRank, isCheckGameState));
             }
         }
 
