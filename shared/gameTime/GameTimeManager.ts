@@ -5,6 +5,10 @@ import {GameTimeInfinite} from "./GameTimeInfinite";
 import {GameTimeMove} from "./GameTimeMove";
 import {GameTimeNormal} from "./GameTimeNormal";
 
+
+export type GameTimeStructConfig = { "timeType" : GameTimeType, "totalTime" ?: number, incrTime ?: number}
+export type GameTimeStructConfigs = { [key in SideType] : GameTimeStructConfig};
+
 export class GameTimeManager {
     private gameTimeStructs : { [key in SideType] : GameTimeAbstract} ;
 
@@ -19,7 +23,7 @@ export class GameTimeManager {
         return this.timeStamps[this.timeStamps.length - 1];
     }
 
-    constructor(gameTimeStructConfigs : { [key in SideType] : { "timeType" : GameTimeType, "totalTime" ?: number, incrTime ?: number}}){
+    constructor(gameTimeStructConfigs : GameTimeStructConfigs){
         this.timeStamps = [];
 
         // @ts-ignore

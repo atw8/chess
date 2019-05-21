@@ -27,7 +27,4 @@ export abstract class GameTimeAbstract {
     public undoMove(){}
 
     public setTimeStamps(timeStamps : number[]){}
-
-
-
 }
