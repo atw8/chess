@@ -9,17 +9,18 @@ import {WinNode} from "./WinNode";
 import {ChessGameStateEnum} from "../../shared/engine/ChessGameStateEnum";
 import {ControllerAbstract} from "../controller/ControllerAbstract";
 import {PredictPanel} from "../OtherView/PredictPanel";
-import {PieceView} from "../OtherView/PieceView";
-import {PieceType} from "../../shared/engine/PieceType";
 
 
 export class ParentBoardView extends PIXI.display.Layer {
     private uiBoardView : BoardView;
+    private uiPredictBoardView : BoardView;
+
     private uiTimePanels : { [key in SideType] : TimePanel};
 
     private controllerInner : ControllerAbstract;
 
     private uiWaitingNode : WaitingNode;
+    private uiPredictPanel : PredictPanel;
 
     constructor(controllerInner : ControllerAbstract){
         super();
@@ -28,7 +29,8 @@ export class ParentBoardView extends PIXI.display.Layer {
 
         //this.controller.setParentView(this);
 
-        this.uiBoardView = new BoardView(800, this.controllerInner);
+
+        this.uiBoardView = new BoardView({size : 800, isBoardVisible : true, displaySquares : true}, this.controllerInner);
         this.uiBoardView.zIndex = 0;
         this.addChild(this.uiBoardView);
         //SimpleGame.debugDraw(this.uiBoardView);
@@ -43,6 +45,19 @@ export class ParentBoardView extends PIXI.display.Layer {
             this.uiTimePanels[sideType] = uiTimePanel;
         }
 
+        if(this.controllerInner.isPredictPanel()){
+            let m_opts = {size : 800, isBoardVisible : false, displaySquares : false, moveSpeedNormal : 0.0005, pieceAlpha : 0.5};
+
+            this.uiPredictBoardView = new BoardView(m_opts, this.controllerInner);
+            this.uiPredictBoardView.zIndex = 1;
+            this.addChild(this.uiPredictBoardView);
+
+            this.uiPredictPanel = new PredictPanel(800, 50, this.controllerInner);
+            this.uiPredictPanel.position.x = this.uiBoardView.position.x + this.uiBoardView.width/2 + this.uiPredictPanel.width/2;
+            this.addChild(this.uiPredictPanel);
+        }
+
+
         if(SimpleGame.isLandscape()){
             for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
                 let uiTimePanel = this.uiTimePanels[sideType];
@@ -52,12 +67,27 @@ export class ParentBoardView extends PIXI.display.Layer {
 
             this.uiTimePanels[SideType.WHITE].position.y = this.uiBoardView.position.y - this.uiBoardView.height/2 + this.uiTimePanels[SideType.WHITE].height/2;
             this.uiTimePanels[SideType.BLACK].position.y = this.uiBoardView.position.y + this.uiBoardView.height/2 - this.uiTimePanels[SideType.BLACK].height/2;
+
+
+            let w = this.uiPredictPanel.width + this.uiBoardView.width;
+            if(w > SimpleGame.getDesignWidth()){
+                let s = SimpleGame.getDesignWidth()/w;
+
+                this.uiBoardView.scale.set(s);
+                this.uiPredictBoardView.scale.set(s);
+                this.uiPredictPanel.scale.set(s);
+            }
+
+            SimpleGame.arrangeHorizontally([this.uiBoardView, this.uiPredictPanel]);
+            this.uiPredictBoardView.position = this.uiBoardView.position;
+
         }else {
 
         }
 
         //Add the uiWaitingNode
         this.uiWaitingNode = new WaitingNode(80);
+        this.uiWaitingNode.position = this.uiBoardView.position;
         this.uiWaitingNode.zIndex = 2;
         this.addChild(this.uiWaitingNode);
 
@@ -67,7 +97,19 @@ export class ParentBoardView extends PIXI.display.Layer {
 
 
 
-        this.controllerInner.setParentBoardView(this, this.uiBoardView);
+        /*
+        opts : {uiParentView : ParentBoardView,
+        uiBoardView : BoardView,
+        uiPredictPanel : PredictPanel | null,
+        uiPredictBoardView : BoardView | null}
+         */
+        this.controllerInner.setParentBoardView({
+            uiParentView: this,
+            uiBoardView: this.uiBoardView,
+            uiPredictPanel: this.uiPredictPanel,
+            uiPredictBoardView: this.uiPredictBoardView
+        });
+
 
 
 
@@ -116,18 +158,24 @@ export class ParentBoardView extends PIXI.display.Layer {
         this.addChild(this.uiPredictPanel);
         this.uiPredictPanel.position.set(this.uiBoardView.position.x, this.uiBoardView.position.y);
         */
-
-
+    }
+    /*
+    public createPredictPanel(){
+        if(this.uiPredictPanel != undefined){
+            return;
+        }
+    }
+    */
+    public setVotedMoves(votedDatas : { sanStr : string, number : number}[]){
+        this.uiPredictPanel.setVotedMoves(votedDatas);
     }
 
-    public uiPredictPanel : PredictPanel;
 
     public showPromotePieceLayer(moveClasses : MoveClass[], callback : (moveClass : MoveClass) => void){
         let promotePieceLayer = new PromotePieceLayer(moveClasses, 90, callback);
         promotePieceLayer.position.set(SimpleGame.getDesignWidth()/2, SimpleGame.getDesignHeight()/2);
         this.addChild(promotePieceLayer);
     }
-
 
     public setWaitingNodeVisible(isVisible : boolean){
         this.uiWaitingNode.visible = isVisible;
