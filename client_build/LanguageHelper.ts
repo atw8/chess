@@ -29,6 +29,8 @@ export enum LanguageKey {
 
     Ok,
 
+    MyMove,
+    VotedMoves,
 }
 
 export namespace LanguageHelper {
@@ -96,9 +98,16 @@ export namespace LanguageHelper {
             case LanguageKey.Ok:
                 ret = "Ok";
                 break;
+            case LanguageKey.MyMove:
+                ret = "My Move";
+                break;
+            case LanguageKey.VotedMoves:
+                ret = "Voted Moves";
+                break;
         }
 
 
         return ret;
     }
 }
+
