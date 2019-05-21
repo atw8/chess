@@ -84,6 +84,14 @@ export class RoomServer {
     }
 
 
+
+    public removeRoom(room : Room):void{
+        let roomId = room.getRoomId();
+        this.roomContainer.removeRoom(roomId);
+        delete this.roomsMap[roomId];
+    }
+
+
     public emitMessage(socket : SocketIO.Socket | number, clientServerMessage : ClientServerMessage | null, serverClientMessage : ServerClientMessage){
         this.socketServerAgent.emitMessage(socket, clientServerMessage, serverClientMessage);
     }

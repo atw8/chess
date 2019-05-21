@@ -3,6 +3,8 @@ import {GameTimeType} from "../shared/gameTime/GameTimeType";
 import {SideType} from "./engine/SideType";
 import {RoomStateEnum} from "../shared/RoomStateEnum";
 import {ChessGameStateEnum} from "./engine/ChessGameStateEnum";
+import {RoomTypeEnum} from "./RoomTypeEnum";
+import {GameTimeStructConfigs} from "./gameTime/GameTimeManager";
 
 
 export enum MessageType {
@@ -57,7 +59,7 @@ let validator : Validator;
     };
 
     validator.customFormats.GameTimeType = function(input : number){
-        return input in GameTimeType;
+        return input >= GameTimeType.FIRST_TIME_TYPE && input <= GameTimeType.LAST_TIME_TYPE;
     };
 
     validator.customFormats.ChessGameStateEnum = function(input : number){
@@ -65,7 +67,7 @@ let validator : Validator;
     };
 
     validator.customFormats.RoomStateEnum = function(input : number){
-        return input in RoomStateEnum;
+        return input >= RoomStateEnum.FIRST_ROOM_STATE && input <= RoomTypeEnum.LAST_ROOM_TYPE;
     };
     validator.customFormats.SideTypeMap = function(input : any){
         let ret : boolean = true;
@@ -77,6 +79,10 @@ let validator : Validator;
 
         return ret;
     };
+    validator.customFormats.RoomTypeEnum = function(input : number){
+        return input >= RoomTypeEnum.FIRST_ROOM_TYPE && input <= RoomTypeEnum.LAST_ROOM_TYPE;
+    };
+
     {
         let clientServerSchema : Schema = {
             "id" : "/ClientServerMessage",
@@ -142,6 +148,10 @@ let validator : Validator;
             "id" : "/RoomInitConfig",
             "type" : "object",
             "properties" : {
+                "roomTypeEnum" : {
+                    "type" : "integer",
+                    "format" : "RoomTypeEnum"
+                },
                 "gameTimeStructs" : {
                     "type" : "object",
                     "additionalProperties": {"$ref": "/GameTimeStruct"},
@@ -155,7 +165,7 @@ let validator : Validator;
                     "type" : "string",
                 }
             },
-            "required" : ["gameTimeStructs"]
+            "required" : ["roomTypeEnum", "gameTimeStructs"]
         };
         validator.addSchema(roomInitConfig, "/RoomInitConfig");
 
@@ -215,10 +225,17 @@ let validator : Validator;
 
 
 export class RoomInitConfig {
-    public gameTimeStructs : { [key in SideType] : {"timeType" : GameTimeType, "totalTime" ?: number, "incrTime" ?: number}};
+    public roomTypeEnum : RoomTypeEnum;
+    public gameTimeStructs : GameTimeStructConfigs;
 
     public isChess960 ?: boolean;
     public beginFenStr ?: string;
+
+
+    constructor(roomTypeEnum : RoomTypeEnum, gameTimeStructs : { [key in SideType] : {"timeType" : GameTimeType, "totalTime" ?: number, "incrTime" ?: number}}){
+        this.roomTypeEnum = roomTypeEnum;
+        this.gameTimeStructs = gameTimeStructs;
+    }
 
     public static getRoomInitConfigStr(roomInitConfig : RoomInitConfig):string{
         return JSON.stringify(roomInitConfig);
@@ -248,8 +265,11 @@ export class RoomInitConfig {
             return null;
         }
 
-        let roomInitConfig : RoomInitConfig = new RoomInitConfig();
-        roomInitConfig.gameTimeStructs = json.gameTimeStructs;
+
+        let roomTypeEnum : RoomTypeEnum = json.roomTypeEnum;
+        let gameTimeStructs : GameTimeStructConfigs = json.gameTimeStructs;
+
+        let roomInitConfig : RoomInitConfig = new RoomInitConfig(roomTypeEnum, gameTimeStructs);
 
         roomInitConfig.beginFenStr = json.beginFenStr;
         roomInitConfig.isChess960 = json.isChess960;
@@ -1050,7 +1070,7 @@ export class OnRoomTimeOutBroadcastMessage extends ServerClientMessage {
 
         this.roomId = roomId;
         this.roomState = roomState;
-        this.chessGameState = this.chessGameState;
+        this.chessGameState = chessGameState;
         this.endTimeStamp = endTimeStamp;
         this.isLoseByTimeMap = isLoseByTimeMap;
     }

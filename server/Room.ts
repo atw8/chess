@@ -19,6 +19,7 @@ import {RoomStateEnum} from "../shared/RoomStateEnum";
 import {ChessGameStateEnum} from "../shared/engine/ChessGameStateEnum";
 import {GameTimeManager} from "../shared/gameTime/GameTimeManager";
 import {DomainMapStruct} from "../shared/DomainMapStruct";
+import {RoomTypeEnum} from "../shared/RoomTypeEnum";
 
 export class Room {
     //private playerIdSideTypeMap : {[key : number] : SideType};
@@ -238,12 +239,12 @@ export class Room {
                 this.roomServer.emitMessage(oppositePlayerId, null, onRoomMakeMoveBroadcastMsg);
             }
         }
+
+
+        if(this.roomStateEnum == RoomStateEnum.END){
+            this.roomServer.removeRoom(this);
+        }
     }
-
-
-
-
-
 
 
 
@@ -277,6 +278,14 @@ export class Room {
 
                 this.roomServer.emitMessage(playerId, null, onRoomTimeOutBroadcastMsg);
             }
+
+
+            //this.roomServer.removeRoom(this);
+        }
+
+
+        if(this.roomStateEnum == RoomStateEnum.END){
+            this.roomServer.removeRoom(this);
         }
     }
 }
