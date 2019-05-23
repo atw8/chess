@@ -37,7 +37,7 @@ export class ControllerTest implements ControllerAbstract {
             votedMoves.push({sanStr : sanMoves[i], number : number});
         }
 
-        this.uiParentView.setVotedMoves(votedMoves);
+        //this.uiParentView.setVotingData(votedMoves);
 
         console.log(this.chessEngine.getSanMoves());
 

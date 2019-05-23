@@ -204,16 +204,21 @@ export class PredictPanel extends PIXI.Graphics {
 
 
 
-    public setVotedMoves(votedDatas : { sanStr : string, number : number}[]){
-        votedDatas.sort((a:{ sanStr : string, number : number}, b:{ sanStr : string, number : number})=>{
+    public setVotingData(votingData : { [key : string] : number}){
+        let votingDataArray : { sanStr : string, number : number}[] = [];
+        for(let k in votingData){
+            votingDataArray.push({sanStr : k, number : votingData[k]});
+        }
+
+        votingDataArray.sort((a:{ sanStr : string, number : number}, b:{ sanStr : string, number : number})=>{
             return  b.number - a.number;
         });
 
 
         let votedSanMap : { [key : string] : { sanStr : string, number : number, rowPosition : number}} = {};
-        for(let i = 0; i < votedDatas.length; i++){
-            let votedData = votedDatas[i];
-            votedSanMap[votedDatas[i].sanStr] = {sanStr : votedData.sanStr, number : votedData.number, rowPosition : i + 3};
+        for(let i = 0; i < votingDataArray.length; i++){
+            let votedData = votingDataArray[i];
+            votedSanMap[votingDataArray[i].sanStr] = {sanStr : votedData.sanStr, number : votedData.number, rowPosition : i + 3};
         }
 
 

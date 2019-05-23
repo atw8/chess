@@ -166,8 +166,8 @@ export class ParentBoardView extends PIXI.display.Layer {
         }
     }
     */
-    public setVotedMoves(votedDatas : { sanStr : string, number : number}[]){
-        this.uiPredictPanel.setVotedMoves(votedDatas);
+    public setVotingData(votingData : { [key : string] : number}){
+        this.uiPredictPanel.setVotingData(votingData);
     }
 
 
