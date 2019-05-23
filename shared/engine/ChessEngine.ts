@@ -93,7 +93,7 @@ export class ChessEngine extends  AbstractEngine {
         return ( pos.x >= 1 && pos.x <= ChessEngine.getNumOfFiles() && pos.y >= 1 && pos.y <= ChessEngine.getNumOfRanks() );
     }
     public static getClosestLegalFileRank(inFileRank : FileRank, outFileRank ?: FileRank): FileRank {
-        if(typeof (outFileRank) == "undefined"){
+        if(outFileRank == undefined){
             outFileRank =  inFileRank.clone();
         }
 
@@ -1082,24 +1082,6 @@ export class ChessEngine extends  AbstractEngine {
 
 
 
-    /*
---Update the move number
-    self:flipMoveTurn()
-    if self:getMoveTurn() == SideType.BLACK then
-    self.moveNumber = self.moveNumber - 1
-    end
-
---Figure out if an en passant square occured
-    self:updateEnPassantSquare()
-
-    if isUpdateStateResultCheck then
-    self:updateStateResultCheck()
-    end
-    end
-
-*/
-
-//the logic of moving pieces
     public isMoveLegal(moveClass : MoveClass, isCheckGameState : boolean):boolean{
         if(isCheckGameState){
             if(this.getGameState() != ChessGameStateEnum.NORMAL){
@@ -1799,7 +1781,10 @@ export class ChessEngine extends  AbstractEngine {
         return ret
     }
 
-    public getSANMovesForCurrentBoardAndMoveClasses(moveClasses : MoveClass[]):string[]{
+    public getSANMovesForCurrentBoardAndMoveClasses(moveClasses : MoveClass[] | null):string[]{
+        if(moveClasses == null){
+            moveClasses = this.getAllLegalMoves(null, true);
+        }
         let ret : string[] = [];
         for(let i = 0; i < moveClasses.length; i++){
             ret.push(this.getSANMoveForCurrentBoardAndMoveClass(moveClasses[i]));
@@ -1908,7 +1893,10 @@ export class ChessEngine extends  AbstractEngine {
 
 
 
-    public getUCIMovesForMoveClasses(moveClasses : MoveClass[]):string[]{
+    public getUCIMovesForMoveClasses(moveClasses : MoveClass[] | null):string[]{
+        if(moveClasses == null){
+            moveClasses = this.getAllLegalMoves(null, true);
+        }
         let ret :string[] = [];
         for(let i = 0; i < moveClasses.length; i++){
             ret.push(this.getUCIMoveForMoveClass(moveClasses[i]));
