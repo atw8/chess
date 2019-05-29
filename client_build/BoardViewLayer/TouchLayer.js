@@ -2,9 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var app_1 = require("../app");
 var TouchLayer = /** @class */ (function () {
-    function TouchLayer(controller) {
+    function TouchLayer(uiBoardView, controllerAbstract) {
         this.identifier = null;
-        this.controller = controller;
+        this.uiBoardView = uiBoardView;
+        this.controllerAbstract = controllerAbstract;
         app_1.SimpleGame.getInstance().stage.interactive = true;
         app_1.SimpleGame.getInstance().stage.on("pointerdown", this.onTouchBegan.bind(this));
         app_1.SimpleGame.getInstance().stage.on("pointermove", this.onTouchMoved.bind(this));
@@ -25,16 +26,14 @@ var TouchLayer = /** @class */ (function () {
             return;
         }
         this.identifier = interactionEvent.data.identifier;
-        this.controller.onTouchBegan(interactionEvent.data.global);
-        //console.log("onTouchBegan ", interactionEvent.data.global.x,", ", interactionEvent.data.global.y);
+        this.uiBoardView.onTouchBegan(interactionEvent.data.global, this.controllerAbstract.getChessEngine());
     };
     TouchLayer.prototype.onTouchMoved = function (interactionEvent) {
         //console.log("onTouchMoved");
         if (this.identifier != interactionEvent.data.identifier) {
             return;
         }
-        this.controller.onTouchMoved(interactionEvent.data.global);
-        //console.log("onTouchMoved ", interactionEvent.data.global.x,", ", interactionEvent.data.global.y);
+        this.uiBoardView.onTouchMoved(interactionEvent.data.global, this.controllerAbstract.getChessEngine());
     };
     TouchLayer.prototype.onTouchEnded = function (interactionEvent) {
         //console.log("onTouchEnded");
@@ -42,8 +41,7 @@ var TouchLayer = /** @class */ (function () {
             return;
         }
         this.identifier = null;
-        this.controller.onTouchEnded(interactionEvent.data.global);
-        //console.log("onTouchEnded ", interactionEvent.data.global.x,", ", interactionEvent.data.global.y);
+        this.uiBoardView.onTouchEnded(interactionEvent.data.global, this.controllerAbstract.getChessEngine());
     };
     return TouchLayer;
 }());

@@ -2,7 +2,7 @@ import {MoveClass} from "../../shared/engine/MoveClass";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
 import {SideType} from "../../shared/engine/SideType";
 import {PieceType} from "../../shared/engine/PieceType";
-import {PieceView} from "../OtherView/PieceView";
+import {PieceView} from "./PieceView";
 import InteractionData = PIXI.interaction.InteractionData;
 import InteractionEvent = PIXI.interaction.InteractionEvent;
 

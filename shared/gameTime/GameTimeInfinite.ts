@@ -18,5 +18,7 @@ export class GameTimeInfinite extends GameTimeAbstract {
         super(gameTimeManager);
     }
 
+
+
 }
 

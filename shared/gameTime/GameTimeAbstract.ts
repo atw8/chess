@@ -19,7 +19,6 @@ export abstract class GameTimeAbstract {
     }
 
 
-
     public start(startTimeStamp : number){}
     public end(endTimeStamp : number){}
 

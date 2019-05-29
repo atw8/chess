@@ -5,6 +5,7 @@ import {RoomStateEnum} from "../shared/RoomStateEnum";
 import {ChessGameStateEnum} from "./engine/ChessGameStateEnum";
 import {RoomTypeEnum} from "./RoomTypeEnum";
 import {GameTimeStructConfigs} from "./gameTime/GameTimeManager";
+import {type} from "os";
 
 
 export enum MessageType {
@@ -21,7 +22,12 @@ export enum MessageType {
 
     OnRoomTimeOutBroadcast = "OnRoomTimeOutBroadcast",
 
+    OpRoomMakeVote = "OpRoomMakeVote",
+    OnRoomMakeVote = "OnRoomMakeVote",
+
     OnRoomVotingUpdateBroadcast = "OnRoomVotingUpdateBroadcast",
+
+    OnRoomMultiplayerStateBroadcast = "OnRoomMultiplayerStateBroadcast"
 };
 
 
@@ -30,6 +36,10 @@ export enum ErrorCode {
     SUCCESS = 0,
 
     ROOM_DOES_NOT_EXIST = 1,
+
+    ROOM_DOES_NOT_SUPPORT_MAKE_MOVE = 31,
+    ROOM_DOES_NOT_SUPPORT_VOTE_MOVE = 32,
+
 
     JOIN_ROOM_ALREADY_HAS_SIDE_TYPE = 11,
     JOIN_ROOM_ALREADY_IN_ROOM = 12,
@@ -376,8 +386,13 @@ export class RoomStateConfig {
 
 
 
+
+
+
+
+
 export type ClientServerMessageType = {requestId ?: number};
-export class ClientServerMessage {
+export abstract class ClientServerMessage {
     public messageType : MessageType;
     public requestId : number;
 
@@ -401,6 +416,7 @@ export class ClientServerMessage {
     public setRequestId(requestId : number){
         this.requestId = requestId;
     }
+
 
     /*
     public static validateSchema(json : any):boolean {
@@ -492,16 +508,12 @@ export type OpUserLoginGuestMessageType = {guestToken ?: string} & ClientServerM
 export class OpUserLoginGuestMessage extends ClientServerMessage {
     public guestToken ?: string;
 
-
-
     public constructor(json : OpUserLoginGuestMessageType){
         super(MessageType.OpLoginGuest, json);
         this.guestToken = json.guestToken;
     }
 
-
-
-    public static validateSchema(json : any): boolean{
+    public static getSchema():Schema {
         let schema : Schema = {
             "id" : "/OpUserLoginGuestMessage",
             "type" : "object",
@@ -513,35 +525,7 @@ export class OpUserLoginGuestMessage extends ClientServerMessage {
             "$ref": "/ClientServerMessage"
         };
 
-        let validatorResult : ValidatorResult = validator.validate(json, schema);
-        if(!validatorResult.valid){
-            console.log(validatorResult);
-            console.log(validatorResult.valid);
-        }
-
-        return validatorResult.valid;
-    }
-
-    public static createFromString(str: string): OpUserLoginGuestMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        }catch(e){
-            return null;
-        }
-
-        return this.createFromJson(json);
-    }
-    public static createFromJson(json : any): OpUserLoginGuestMessage | null{
-        if(!this.validateSchema(json)){
-            return null;
-        }
-
-
-        let opUserLoginGuestMsg = new OpUserLoginGuestMessage(json);
-
-
-        return opUserLoginGuestMsg;
+        return schema;
     }
 }
 
@@ -560,10 +544,7 @@ export class OnUserLoginGuestMessage extends ServerClientMessage {
         this.roomIds = json.roomIds;
     }
 
-
-
-
-    public static validateSchema(json : any):boolean{
+    public static getSchema():Schema{
         let schema : Schema = {
             "id" : "/OnUserLoginGuestMessage",
             "type" : "object",
@@ -585,35 +566,7 @@ export class OnUserLoginGuestMessage extends ServerClientMessage {
             "$ref": "/ServerClientMessage"
         };
 
-        let validatorResult : ValidatorResult = validator.validate(json, schema);
-        if(!validatorResult.valid){
-            console.log(validatorResult);
-            console.log(validatorResult.valid);
-        }
-
-        return validatorResult.valid;
-    }
-
-    public static createFromString(str : string):OnUserLoginGuestMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            return null;
-        }
-
-        return this.createFromJson(json);
-
-    }
-
-    public static createFromJson(json : any):OnUserLoginGuestMessage | null{
-        if(!this.validateSchema(json)){
-            return null;
-        }
-
-        let onUserLoginGuestMsg : OnUserLoginGuestMessage = new OnUserLoginGuestMessage(json);
-
-        return onUserLoginGuestMsg;
+        return schema;
     }
 }
 
@@ -634,7 +587,8 @@ export class OpRoomJoinMessage extends ClientServerMessage {
         this.sideType = json.sideType;
     }
 
-    public static validateSchema(json : any):boolean {
+
+    public static getSchema():Schema{
         let schema : Schema = {
             "id" : "/OpRoomJoinMessage",
             "type" : "object",
@@ -654,36 +608,7 @@ export class OpRoomJoinMessage extends ClientServerMessage {
             "$ref": "/ClientServerMessage"
         };
 
-
-        let validatorResult : ValidatorResult = validator.validate(json, schema);
-        if(!validatorResult.valid){
-            console.log(validatorResult);
-            console.log(validatorResult.valid);
-        }
-
-        return validatorResult.valid;
-    }
-
-    public static createFromString(str : string):OpRoomJoinMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            return null;
-        }
-
-        return this.createFromJson(json);
-    }
-
-    public static createFromJson(json : any):OpRoomJoinMessage | null {
-        if(!this.validateSchema(json)){
-            return null;
-        }
-
-        let opJoinRoomMessage : OpRoomJoinMessage = new OpRoomJoinMessage(json);
-
-        return opJoinRoomMessage;
-
+        return schema;
     }
 }
 
@@ -703,7 +628,7 @@ export class OnRoomJoinMessage extends ServerClientMessage {
         this.roomStateConfig = json.roomStateConfig;
     }
 
-    public static validateSchema(json : any):boolean{
+    public static getSchema():Schema{
         let schema : Schema = {
             "id" : "/OnRoomJoinMessage",
             "type" : "object",
@@ -724,34 +649,7 @@ export class OnRoomJoinMessage extends ServerClientMessage {
             "$ref": "/ServerClientMessage"
         };
 
-        let validatorResult : ValidatorResult = validator.validate(json, schema);
-        if(!validatorResult.valid){
-            console.log(validatorResult);
-            console.log(validatorResult.valid);
-            return false;
-        }
-
-        return true;
-    }
-
-    public static createFromString(str : string):OnRoomJoinMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            return null;
-        }
-
-        return this.createFromJson(json);
-    }
-    public static createFromJson(json : any):OnRoomJoinMessage | null {
-        if(!this.validateSchema(json)){
-            return null;
-        }
-
-        let onJoinRoomMessage : OnRoomJoinMessage = new OnRoomJoinMessage(json);
-
-        return onJoinRoomMessage;
+        return schema;
     }
 }
 
@@ -779,7 +677,7 @@ export class OnRoomJoinBroadcastMessage extends ServerClientMessage {
         this.roomState = json.roomState;
     }
 
-    public static validateSchema(json : any):boolean{
+    public static getSchema():Schema{
         let schema : Schema = {
             "id" : "/OnRoomJoinBroadcastMessage",
             "type" : "object",
@@ -807,35 +705,7 @@ export class OnRoomJoinBroadcastMessage extends ServerClientMessage {
             "$ref": "/ServerClientMessage"
         };
 
-        let validatorResult : ValidatorResult = validator.validate(json, schema);
-        if(!validatorResult.valid){
-            console.log(validatorResult);
-            console.log(validatorResult.valid);
-            return false;
-        }
-
-        return true;
-    }
-
-
-    public static createFromString(str : string):OnRoomJoinBroadcastMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            return null;
-        }
-
-        return this.createFromJson(json);
-    }
-    public static createFromJson(json : any):OnRoomJoinBroadcastMessage | null {
-        if(!this.validateSchema(json)){
-            return null;
-        }
-
-        let onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage = new OnRoomJoinBroadcastMessage(json);
-
-        return onRoomJoinBroadcastMsg;
+        return schema;
     }
 }
 
@@ -850,7 +720,7 @@ export class OpRoomMakeMoveMessage extends ClientServerMessage {
         this.sanMove = json.sanMove;
     }
 
-    public static validateSchema(json : any):boolean {
+    public static getSchema():Schema{
         let schema : Schema = {
             "id" : "/OpRoomMakeMoveMessage",
             "type" : "object",
@@ -866,34 +736,7 @@ export class OpRoomMakeMoveMessage extends ClientServerMessage {
             "$ref": "/ClientServerMessage"
         };
 
-        let validatorResult : ValidatorResult = validator.validate(json, schema);
-        if(!validatorResult.valid){
-            console.log(validatorResult);
-            console.log(validatorResult.valid);
-            return false;
-        }
-
-        return true;
-    }
-
-    public static createFromString(str : string):OpRoomMakeMoveMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            return null;
-        }
-
-        return this.createFromJson(json);
-    }
-    public static createFromJson(json : any):OpRoomMakeMoveMessage | null {
-        if(!this.validateSchema(json)){
-            return null;
-        }
-
-        let opRoomMakeMoveMessage : OpRoomMakeMoveMessage = new OpRoomMakeMoveMessage(json);
-
-        return opRoomMakeMoveMessage;
+        return schema;
     }
 }
 
@@ -921,7 +764,7 @@ export class OnRoomMakeMoveMessage extends ServerClientMessage {
         this.chessGameState = json.chessGameState;
     }
 
-    public static validateSchema(json : any):boolean{
+    public static getSchema(){
         let schema : Schema = {
             "id" : "/OnRoomMakeMoveMessage",
             "type" : "object",
@@ -948,33 +791,7 @@ export class OnRoomMakeMoveMessage extends ServerClientMessage {
             "$ref": "/ServerClientMessage"
         };
 
-        let validatorResult : ValidatorResult = validator.validate(json, schema);
-        if(!validatorResult.valid){
-            console.log(validatorResult);
-            console.log(validatorResult.valid);
-            return false;
-        }
-
-        return true;
-    }
-    public static createFromString(str : string):OnRoomMakeMoveMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            return null;
-        }
-
-        return this.createFromJson(json);
-    }
-    public static createFromJson(json : any):OnRoomMakeMoveMessage | null {
-        if(!this.validateSchema(json)){
-            return null;
-        }
-
-        let onRoomMakeMoveMessage : OnRoomMakeMoveMessage = new OnRoomMakeMoveMessage(json);
-
-        return onRoomMakeMoveMessage;
+        return schema;
     }
 }
 
@@ -1002,7 +819,7 @@ export class OnRoomMakeMoveBroadcastMessage extends ServerClientMessage {
         this.chessGameState = json.chessGameState;
     }
 
-    public static validateSchema(json : any):boolean{
+    public static getSchema(){
         let schema : Schema = {
             "id" : "/OnRoomMakeMoveMessage",
             "type" : "object",
@@ -1029,33 +846,7 @@ export class OnRoomMakeMoveBroadcastMessage extends ServerClientMessage {
             "$ref": "/ServerClientMessage"
         };
 
-        let validatorResult : ValidatorResult = validator.validate(json, schema);
-        if(!validatorResult.valid){
-            console.log(validatorResult);
-            console.log(validatorResult.valid);
-            return false;
-        }
-
-        return true;
-    }
-    public static createFromString(str : string):OnRoomMakeMoveBroadcastMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            return null;
-        }
-
-        return this.createFromJson(json);
-    }
-    public static createFromJson(json : any):OnRoomMakeMoveBroadcastMessage | null {
-        if(!this.validateSchema(json)){
-            return null;
-        }
-
-        let onRoomMakeMoveBroadcastMsg : OnRoomMakeMoveBroadcastMessage = new OnRoomMakeMoveBroadcastMessage(json);
-
-        return onRoomMakeMoveBroadcastMsg;
+        return schema;
     }
 }
 
@@ -1081,7 +872,7 @@ export class OnRoomTimeOutBroadcastMessage extends ServerClientMessage {
         this.isLoseByTimeMap = json.isLoseByTimeMap;
     }
 
-    public static validateSchema(json : any):boolean{
+    public static getSchema():Schema {
         let schema : Schema = {
             "id" : "/OnRoomTimeOutBroadcastMessage",
             "type" : "object",
@@ -1110,49 +901,22 @@ export class OnRoomTimeOutBroadcastMessage extends ServerClientMessage {
             "$ref": "/ServerClientMessage"
         };
 
-        let validatorResult : ValidatorResult = validator.validate(json, schema);
-        if(!validatorResult.valid){
-            console.log(validatorResult);
-            console.log(validatorResult.valid);
-            return false;
-        }
-
-        return true;
-    }
-
-    public static createFromString(str : string):OnRoomTimeOutBroadcastMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            return null;
-        }
-
-        return this.createFromJson(json);
-    }
-    public static createFromJson(json : any):OnRoomTimeOutBroadcastMessage | null {
-        if(!OnRoomTimeOutBroadcastMessage.validateSchema(json)){
-            return null;
-        }
-
-        let onRoomTimeOutBroacastMsg : OnRoomTimeOutBroadcastMessage = new OnRoomTimeOutBroadcastMessage(json);
-
-        return onRoomTimeOutBroacastMsg;
+        return schema;
     }
 }
 
 
-/*
+export type OpRoomMakeVoteMessageType = {roomId : number, myVoting : string} & ClientServerMessageType
 export class OpRoomMakeVoteMessage extends ClientServerMessage {
     public roomId : number;
-    public sanMove : string;
-    constructor(roomId : number, sanMove : string) {
-        super(MessageType.OpRoomMakeMove);
-        this.roomId  = roomId;
-        this.sanMove = sanMove;
+    public myVoting : string;
+    constructor(json : OpRoomMakeVoteMessageType) {
+        super(MessageType.OpRoomMakeVote, json);
+        this.roomId  = json.roomId;
+        this.myVoting = json.myVoting;
     }
 
-    public static validateSchema(json : any):boolean {
+    public static getSchema():Schema{
         let schema : Schema = {
             "id" : "/OpRoomMakeVoteMessage",
             "type" : "object",
@@ -1160,47 +924,49 @@ export class OpRoomMakeVoteMessage extends ClientServerMessage {
                 "roomId" : {
                     "type" : "integer",
                 },
-                "sanMove" : {
+                "myVoting" : {
                     "type" : "string",
                 }
             },
-            "required" : ["roomId", "sanMove"],
+            "required" : ["roomId", "myVoting"],
             "$ref": "/ClientServerMessage"
         };
 
-        let validatorResult : ValidatorResult = validator.validate(json, schema);
-        if(!validatorResult.valid){
-            console.log(validatorResult);
-            console.log(validatorResult.valid);
-            return false;
-        }
-
-        return true;
-    }
-
-    public static createFromString(str : string):OpRoomMakeVoteMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            return null;
-        }
-
-        return this.createFromJson(json);
-    }
-    public static createFromJson(json : any):OpRoomMakeVoteMessage | null {
-        if(!this.validateSchema(json)){
-            return null;
-        }
-
-        let opRoomMakeMoveMessage : OpRoomMakeMoveMessage = new OpRoomMakeMoveMessage(json.roomId, json.sanMove);
-        opRoomMakeMoveMessage.superCreateFromJson(json);
-        return opRoomMakeMoveMessage;
+        return schema;
     }
 }
-*/
 
-type OnRoomVotingUpdateBroadcastMessageType = {roomId : number, votingData : { [key : string] : number}} & ServerClientMessageType;
+export type OnRoomMakeVoteMessageType = {roomId : number, myVoting : string} & ServerClientMessageType;
+export class OnRoomMakeVoteMessage extends ServerClientMessage {
+    public roomId : number;
+    public myVoting : string;
+    constructor(json : OnRoomMakeVoteMessageType){
+        super(MessageType.OnRoomMakeVote, json);
+        this.roomId = json.roomId;
+        this.myVoting = json.myVoting;
+    }
+
+    public static getSchema():Schema{
+        let schema : Schema = {
+            "id" : "/OnRoomMakeVoteMessage",
+            "type" : "object",
+            "properties" : {
+                "roomId" : {
+                    "type" : "integer",
+                },
+                "myVoting" : {
+                    "type" : "string",
+                }
+            },
+            "required" : ["roomId", "myVoting"],
+            "$ref": "/ServerClientMessage"
+        };
+
+        return schema;
+    }
+}
+
+export type OnRoomVotingUpdateBroadcastMessageType = {roomId : number, votingData : { [key : string] : number}} & ServerClientMessageType;
 export class OnRoomVotingUpdateBroadcastMessage extends ServerClientMessage {
     public roomId : number;
     public votingData : { [key : string] : number};
@@ -1211,7 +977,8 @@ export class OnRoomVotingUpdateBroadcastMessage extends ServerClientMessage {
         this.votingData = json.votingData;
     }
 
-    public static validateSchema(json : any):boolean{
+
+    public static getSchema():Schema {
         let schema : Schema = {
             "id" : "/OnRoomVotingUpdateBroadcastMessage",
             "type" : "object",
@@ -1228,36 +995,74 @@ export class OnRoomVotingUpdateBroadcastMessage extends ServerClientMessage {
             "$ref": "/ServerClientMessage"
         };
 
-        let validatorResult : ValidatorResult = validator.validate(json, schema);
-        if(!validatorResult.valid){
-            console.log(validatorResult);
-            console.log(validatorResult.valid);
-            return false;
-        }
-
-        return true;
+        return schema;
     }
-    public static createFromString(str : string):OnRoomVotingUpdateBroadcastMessage | null {
-        let json;
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            return null;
-        }
+}
 
-        return this.createFromJson(json);
+
+export type OnRoomMultiplayerStateBroadcastMessageType = {roomId : number, sanMove : string, moveTimeStamp : number} & ServerClientMessageType;
+export class OnRoomMultiplayerStateBroadcastMessage extends ServerClientMessage {
+    public roomId : number;
+    public sanMove : string;
+    public moveTimeStamp : number;
+
+    constructor(json : OnRoomMultiplayerStateBroadcastMessageType){
+        super(MessageType.OnRoomMultiplayerStateBroadcast, json);
+
+        this.roomId = json.roomId;
+        this.sanMove = json.sanMove;
+        this.moveTimeStamp = json.moveTimeStamp;
     }
-    public static createFromJson(json : any):OnRoomVotingUpdateBroadcastMessage | null {
-        if(!OnRoomVotingUpdateBroadcastMessage.validateSchema(json)){
-            return null;
-        }
 
-        let onRoomVotingUpdateBroadcastMsg = new OnRoomVotingUpdateBroadcastMessage(json);
+    public static getSchema():Schema {
+        let schema : Schema = {
+            "id" : "/OnRoomMultiplayerStateBroadcastMessage",
+            "type" : "object",
+            "properties" : {
+                "roomId" : {
+                    "type" : "integer"
+                },
+                "sanMove" : {
+                    "type": "string",
+                },
+                "moveTimeStamp" : {
+                    "type" : "number"
+                }
+            },
+            "required" : ["roomId", "sanMove", "moveTimeStamp"],
+            "$ref": "/ServerClientMessage"
+        };
 
-        return onRoomVotingUpdateBroadcastMsg;
+        return schema;
     }
 }
 
 
 
 
+export function createMessageFromString<T>(str : string, classReference: { new (json : any): T, getSchema() : Schema }):T | null{
+    let json;
+    try {
+        json = JSON.parse(str);
+    }catch(e){
+        return null;
+    }
+
+    return createMessageFromJson(json, classReference);
+}
+
+
+export function createMessageFromJson<T>(json : any, classReference : { new (json : any) : T, getSchema() : Schema}):T | null{
+    let validatorResult : ValidatorResult = validator.validate(json, classReference.getSchema());
+    if(!validatorResult.valid){
+        console.log(validatorResult);
+        console.log(validatorResult.valid);
+    }
+
+    if(!validatorResult.valid){
+        return null;
+    }
+
+    let ret : T = new classReference(json);
+    return ret;
+}

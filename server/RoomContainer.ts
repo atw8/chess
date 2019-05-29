@@ -1,46 +1,32 @@
 import {SideType} from "../shared/engine/SideType";
 import {RoomInitConfig} from "../shared/MessageTypes";
+import {DoubleMapSetStruct} from "../shared/DoubleMapSetStruct";
 
 
 export class RoomContainer {
     private avaliableStructMap : {[key : string] : {[key in SideType] : { [key : number] : boolean}}};
     private roomIdRoomInitConfigStrMap : {[key : number] : string};
 
-    private roomIdPlayerIdMap : {[key : number] : number[]};
-    private playerIdRoomIdMap : {[key : number] : number[]};
+    private playerIdRoomIdRelations : DoubleMapSetStruct<number, number>;
+
+    //private roomIdPlayerIdMap : {[key : number] : number[]};
+    //private playerIdRoomIdMap : {[key : number] : number[]};
 
     constructor(){
         this.avaliableStructMap = {};
         this.roomIdRoomInitConfigStrMap = {};
 
-        this.roomIdPlayerIdMap = {};
-        this.playerIdRoomIdMap = {};
+        this.playerIdRoomIdRelations = new DoubleMapSetStruct();
     }
 
     public addPlayerIdRoomId(playerId : number, roomId : number){
-        if(!(playerId in this.playerIdRoomIdMap)){
-            this.playerIdRoomIdMap[playerId] = [];
-        }
-        this.playerIdRoomIdMap[playerId].push(roomId);
-
-        if(!(roomId in this.roomIdPlayerIdMap)){
-            this.roomIdPlayerIdMap[roomId] = [];
-        }
-        this.roomIdPlayerIdMap[roomId].push(playerId);
+        this.playerIdRoomIdRelations.addFirstSecondRelationship(playerId, roomId);
     }
     public getRoomIdsForPlayerId(playerId : number):number[]{
-        if(!(playerId in this.playerIdRoomIdMap)){
-            return [];
-        }
-
-        return this.playerIdRoomIdMap[playerId];
+        return this.playerIdRoomIdRelations.getArrayForFirstValue(playerId);
     }
     public getPlayerIdsForRoomId(roomId : number):number[]{
-        if(!(roomId in this.roomIdPlayerIdMap)){
-            return [];
-        }
-
-        return this.roomIdPlayerIdMap[roomId];
+        return this.playerIdRoomIdRelations.getArrayForSecondValue(roomId);
     }
 
     public setAvaliable(roomId : number, sideType : SideType, isAvaliable : boolean){
@@ -71,8 +57,6 @@ export class RoomContainer {
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
             this.avaliableStructMap[roomInitConfigStr][sideType][roomId] = true;
         }
-
-        this.roomIdPlayerIdMap[roomId] = [];
     }
 
     private initAvaliableStructMapWithRoomInitConfigStr(roomInitConfigStr : string){
@@ -95,6 +79,9 @@ export class RoomContainer {
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
             delete this.avaliableStructMap[roomInitConfigStr][sideType][roomId];
         }
+
+
+        this.playerIdRoomIdRelations.removeSecondValue(roomId);
     }
 
 

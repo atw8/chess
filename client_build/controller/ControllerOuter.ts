@@ -6,20 +6,24 @@ import {
     OnRoomJoinBroadcastMessage,
     OnRoomJoinMessage,
     OnRoomMakeMoveBroadcastMessage,
-    OnRoomMakeMoveMessage,
-    OnRoomTimeOutBroadcastMessage,
-    OnUserLoginGuestMessage,
+    OnRoomMakeMoveMessage, OnRoomMakeVoteMessage, OnRoomMultiplayerStateBroadcastMessage,
+    OnRoomTimeOutBroadcastMessage, OnRoomVotingUpdateBroadcastMessage,
+    OnUserLoginGuestMessage, OpRoomMakeVoteMessage,
     RoomInitConfig, RoomStateConfig
 } from "../../shared/MessageTypes";
-import {ControllerInner} from "./ControllerInner";
+import {ControllerAbstract} from "./ControllerAbstract";
 import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
+import {ControllerNormalGame} from "./ControllerNormalGame";
+import {ControllerMultiplayerGame} from "./ControllerMultiplayerGame";
+
+import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 
 export class ControllerOuter implements SocketClientInterface{
     private uiLogoLayer : LogoLayer;
     private socketClientAgent : SocketClientAgent;
 
 
-    private roomIdMap : { [key : number] : ControllerInner};
+    private roomIdMap : { [key : number] : ControllerAbstract};
     private roomIdLayerMap : { [key : number] : ParentBoardView};
 
     constructor(uiLogoLayer : LogoLayer){
@@ -33,12 +37,26 @@ export class ControllerOuter implements SocketClientInterface{
 
 
 
-    public getOrCreateController(roomId : number):ControllerInner{
+    public getOrCreateController(roomId : number):ControllerAbstract{
         if(this.roomIdMap[roomId] == undefined){
-            let controllerInner = new ControllerInner(roomId, this);
-            let parentBoardView = new ParentBoardView(controllerInner);
+            let roomInitConfig = this.socketClientAgent.getRoomInitConfig(roomId);
 
-            this.roomIdMap[roomId] = controllerInner;
+            let controllerAbstract : ControllerAbstract;
+            switch(roomInitConfig.roomTypeEnum){
+                case RoomTypeEnum.NORMAL:
+                    controllerAbstract = new ControllerNormalGame(roomId, this);
+                    break;
+                case RoomTypeEnum.MULTIPLAYER:
+                    controllerAbstract = new ControllerMultiplayerGame(roomId, this);
+                    break;
+                default:
+                    controllerAbstract = <ControllerNormalGame><unknown>"hello world";
+                    break;
+            }
+
+            let parentBoardView = new ParentBoardView(controllerAbstract);
+
+            this.roomIdMap[roomId] = controllerAbstract;
             this.roomIdLayerMap[roomId] = parentBoardView;
 
             this.uiLogoLayer.addLayer(parentBoardView);
@@ -171,10 +189,50 @@ export class ControllerOuter implements SocketClientInterface{
             return;
         }
 
-        let roomId = <number>onRoomTimeOutBroadcastMsg.roomId;
+        let roomId = onRoomTimeOutBroadcastMsg.roomId;
 
         let controller = this.getOrCreateController(roomId);
 
         controller.OnRoomTimeOutBroadcast(onRoomTimeOutBroadcastMsg);
+    }
+
+
+    public OpRoomMakeVote(roomId : number, myVoting : string):void {
+        this.socketClientAgent.OpRoomMakeVote(roomId, myVoting);
+    }
+    public OnRoomMakeVote(onRoomMakeVoteMsg : OnRoomMakeVoteMessage):void {
+        if(!(onRoomMakeVoteMsg.errorCode == ErrorCode.SUCCESS)){
+            return;
+        }
+
+        let roomId = onRoomMakeVoteMsg.roomId;
+
+        let controller = this.getOrCreateController(roomId);
+
+        controller.OnRoomMakeVote(onRoomMakeVoteMsg);
+    }
+
+    public OnRoomVotingUpdateBroadcast(onRoomVotingUpdateBroadcastMsg : OnRoomVotingUpdateBroadcastMessage):void {
+        if(!(onRoomVotingUpdateBroadcastMsg.errorCode == ErrorCode.SUCCESS)){
+            return;
+        }
+
+        let roomId = onRoomVotingUpdateBroadcastMsg.roomId;
+
+        let controller = this.getOrCreateController(roomId);
+
+        controller.OnRoomVotingUpdateBroadcast(onRoomVotingUpdateBroadcastMsg);
+    }
+
+    public OnRoomMultiplayerStateBroadcast(onRoomMultiplayerStateBroadcastMsg : OnRoomMultiplayerStateBroadcastMessage):void{
+        if(!(onRoomMultiplayerStateBroadcastMsg.errorCode == ErrorCode.SUCCESS)){
+            return;
+        }
+
+        let roomId = onRoomMultiplayerStateBroadcastMsg.roomId;
+
+        let controller = this.getOrCreateController(roomId);
+
+        controller.OnRoomMultiplayerStateBroadcast(onRoomMultiplayerStateBroadcastMsg);
     }
 }

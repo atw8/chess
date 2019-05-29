@@ -1,22 +1,105 @@
-import {PredictSanSprite} from "./PredictSanSprite";
-import {SanSprite} from "./SanSprite";
 import {SideType} from "../../shared/engine/SideType";
 import {PositionManager} from "../PositionManager";
 
 import {SimpleGame} from "../app";
-import {ControllerAbstract} from "../controller/ControllerAbstract";
 import {LanguageHelper, LanguageKey} from "../LanguageHelper";
 import * as PIXI from "pixi.js";
 import * as TWEEN from "@tweenjs/tween.js";
 import {ControllerMultiplayerGame} from "../controller/ControllerMultiplayerGame";
+import {DefaultButton} from "./Button/DefaultButton";
+
+import {SanSprite} from "./SanSprite";
+
+class PredictButton  extends DefaultButton {
+    private m_sanStr : string;
+    private m_moveTurn : SideType;
+
+    private uiPercentage : PIXI.Text;
+    private uiSanSprite : SanSprite | null = null;
+    private uiHighlight : PIXI.Graphics;
+
+    private pieceViewScale : number = 0.7;
+
+    constructor(width : number, height : number, cb : (d : DefaultButton) => void){
+        super(width, height, cb);
+
+        //this.m_moveTurn = SideType.WHITE;
+        //this.m_sanStr = "";
+
+        this.uiHighlight = new PIXI.Graphics();
+        this.uiHighlight.lineStyle(5,  SimpleGame.getDarkBrownColor(), 1.0);
+        this.uiHighlight.beginFill(SimpleGame.getDarkBrownColor());
+
+        this.uiHighlight.drawRoundedRect(-this.m_width/2, -this.m_height/2, this.m_width, this.m_height, 5);
+        this.addChild(this.uiHighlight);
+        this.uiHighlight.visible = false;
+
+
+        this.uiPercentage = new PIXI.Text("", SimpleGame.getDefaultTextStyleOptions(this.m_height * this.pieceViewScale));
+        this.uiPercentage.anchor.set(1.0, 0.5);
+        this.uiPercentage.position.set((this.m_width/2) - 0.5*this.pieceViewScale*this.m_height, 0.0);
+        this.addChild(this.uiPercentage);
+
+
+
+    }
+
+
+    public setSanStr(sanStr : string, moveTurn : SideType){
+        if(sanStr == this.m_sanStr && moveTurn == this.m_moveTurn){
+            return;
+        }
+        this.m_sanStr = sanStr;
+        this.m_moveTurn = moveTurn;
+
+        if(this.uiSanSprite != null){
+            this.uiSanSprite.parent.removeChild(this.uiSanSprite);
+            this.uiSanSprite = null;
+        }
+
+        this.uiSanSprite = new SanSprite(sanStr, moveTurn, this.m_height*this.pieceViewScale);
+        this.addChild(this.uiSanSprite);
+
+        this.uiSanSprite.position.set(-this.m_width/2 + this.uiSanSprite.width/2 + 0.5*this.pieceViewScale*this.m_height, 0.0);
+    }
+
+
+    public setPercentage(percentage : number | null){
+        let str : string;
+        if(percentage == null){
+            str = "";
+        }else {
+            str = percentage.toFixed(1) + "%";
+        }
+
+        this.uiPercentage.text = str;
+    }
+
+    public getSanStr():string{
+        return this.m_sanStr;
+    }
+    public getMoveTurn():SideType{
+        return this.m_moveTurn;
+    }
+
+
+
+    public getIsHighlighted():boolean{
+        return this.uiHighlight.visible;
+    }
+
+    public setIsHighlighted(isHighlighted : boolean):void{
+        this.uiHighlight.visible = isHighlighted;
+    }
+}
 
 export class PredictPanel extends PIXI.Graphics {
 
     private uiMyMoveText : PIXI.Text;
-    private uiMyMoveSprite : PredictSanSprite;
+    private uiMyMoveSprite : PredictButton;
 
     private uiVotedMovesText : PIXI.Text;
-    private uiVotedMovesSprites : { [key : string] : { sprite : PredictSanSprite, lastRowPosition : number, newRowPosition : number } };
+    private uiVotedMovesSprites : { [key : string] : { sprite : PredictButton, lastRowPosition : number, newRowPosition : number } };
 
 
 
@@ -35,12 +118,14 @@ export class PredictPanel extends PIXI.Graphics {
 
 
     private m_height : number;
+    private m_width : number;
     private m_rowHeight : number;
 
-    constructor(height : number, rowHeight : number, controller : ControllerMultiplayerGame){
+    constructor(height : number, width : number, rowHeight : number, controller : ControllerMultiplayerGame){
         super();
 
         this.m_height = height;
+        this.m_width = width;
         this.m_rowHeight = rowHeight;
 
         this.m_moveTurn = SideType.WHITE;
@@ -53,50 +138,13 @@ export class PredictPanel extends PIXI.Graphics {
 
 
 
-        {
-            let textStyleOptions : PIXI.TextStyleOptions = {};
-            textStyleOptions.fontSize = this.m_rowHeight;
-            textStyleOptions.fontFamily = "Helvetica";
-            textStyleOptions.fontWeight = "Bold";
-
-            this.uiMyMoveText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.MyMove));
-            this.uiMyMoveText.style = new PIXI.TextStyle(textStyleOptions);
-            this.uiMyMoveText.anchor.set(0.5, 0.5);
-            this.uiMyMoveText.position = this.getPositionForRow(0);
-
-            this.addChild(this.uiMyMoveText);
-        }
-        {
-            let textStyleOptions : PIXI.TextStyleOptions = {};
-            textStyleOptions.fontSize = this.m_rowHeight;
-            textStyleOptions.fontFamily = "Helvetica";
-            textStyleOptions.fontWeight = "Bold";
-
-            this.uiVotedMovesText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.VotedMoves));
-            this.uiVotedMovesText.style = new PIXI.TextStyle(textStyleOptions);
-            this.uiVotedMovesText.anchor.set(0.5, 0.5);
-            this.uiVotedMovesText.position = this.getPositionForRow(2);
-
-
-            this.addChild(this.uiVotedMovesText);
-        }
-
-        this.uiMyMoveSprite = new PredictSanSprite(this.getRowWidth(), this.getRowHeight(), this.m_moveTurn, this.predictSanSpriteCallback.bind(this, true));
-        this.uiMyMoveSprite.position = this.getPositionForRow(1);
-        this.addChild(this.uiMyMoveSprite);
-
-
-
 
 
 
         this.beginFill(SimpleGame.getLightBrownColor());
         this.lineStyle(4, SimpleGame.getBlackColor());
 
-
-
         this.drawRoundedRect(-this._getWidth()/2, -this._getHeight()/2, this._getWidth(), this._getHeight(), 4);
-
 
 
         let uiMask = new PIXI.Graphics();
@@ -105,10 +153,48 @@ export class PredictPanel extends PIXI.Graphics {
         this.addChild(uiMask);
 
         this.mask = uiMask;
+
+
+
+
+        {
+            this.uiMyMoveText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.MyMove), SimpleGame.getDefaultTextStyleOptions(this.m_rowHeight));
+            this.uiMyMoveText.anchor.set(0.5, 0.5);
+            this.uiMyMoveText.position = this.getPositionForRow(0);
+
+            this.addChild(this.uiMyMoveText);
+        }
+        {
+            this.uiVotedMovesText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.VotedMoves), SimpleGame.getDefaultTextStyleOptions(this.m_rowHeight));
+            this.uiVotedMovesText.anchor.set(0.5, 0.5);
+            this.uiVotedMovesText.position = this.getPositionForRow(2);
+
+
+            this.addChild(this.uiVotedMovesText);
+        }
+
+        this.uiMyMoveSprite = new PredictButton(this.getRowWidth(), this.getRowHeight(), this.predictBtnCallback.bind(this));
+        this.uiMyMoveSprite.position = this.getPositionForRow(1);
+        this.addChild(this.uiMyMoveSprite);
+
+
+
     }
 
+
+
     private getRowWidth():number{
-        return this.m_rowHeight * 7;
+        /*
+
+        let widthOffset = 10;
+        let width = this.getRowWidth() + widthOffset;
+
+        return width;
+         */
+
+        return this.m_width - 10;
+
+        //return this.m_rowHeight * 7;
     }
     private getRowHeight():number{
         return this.m_rowHeight;
@@ -123,10 +209,7 @@ export class PredictPanel extends PIXI.Graphics {
         */
     }
     private _getWidth():number{
-        let widthOffset = 10;
-        let width = this.getRowWidth() + widthOffset;
-
-        return width;
+        return this.m_width;
     }
 
     private getPositionForRow(row : number):PIXI.Point {
@@ -146,59 +229,51 @@ export class PredictPanel extends PIXI.Graphics {
 
 
 
-    public setPredictMove(sanStr : string, isPredictMove : boolean){
+
+
+    public setIsHighlighted(sanStr : string, isHighlighted : boolean):void{
         if(this.uiMyMoveSprite.getSanStr() == sanStr){
-            this.uiMyMoveSprite.setIsPredictMove(isPredictMove)
+            this.uiMyMoveSprite.setIsHighlighted(isHighlighted);
         }
 
-        if(sanStr in this.uiVotedMovesSprites){
-            this.uiVotedMovesSprites[sanStr].sprite.setIsPredictMove(isPredictMove);
-        }
-    }
-    public isPredictMove(sanStr : string):boolean {
-        let ret : boolean = false;
-        if(this.uiMyMoveSprite.getSanStr() == sanStr){
-            if(this.uiMyMoveSprite.getIsPredictMove()){
-                ret = true;
-            }
+        let uiVotedMoveSprite = this.uiVotedMovesSprites[sanStr];
+        if(uiVotedMoveSprite == undefined){
+            return;
         }
 
-        if(sanStr in this.uiVotedMovesSprites){
-            if(this.uiVotedMovesSprites[sanStr].sprite.getIsPredictMove()){
-                ret = true;
-            }
-        }
-
-        return ret;
+        uiVotedMoveSprite.sprite.setIsHighlighted(isHighlighted);
     }
 
 
 
-
-
-
-
-    public setMyMovePercentage(percentage : number | null):number | null{
-        let ret = this.uiMyMoveSprite.getPercentage();
-
+    public setMyMovePercentage(percentage : number | null):void{
         this.uiMyMoveSprite.setPercentage(percentage);
-
-        return ret;
     }
 
-    public predictSanSpriteCallback(isMyMove : boolean, predictSanSprite : PredictSanSprite){
+    public predictBtnCallback(predictButton : PredictButton){
         //console.debug("isMyMove", isMyMove);
-        let sanStr : string | null = predictSanSprite.getSanStr();
+        let sanStr : string | null = predictButton.getSanStr();
         if(sanStr == null){
             return;
         }
 
-        this.controller.predictMovePress(isMyMove, sanStr);
+
+        if(predictButton != this.uiMyMoveSprite){
+            if(this.uiVotedMovesSprites[sanStr] == undefined){
+                return;
+            }
+            if(this.uiVotedMovesSprites[sanStr].sprite != predictButton){
+                return;
+            }
+        }
+
+
+        this.controller.predictMovePress(this.m_moveTurn, sanStr);
     }
 
 
-    public setMyVoting(sanStr : string | null):void{
-        this.uiMyMoveSprite.setSanStr(sanStr);
+    public setMyVoting(sanStr : string):void{
+        this.uiMyMoveSprite.setSanStr(sanStr, this.m_moveTurn);
     }
     public setVotingData(votingData : { [key : string] : number}){
         let votingDataArray : { sanStr : string, number : number}[] = [];
@@ -267,9 +342,9 @@ export class PredictPanel extends PIXI.Graphics {
             let sanStr = addUiVotedMoveSprites[i];
             let votedData : { sanStr : string, number : number, rowPosition : number}  = votedSanMap[sanStr];
 
-            let sprite = new PredictSanSprite(this.getRowWidth(), this.getRowHeight(), this.m_moveTurn, this.predictSanSpriteCallback.bind(this, false))
+            let sprite = new PredictButton(this.getRowWidth(), this.getRowHeight(), this.predictBtnCallback.bind(this));
             sprite.position = this.getPositionForRow(votedData.rowPosition);
-            sprite.setSanStr(sanStr);
+            sprite.setSanStr(sanStr, this.m_moveTurn);
             if(numOfVotes == 0){
                 sprite.setPercentage(0);
             }else {
@@ -278,9 +353,9 @@ export class PredictPanel extends PIXI.Graphics {
 
             this.addChild(sprite);
 
-            if(this.isPredictMove(sanStr)){
-                sprite.setIsPredictMove(true);
-            }
+            //if(this.isPredictMove(sanStr)){
+                //sprite.setIsPredictMove(true);
+            //}
 
 
 
@@ -323,6 +398,11 @@ export class PredictPanel extends PIXI.Graphics {
             this.positionManager.moveTo(sprite, null, positionTo, 0.5);
 
             uiVotedMoveSprite.lastRowPosition = uiVotedMoveSprite.newRowPosition;
+        }
+
+
+        if(this.uiMyMoveSprite.getIsHighlighted()){
+            this.setIsHighlighted(this.uiMyMoveSprite.getSanStr(), true);
         }
     }
 }

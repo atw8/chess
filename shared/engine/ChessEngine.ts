@@ -70,6 +70,15 @@ export class ChessEngine extends  AbstractEngine {
     public m_isForfeit : { [key in SideType] : boolean};
     public m_askForDraw : { [key in SideType] : boolean};
 
+    private uciMoveRegExp : RegExp;
+
+    private sanMovePiecePatternRegExp : RegExp;
+    private sanMoveKingCastleRegExp : RegExp;
+    private sanMoveQueenCastleRegExp : RegExp;
+
+    private fenStrRegExp : RegExp;
+    private fenStrRowRegExp : RegExp;
+
 
     public static getNumOfFiles():number{
         return 8;
@@ -264,9 +273,43 @@ export class ChessEngine extends  AbstractEngine {
             this.pawn2MoveFairy[SideType.BLACK] = blackFairyStupid;
         }
 
-        //SET THE KINGS TO ROYAL PIECES
-        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            this.setPieceToRoyal(sideType, PieceType.KING);
+
+
+        this.uciMoveRegExp = new RegExp("^([a-h][1-8])([a-h][1-8])([nbrq])?$");
+
+        {
+            let piecePlacementStr = "((?:[pnbrqkPNBRQK12345678]+\/){7}[pnbrqkPNBRQK12345678]+)";
+            let sideTypeStr = "([wb])";
+            let castlingStr = "((?:[KABCDEFGH]?[QABCDEFGH]?[kabcdefgh]?[qabcdefgh]?)|-)";
+            let enPassantStr = "((?:[abcdefgh][12345678])|-)";
+            let halfMoveStr = "(\\d+)";
+            let moveNumberStr = "(\\d+)";
+
+
+            let str = "^" + piecePlacementStr + " " + sideTypeStr + " " + castlingStr + " " + enPassantStr + " " + halfMoveStr + " " + moveNumberStr + "$";
+            this.fenStrRegExp = new RegExp(str);
+
+            this.fenStrRowRegExp = new RegExp("[pnbrqkPNBRQK12345678]+", "g");
+        }
+
+
+        {
+            let annotationExpr = "[\#\+\!\?]*";
+
+            this.sanMoveKingCastleRegExp = new RegExp("^O-O" + annotationExpr + "$");
+            this.sanMoveQueenCastleRegExp = new RegExp("^O-O-O" + annotationExpr + "$");
+
+
+            let pieceType = "([NBRQK])?";
+            let fileFrom = "([a-h])?";
+            let rankFrom = "([1-8])?";
+            let isCapture = "(x)?";
+            let fileRankTo = "([a-h][1-8])";
+            let promotionPieceType = "(?:=([NBRQ]))?";
+
+
+            let str = "^"  + pieceType + fileFrom + rankFrom + isCapture + fileRankTo + promotionPieceType + annotationExpr + "$";
+            this.sanMovePiecePatternRegExp = new RegExp(str);
         }
     };
 
@@ -296,8 +339,8 @@ export class ChessEngine extends  AbstractEngine {
 
 
 
-    public outitModel(){
-        super.outitModel();
+    public outit(){
+        super.outit();
 
         this.halfMoveClockVector = [];
         this.halfMoveClockVector.push(0);
@@ -454,31 +497,23 @@ export class ChessEngine extends  AbstractEngine {
         }
         this.initParam = <{isChess960 : boolean, beginFenStr : string}>initParam;
 
-        this.outitModel();
-
-
-
-
-        let fenStrRegExp :RegExp;
-        {
-            let piecePlacementStr = "((?:[pnbrqkPNBRQK12345678]+\/){7}[pnbrqkPNBRQK12345678]+)";
-            let sideTypeStr = "([wb])";
-            let castlingStr = "((?:[KABCDEFGH]?[QABCDEFGH]?[kabcdefgh]?[qabcdefgh]?)|-)";
-            let enPassantStr = "((?:[abcdefgh][12345678])|-)";
-            let halfMoveStr = "(\\d+)";
-            let moveNumberStr = "(\\d+)";
-
-
-            let str = "^" + piecePlacementStr + " " + sideTypeStr + " " + castlingStr + " " + enPassantStr + " " + halfMoveStr + " " + moveNumberStr + "$";
-            fenStrRegExp = new RegExp(str);
+        this.outit();
+        //SET THE KINGS TO ROYAL PIECES
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            this.setPieceToRoyal(sideType, PieceType.KING);
         }
+
+
+
+
+
         /*
         if(fenStrRegExp.test(this.initParam["beginFenStr"])){
             console.debug("success");
         }
         */
 
-        let fenStrResult : RegExpExecArray | null = fenStrRegExp.exec(this.initParam["beginFenStr"]);
+        let fenStrResult : RegExpExecArray | null = this.fenStrRegExp.exec(this.initParam["beginFenStr"]);
         if(fenStrResult == null){
             return;
         }
@@ -489,8 +524,8 @@ export class ChessEngine extends  AbstractEngine {
         {
             let piecePlacementStr = fenStrResult[1];
 
-            let regex = new RegExp("[pnbrqkPNBRQK12345678]+", "g");
-            let regexMatch = <RegExpMatchArray>piecePlacementStr.match(regex);
+
+            let regexMatch = <RegExpMatchArray>piecePlacementStr.match(this.fenStrRowRegExp);
 
             for(let i = 0; i < regexMatch.length; i++){
                 let rank = this.getNumOfRanks() - i;
@@ -1621,34 +1656,14 @@ export class ChessEngine extends  AbstractEngine {
 
         console.debug("parsing sanMove ", sanMove);
 
-        let piecePattern : RegExp;
-        let kingCastlePattern : RegExp;
-        let queenCastlePattern : RegExp;
-        {
-            let annotationExpr = "[\#\+\!\?]*";
-
-            kingCastlePattern = new RegExp("^O-O" + annotationExpr + "$");
-            queenCastlePattern = new RegExp("^O-O-O" + annotationExpr + "$");
 
 
-            let pieceType = "([NBRQK])?";
-            let fileFrom = "([a-h])?";
-            let rankFrom = "([1-8])?";
-            let isCapture = "(x)?";
-            let fileRankTo = "([a-h][1-8])";
-            let promotionPieceType = "(?:=([NBRQ]))?";
 
-
-            let str = "^"  + pieceType + fileFrom + rankFrom + isCapture + fileRankTo + promotionPieceType + annotationExpr + "$";
-            piecePattern = new RegExp(str);
-        }
-
-
-        if(kingCastlePattern.test(sanMove) || queenCastlePattern.test(sanMove)){
+        if(this.sanMoveKingCastleRegExp.test(sanMove) || this.sanMoveQueenCastleRegExp.test(sanMove)){
             let castleType : CastleType = CastleType.KING_SIDE;
-            if(kingCastlePattern.test(sanMove)){
+            if(this.sanMoveKingCastleRegExp.test(sanMove)){
                 castleType = CastleType.KING_SIDE;
-            }else if(queenCastlePattern.test(sanMove)){
+            }else if(this.sanMoveQueenCastleRegExp.test(sanMove)){
                 castleType = CastleType.QUEEN_SIDE;
             }
 
@@ -1662,7 +1677,7 @@ export class ChessEngine extends  AbstractEngine {
                 ret = legalMove[0]
             }
         }else {
-            let sanPatternResult = piecePattern.exec(sanMove);
+            let sanPatternResult = this.sanMovePiecePatternRegExp.exec(sanMove);
             if(sanPatternResult == null){
                 return null;
             }
@@ -1931,8 +1946,8 @@ export class ChessEngine extends  AbstractEngine {
     public getMoveClassForUCIMove(uciMove : string):MoveClass | null {
         //checking whether this uciMove is valid
 
-        let uciPattern = new RegExp("^([a-h][1-8])([a-h][1-8])([nbrq])?$");
-        let uciPatternResult : RegExpExecArray | null = uciPattern.exec(uciMove);
+
+        let uciPatternResult : RegExpExecArray | null = this.uciMoveRegExp.exec(uciMove);
 
         if(uciPatternResult == null){
             return null;

@@ -48,7 +48,7 @@ export abstract class RoomAbstract {
 
         this.roomStateEnum = RoomStateEnum.START;
 
-        let tickDelay : number = 300;
+        let tickDelay : number = 10;
         setInterval(this.tick.bind(this, tickDelay), tickDelay);
     }
 
@@ -57,6 +57,9 @@ export abstract class RoomAbstract {
     }
     public getRoomInitConfigStr():string{
         return RoomInitConfig.getRoomInitConfigStr(this.roomInitConfig);
+    }
+    public getRoomTypeEnum():RoomTypeEnum{
+        return this.roomInitConfig.roomTypeEnum;
     }
 
     public getRoomStateConfig(playerId : number | null):RoomStateConfig{
@@ -101,43 +104,17 @@ export abstract class RoomAbstract {
         this.roomServer.emitMessage(playerId, clientServerMsg, serverClientMsg);
     }
     public abstract emitOtherPlayerId(playerId : number | null, clientServerMsg : ClientServerMessage | null, serverClientMsg : ServerClientMessage):void;
+
+    /*
     public abstract getSideTypeForPlayerId(playerId : number):SideType | undefined;
     public abstract setSideTypeForPlayerId(playerId : number, sideType : SideType | undefined):void;
-
+    */
 
     public abstract joinRoom(playerId : number, opJoinRoomMsg : OpRoomJoinMessage, onJoinRoomMsg : OnRoomJoinMessage):void;
 
-    public abstract _makeMove(playerId : number, opRoomMakeMoveMsg : OpRoomMakeMoveMessage, onRoomMakeMoveMsg : OnRoomMakeMoveMessage, moveTimeStamp : number):void;
-
-    public makeMove(playerId : number, opRoomMakeMoveMsg : OpRoomMakeMoveMessage, onRoomMakeMoveMsg : OnRoomMakeMoveMessage):void{
-        let moveTimeStamp = Date.now();
-
-        this._tick(moveTimeStamp);
-        if(this.roomStateEnum != RoomStateEnum.NORMAL || this.chessEngine.getGameState() != ChessGameStateEnum.NORMAL){
-            onRoomMakeMoveMsg.setErrorCode(ErrorCode.DO_MOVE_NOT_ACTIVE_GAME);
-            this.emitPlayerId(playerId, opRoomMakeMoveMsg, onRoomMakeMoveMsg);
-            return;
-        }
-
-        let sideType = this.getSideTypeForPlayerId(playerId);
-        if(sideType == undefined){
-            onRoomMakeMoveMsg.setErrorCode(ErrorCode.DO_MOVE_NOT_IN_ROOM);
-            this.emitPlayerId(playerId, opRoomMakeMoveMsg, onRoomMakeMoveMsg);
-            return;
-        }
-
-        if(sideType != this.chessEngine.getMoveTurn()){
-            onRoomMakeMoveMsg.setErrorCode(ErrorCode.DO_MOVE_NOT_MOVE_TURN);
-            this.emitPlayerId(playerId, opRoomMakeMoveMsg, onRoomMakeMoveMsg);
-            return;
-        }
-
-        this._makeMove(playerId, opRoomMakeMoveMsg, onRoomMakeMoveMsg, moveTimeStamp);
-    }
 
 
-
-    public tick(dt : number){
+    public tick(dt : number):void{
         if(this.roomStateEnum != RoomStateEnum.NORMAL){
             return;
         }
@@ -145,35 +122,5 @@ export abstract class RoomAbstract {
         let timeStamp = Date.now();
         this._tick(timeStamp);
     }
-    public _tick(timeStamp : number){
-        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            if(this.gameTimeManager.isLose(sideType, timeStamp)){
-                this.chessEngine.setIsLoseByTime(sideType, true);
-                this.roomStateEnum = RoomStateEnum.END;
-            }
-        }
-
-        if(this.roomStateEnum == RoomStateEnum.END){
-            this.gameTimeManager.end(timeStamp);
-
-
-            let onRoomTimeOutBroadcastMsgType = {
-                roomId : this.roomId,
-                roomState : this.roomStateEnum,
-                chessGameState : this.chessEngine.getGameState(),
-                endTimeStamp : timeStamp,
-                isLoseByTimeMap : this.chessEngine.m_isLoseByTime
-            };
-
-            let onRoomTimeOutBroadcastMsg = new OnRoomTimeOutBroadcastMessage(onRoomTimeOutBroadcastMsgType);
-
-
-            this.emitOtherPlayerId(null, null, onRoomTimeOutBroadcastMsg);
-        }
-
-
-        if(this.roomStateEnum == RoomStateEnum.END){
-            this.roomServer.removeRoom(this);
-        }
-    }
+    public abstract _tick(timeStamp : number):void;
 }

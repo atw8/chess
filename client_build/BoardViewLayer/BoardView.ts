@@ -5,7 +5,7 @@ import {PieceType} from "../../shared/engine/PieceType";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
 import {MoveClass} from "../../shared/engine/MoveClass";
 
-import {PieceView} from "../OtherView/PieceView";
+import {PieceView} from "./PieceView";
 
 import {SquareColorNode} from "./SquareColorNode";
 import {SQUARE_COLORS} from "./SquareColorCons";
@@ -20,6 +20,7 @@ import {PositionManager} from "../PositionManager";
 
 import {ImageTag} from "../ImageTag";
 import {ControllerAbstract} from "../controller/ControllerAbstract";
+import {TouchLayer} from "./TouchLayer";
 
 
 
@@ -30,7 +31,9 @@ enum TouchTypes {
 }
 
 
+
 export class BoardView extends PIXI.Graphics {
+    private uiTouchLayer : TouchLayer;
 
     private boardFacing: SideType;
 
@@ -42,6 +45,7 @@ export class BoardView extends PIXI.Graphics {
     private uiPoints: { [key: number]: { [key: number]: PointColorNode } };
 
     private uiSelectLightSprite: PIXI.Sprite;
+    private uiSelectLightFileRank: FileRank | null;
 
     private uiOptionCycleSprite: PIXI.Sprite;
     private uiOptionCycleFileRank: FileRank | null;
@@ -63,14 +67,18 @@ export class BoardView extends PIXI.Graphics {
     private m_opts : {size : number,
         isBoardVisible : boolean,
         displaySquares : boolean,
+
+        initTouchLayer : boolean,
+
         pieceAlpha : number,
+
 
 
         moveSpeedNormal : number,
         moveSpeedUndo : number,
 
         moveSpeedIllegal : number,
-        moveSpeedFlipBoard : number,};
+        moveSpeedFlipBoard : number};
 
     private controller: ControllerAbstract;
 
@@ -86,15 +94,16 @@ export class BoardView extends PIXI.Graphics {
     private movingSpriteGroup : PIXI.Container;
 
 
-    constructor(m_opts: {size : number,
+    constructor(m_opts:  {size : number,
         isBoardVisible : boolean,
         displaySquares : boolean,
+        initTouchLayer : boolean,
         pieceAlpha ?: number,
         moveSpeedNormal ?: number,
-        moveSpeedUndo ?: number
+        moveSpeedUndo ?: number,
         moveSpeedIllegal ?: number,
-        moveSpeedFlipBoard ?: number
-        }, controller: ControllerAbstract) {
+        moveSpeedFlipBoard ?: number}, controller: ControllerAbstract) {
+
         super();
 
         if(m_opts.pieceAlpha == undefined){
@@ -110,7 +119,7 @@ export class BoardView extends PIXI.Graphics {
             m_opts.moveSpeedIllegal = 0.003;
         }
         if(m_opts.moveSpeedFlipBoard == undefined){
-            m_opts.moveSpeedFlipBoard = 0.003;
+            m_opts.moveSpeedFlipBoard = 0.002;
         }
         // @ts-ignore
         this.m_opts = m_opts;
@@ -182,6 +191,7 @@ export class BoardView extends PIXI.Graphics {
         this.bottomGroup.addChild(this.uiSelectLightSprite);
         this.uiSelectLightSprite.scale.set(this.m_opts.size / 700);
         this.uiSelectLightSprite.anchor.set(0.5, 0.5);
+        this.uiSelectLightFileRank = null
         this.hideSelectLightSprite();
 
         //The option cycle sprite
@@ -221,6 +231,17 @@ export class BoardView extends PIXI.Graphics {
         this.originSprite = null;
         this.originTouchLocation = null;
         this.currentTouchLocation = null;
+
+
+        if(this.m_opts.initTouchLayer){
+            this.uiTouchLayer = new TouchLayer(this, this.controller);
+            this.uiTouchLayer.setIsEnabled(false);
+        }
+    }
+    public setTouchEnabled(touchEnabled :boolean):void{
+        if(this.m_opts.initTouchLayer){
+            this.uiTouchLayer.setIsEnabled(touchEnabled);
+        }
     }
 
     public getPieceSpriteForFileRank(fileRank : FileRank):PieceView | null{
@@ -426,12 +447,6 @@ export class BoardView extends PIXI.Graphics {
 
         this.moveToPieceSpriteGroup(<PieceView>this.originSprite);
 
-        for(let i = legalMoves.length - 1; i >= 0; i--){
-            if(!(<ChessEngine>chessEngine).isMoveLegal(legalMoves[i], false)){
-                legalMoves.splice(i, 1);
-            }
-        }
-
 
 
         let lastTouchType = this.touchType;
@@ -505,6 +520,67 @@ export class BoardView extends PIXI.Graphics {
         }
 
         this.boardFacing = newBoardFacing;
+
+
+        //Flip the squares and the points
+        if(isAnimation){
+            for(let squareColor = SQUARE_COLORS.FIRST_COLOR; squareColor <= SQUARE_COLORS.LAST_COLOR; squareColor++){
+                let hashs : number[] = [];
+
+                for(let _hash in this.uiSquares[squareColor]){
+                    hashs.push(Number(_hash));
+                }
+
+                this.removeSquaresByColor(squareColor);
+                for(let i = 0; i < hashs.length; i++){
+                    let fileRank = ChessEngine.getFileRankForHash(hashs[i]);
+                    this.addSquare(fileRank, squareColor);
+                }
+            }
+
+            for(let pointColor = POINT_COLORS.FIRST_COLOR; pointColor <= POINT_COLORS.LAST_COLOR; pointColor++){
+                let hashs : number[] = [];
+
+                for(let _hash in this.uiPoints[pointColor]){
+                    hashs.push(Number(_hash));
+                }
+
+                this.removePointsByColor(pointColor);
+                for(let i = 0; i < hashs.length; i++){
+                    let fileRank = ChessEngine.getFileRankForHash(hashs[i]);
+                    this.addPoint(fileRank, pointColor);
+                }
+            }
+        }else {
+            for(let squareColor = SQUARE_COLORS.FIRST_COLOR; squareColor <= SQUARE_COLORS.LAST_COLOR; squareColor++){
+                for(let _hash in this.uiSquares[squareColor]){
+                    let hash = Number(_hash);
+
+                    let uiSquare = this.uiSquares[squareColor][hash];
+                    let fileRank = ChessEngine.getFileRankForHash(hash);
+                    uiSquare.position = this.getPositionForFileRank(fileRank);
+                }
+            }
+
+            for(let pointColor = POINT_COLORS.FIRST_COLOR; pointColor <= POINT_COLORS.LAST_COLOR; pointColor++){
+                for(let _hash in this.uiPoints[pointColor]){
+                    let hash = Number(_hash);
+
+                    let uiPoint = this.uiPoints[pointColor][hash];
+                    let fileRank = ChessEngine.getFileRankForHash(hash);
+                    uiPoint.position = this.getPositionForFileRank(fileRank);
+                }
+            }
+        }
+
+
+        //flip the other graphics
+        if(this.uiOptionCycleFileRank != null){
+            this.uiOptionCycleSprite.position = this.getPositionForFileRank(this.uiOptionCycleFileRank);
+        }
+        if(this.uiSelectLightFileRank != null){
+            this.uiSelectLightSprite.position = this.getPositionForFileRank(this.uiSelectLightFileRank);
+        }
 
         this.updateBoardNumbersColorPosition();
     }
@@ -751,6 +827,22 @@ export class BoardView extends PIXI.Graphics {
 
         this.addLastMoveSquares(chessEngine.getLastMoveClass());
     }
+    public updatePieceViewsToDefault(){
+        for(let fileNumber = 1; fileNumber <= ChessEngine.getNumOfFiles(); fileNumber++){
+            for(let rank = 1; rank <= ChessEngine.getNumOfRanks(); rank++){
+                let fileRank = new FileRank(fileNumber, rank);
+
+
+                let sprite = this.getPieceSpriteForFileRank(fileRank);
+                if(sprite != null) {
+                    let positionFrom: PIXI.Point = this.positionManager.getPosition(sprite);
+                    let positionTo: PIXI.Point = this.getPositionForFileRank(fileRank);
+
+                    this.positionManager.moveTo(sprite, null, positionTo,this.m_opts.moveSpeedFlipBoard*this.m_opts.size);
+                }
+            }
+        }
+    }
 
 
     public hasPoint(fileRank: FileRank, pointColor: POINT_COLORS | null): boolean {
@@ -782,7 +874,7 @@ export class BoardView extends PIXI.Graphics {
         }
     }
 
-    public removePointByColor(pointColor: POINT_COLORS) {
+    public removePointsByColor(pointColor: POINT_COLORS) {
         for (let hash in this.uiPoints[pointColor]) {
             this.pointGroup.removeChild(this.uiPoints[pointColor][hash]);
         }
@@ -791,7 +883,7 @@ export class BoardView extends PIXI.Graphics {
 
     public removeAllPoints() {
         for (let pointColor = POINT_COLORS.FIRST_COLOR; pointColor <= POINT_COLORS.LAST_COLOR; pointColor++) {
-            this.removePointByColor(pointColor);
+            this.removePointsByColor(pointColor);
         }
     }
 
@@ -855,13 +947,21 @@ export class BoardView extends PIXI.Graphics {
 
 
     public hideSelectLightSprite() {
+        this.uiSelectLightFileRank = null;
         this.uiSelectLightSprite.visible = false;
     }
 
     public showSelectLightSprite(fileRank: FileRank) {
-        this.uiSelectLightSprite.visible = true;
+        if(this.uiSelectLightFileRank != null){
+            if(FileRank.isEqual(fileRank, this.uiSelectLightFileRank)){
+                return;
+            }
+        }
 
-        this.uiSelectLightSprite.position = this.getPositionForFileRank(fileRank);
+        this.uiSelectLightFileRank = fileRank;
+
+        this.uiSelectLightSprite.position = this.getPositionForFileRank(this.uiSelectLightFileRank);
+        this.uiSelectLightSprite.visible = true;
     }
 
 
@@ -872,7 +972,6 @@ export class BoardView extends PIXI.Graphics {
 
     public showOptionCycleSprite(fileRank: FileRank) {
         if (this.uiOptionCycleFileRank != null) {
-
             if(FileRank.isEqual(fileRank, this.uiOptionCycleFileRank)){
                 return;
             }

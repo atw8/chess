@@ -28,5 +28,6 @@ export class GameTimeMove extends GameTimeAbstract {
         this.moveTime = moveTime;
     }
 
+
 }
 

@@ -31,6 +31,8 @@ export enum LanguageKey {
 
     MyMove,
     VotedMoves,
+
+    FlipBoard,
 }
 
 export namespace LanguageHelper {
@@ -103,6 +105,9 @@ export namespace LanguageHelper {
                 break;
             case LanguageKey.VotedMoves:
                 ret = "Voted Moves";
+                break;
+            case LanguageKey.FlipBoard:
+                ret = "Flip Board";
                 break;
         }
 

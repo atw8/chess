@@ -37,7 +37,7 @@ export class AbstractEngine {
         this.fileRankPieces = {};
 
 
-        this.outitModel();
+        this.outit();
 
     }
 
@@ -77,7 +77,7 @@ export class AbstractEngine {
     }
 
 
-    protected outitModel(){
+    protected outit(){
         this.moveClasses = [];
         this.royalPieces = {};
 
@@ -107,7 +107,15 @@ export class AbstractEngine {
 
 
     public setPieceToRoyal(sideType : SideType, pieceType : PieceType){
-        this.royalPieces[sideType].push(pieceType);
+        let isInsert : boolean = true;
+        for(let i = 0; i < this.royalPieces[sideType].length; i++){
+            if(this.royalPieces[sideType][i] == pieceType){
+                isInsert = false;
+            }
+        }
+        if(isInsert){
+            this.royalPieces[sideType].push(pieceType);
+        }
     }
     public getSquaresBySideTypePieceType(sideType : SideType, pieceType : PieceType) : FileRank[] {
         return this.pieceToSquareMap[sideType][pieceType];

@@ -1,26 +1,198 @@
 import {MoveClass} from "../../shared/engine/MoveClass";
 import {BoardView} from "../BoardViewLayer/BoardView";
 import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
-import {LogoLayer} from "../LogoLayer";
-import {PredictPanel} from "../OtherView/PredictPanel";
+import {PredictPanel} from "../BoardViewLayer/PredictPanel";
+import {ChessEngine} from "../../shared/engine/ChessEngine";
+import {ControllerOuter} from "./ControllerOuter";
+import {SocketClientInterface} from "./SocketClientInterface";
+import {
+    OnRoomJoinBroadcastMessage, OnRoomJoinMessage, OnRoomMakeMoveBroadcastMessage,
+    OnRoomMakeMoveMessage, OnRoomMakeVoteMessage, OnRoomMultiplayerStateBroadcastMessage,
+    OnRoomTimeOutBroadcastMessage, OnRoomVotingUpdateBroadcastMessage,
+    OnUserLoginGuestMessage, RoomInitConfig, RoomStateConfig
+} from "../../shared/MessageTypes";
+import {GameTimeManager} from "../../shared/gameTime/GameTimeManager";
+import {DomainMapStruct} from "../../shared/DomainMapStruct";
+import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
+import {SideType} from "../../shared/engine/SideType";
+import {RoomStateEnum} from "../../shared/RoomStateEnum";
 
-export interface ControllerAbstract {
-    setParentBoardView(opts : {uiParentView : ParentBoardView,
-        uiBoardView : BoardView,
-        uiPredictPanel : PredictPanel | null,
-        uiPredictBoardView : BoardView | null}):void;
+
+export abstract class ControllerAbstract implements SocketClientInterface {
+    protected chessEngine: ChessEngine;
+
+    protected readonly roomId: number;
+    protected readonly roomTypeEnum: RoomTypeEnum;
+    protected readonly controllerOuter: ControllerOuter;
+
+
+    protected gameTimeManager: GameTimeManager;
+
+    protected uiParentView: ParentBoardView;
+    protected uiBoardView: BoardView;
+    protected uiPredictPanel: PredictPanel | null;
+    protected uiPredictBoardView: BoardView | null;
+
+    constructor(roomId: number, roomTypeEnum: RoomTypeEnum, controllerOuter: ControllerOuter) {
+        this.roomId = roomId;
+        this.roomTypeEnum = roomTypeEnum;
+        this.controllerOuter = controllerOuter;
+
+        this.chessEngine = new ChessEngine();
+
+        PIXI.ticker.shared.add(this.tick, this);
+    }
+    public getRoomTypeEnum():RoomTypeEnum{
+        return this.roomTypeEnum;
+    }
+
+    public getChessEngine(): ChessEngine {
+        return this.chessEngine;
+    }
+
+    public setParentBoardView(opts: {
+        uiParentView: ParentBoardView,
+        uiBoardView: BoardView,
+        uiPredictPanel: PredictPanel | null,
+        uiPredictBoardView: BoardView | null
+    }) {
+
+
+        this.uiParentView = opts.uiParentView;
+        this.uiBoardView = opts.uiBoardView;
+        this.uiPredictPanel = opts.uiPredictPanel;
+        this.uiPredictBoardView = opts.uiPredictBoardView;
+
+        this.uiBoardView.updateViewToModel(null);
+    }
+
     //setParentBoardView(uiParentView : ParentBoardView, uiBoardView : BoardView):void;
 
     //Boardview related rubbish
-    notifyMove(moveClass : MoveClass, uiBoardView : BoardView):void;
+    public abstract notifyMove(moveClass: MoveClass, uiBoardView: BoardView): void;
 
-    notifyPromote(moveClasses : MoveClass[], uiBoardView : BoardView):void;
+    public abstract notifyPromote(moveClasses: MoveClass[], uiBoardView: BoardView): void;
 
     //Touch related API
-    onTouchBegan(point : PIXI.Point):void;
-    onTouchMoved(point : PIXI.Point):void;
-    onTouchEnded(point : PIXI.Point):void;
 
-    isPredictPanel(): boolean;
-    predictMovePress(isMyMove : boolean, sanStr : string): void;
+
+
+    public OnConnect(): void {
+    };
+
+    public OnDisconnect(): void {
+    };
+
+    public OnLoginGuest(onLoginGuestMsg: OnUserLoginGuestMessage): void {
+    };
+
+
+    public OnRoomJoin(onRoomJoinMsg: OnRoomJoinMessage): void {
+        let roomInitConfig = <RoomInitConfig>onRoomJoinMsg.roomInitConfig;
+        let roomStateConfig = <RoomStateConfig>onRoomJoinMsg.roomStateConfig;
+        //let roomInitConfig = this.controllerOuter.getRoomInitConfig(this.roomId);
+        //let roomStateConfig = this.controllerOuter.getRoomStateConfig(this.roomId);
+
+        this.gameTimeManager = new GameTimeManager(roomInitConfig.gameTimeStructs);
+
+
+        this.chessEngine.init(roomInitConfig);
+        for (let i = 0; i < roomStateConfig.sanMoves.length; i++) {
+            let sanMove = roomStateConfig.sanMoves[i];
+            this.chessEngine.doMoveSan(sanMove);
+        }
+        for (let i = 0; i < roomStateConfig.timeStamps.length; i++) {
+            let timeStamp = roomStateConfig.timeStamps[i];
+            this.gameTimeManager.doMove(timeStamp);
+        }
+
+        {
+            let m_askDrawMap = roomStateConfig.askDrawMap;
+            let m_isLoseByTime = roomStateConfig.isLoseByTimeMap;
+            let m_isResignMap = roomStateConfig.isResignMap;
+
+            for (let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++) {
+                this.chessEngine.setIsAskForDraw(sideType, m_askDrawMap[sideType]);
+                this.chessEngine.setIsLoseByTime(sideType, m_isLoseByTime[sideType]);
+                this.chessEngine.setIsResign(sideType, m_isResignMap[sideType]);
+            }
+        }
+
+
+        this.uiBoardView.updateViewToModel(this.chessEngine);
+
+        {
+            let timeStamp = this.controllerOuter.getServerTimeStamp();
+            for (let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++) {
+                this.uiParentView.setTime(sideType, this.gameTimeManager.getCurrentTime(sideType, timeStamp));
+            }
+        }
+
+
+        this._OnRoomJoin(onRoomJoinMsg);
+        //this.syncrhonizeRoomState();
+    }
+
+    public abstract _OnRoomJoin(onRoomJoinMsg: OnRoomJoinMessage): void;
+
+    public OnRoomJoinBroadcast(onRoomJoinBroadcastMsg: OnRoomJoinBroadcastMessage): void {
+        this.gameTimeManager.start(onRoomJoinBroadcastMsg.beginTimeStamp);
+
+        this._OnRoomJoinBroadcast(onRoomJoinBroadcastMsg);
+    }
+
+    public abstract _OnRoomJoinBroadcast(onRoomJoinBroadcastMsg: OnRoomJoinBroadcastMessage): void;
+
+
+    public abstract OnRoomMakeMove(onRoomMakeMoveMsg: OnRoomMakeMoveMessage): void;
+
+    public abstract OnRoomMakeMoveBroadcast(onRoomMakeMoveBroadcastMsg: OnRoomMakeMoveBroadcastMessage): void;
+
+    public abstract OnRoomTimeOutBroadcast(onRoomTimeOutBroadcastMsg: OnRoomTimeOutBroadcastMessage): void;
+
+    public abstract OnRoomMakeVote(onRoomMakeVoteMsg: OnRoomMakeVoteMessage): void;
+
+    public abstract OnRoomVotingUpdateBroadcast(onRoomVotingUpdateBroadcastMsg: OnRoomVotingUpdateBroadcastMessage): void;
+
+    public abstract OnRoomMultiplayerStateBroadcast(onRoomMultiplayerStateBroadcastMsg : OnRoomMultiplayerStateBroadcastMessage):void;
+
+    public syncrhonizeRoomState() {
+        let roomInitConfig = this.controllerOuter.getRoomInitConfig(this.roomId);
+        let roomStateConfig = this.controllerOuter.getRoomStateConfig(this.roomId);
+        this.uiParentView.setWaitingNodeVisible(roomStateConfig.roomState == RoomStateEnum.START);
+
+
+        if (roomStateConfig.roomState == RoomStateEnum.END) {
+            let OnRoomFinish = () => {
+                this.controllerOuter.removeController(this.roomId);
+            };
+
+            this.uiParentView.showWinNode(roomStateConfig.chessGameState, OnRoomFinish);
+        }
+
+        this._synchronizeRoomState();
+    }
+
+    public abstract _synchronizeRoomState(): void;
+
+
+    public tick(dt : number):void{
+        let roomStateConfig = this.controllerOuter.getRoomStateConfig(this.roomId);
+
+        if(roomStateConfig == undefined){
+            return;
+        }
+
+        if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
+            return;
+        }
+
+
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            let currentTime = this.gameTimeManager.getCurrentTime(sideType, this.controllerOuter.getServerTimeStamp());
+            this.uiParentView.setTime(sideType, currentTime);
+        }
+        //console.log("tick ", dt);
+    }
 }
+

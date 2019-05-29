@@ -2,22 +2,24 @@ import {RoomAbstract} from "./RoomAbstract"
 import {
     ClientServerMessage,
     ErrorCode,
-    OnRoomJoinBroadcastMessage,
     OnRoomJoinMessage,
-    OnRoomMakeMoveMessage,
     OnRoomVotingUpdateBroadcastMessage,
     OpRoomJoinMessage,
-    OpRoomMakeMoveMessage,
+    OnRoomMakeVoteMessage,
+    OpRoomMakeVoteMessage,
     RoomInitConfig,
     RoomStateConfig,
-    ServerClientMessage
+    ServerClientMessage,
+    OnRoomTimeOutBroadcastMessage,
+    OnRoomMultiplayerStateBroadcastMessage
 } from "../shared/MessageTypes";
 import {RoomServer} from "./RoomServer";
 import {SideType} from "../shared/engine/SideType";
 import {RoomStateEnum} from "../shared/RoomStateEnum";
+import {ChessGameStateEnum} from "../shared/engine/ChessGameStateEnum";
 
 export class RoomMultiplayer extends RoomAbstract{
-    private playerIds : {[key : number] : boolean};
+    private playerIds : Set<number>;
 
     private isVotingDataDirty : boolean;
     private votingData : {[key : string] : number};
@@ -25,9 +27,8 @@ export class RoomMultiplayer extends RoomAbstract{
 
     constructor(roomServer : RoomServer, roomId : number, roomInitConfig : RoomInitConfig){
         super(roomServer, roomId, roomInitConfig);
-        this.playerIds = {};
+        this.playerIds = new Set<number>();
 
-        this.playerIdSanStrMap = {};
         this.initVotingData();
 
         let tickVotingDelay : number = 1000;
@@ -35,6 +36,8 @@ export class RoomMultiplayer extends RoomAbstract{
     }
     private initVotingData(){
         this.isVotingDataDirty = true;
+
+        this.playerIdSanStrMap = {};
 
         this.votingData = {};
         let sanMoves = this.chessEngine.getSANMovesForCurrentBoardAndMoveClasses(null);
@@ -54,26 +57,19 @@ export class RoomMultiplayer extends RoomAbstract{
         }
     }
 
-    public getSideTypeForPlayerId(playerId : number):SideType{
-        return this.chessEngine.getMoveTurn();
-    }
-    public setSideTypeForPlayerId(playerId : number, sideType : SideType | undefined):void{
-        this.playerIds[playerId] = true;
-    }
 
 
     public emitOtherPlayerId(playerId : number | null, clientServerMsg : ClientServerMessage | null, serverClientMsg : ServerClientMessage):void{
-        for(let _pId in this.playerIds){
-            let pId : number = parseInt(_pId);
+        this.playerIds.forEach((pId : number)=>{
             if(playerId != pId){
                 this.emitPlayerId(pId, clientServerMsg, serverClientMsg);
             }
-        }
+        });
     }
 
 
     public joinRoom(playerId : number, opJoinRoomMsg : OpRoomJoinMessage, onJoinRoomMsg : OnRoomJoinMessage):void{
-        this.setSideTypeForPlayerId(playerId, opJoinRoomMsg.sideType);
+        this.playerIds.add(playerId);
 
         if(this.roomStateEnum == RoomStateEnum.START){
             this.roomStateEnum = RoomStateEnum.NORMAL;
@@ -90,25 +86,26 @@ export class RoomMultiplayer extends RoomAbstract{
         }
         this.emitPlayerId(playerId, opJoinRoomMsg, onJoinRoomMsg);
 
-        /*
-        if(onJoinRoomMsg.getErrorCode() == ErrorCode.SUCCESS){
-            let onJoinRoomBroadcastMsg = new OnRoomJoinBroadcastMessage(this.getRoomId());
-            onJoinRoomBroadcastMsg.sideTypeMap = this.sideTypeMapStruct.getDomainMap();
-            onJoinRoomBroadcastMsg.beginTimeStamp = this.gameTimeManager.getFirstTimeStamp();
-            onJoinRoomBroadcastMsg.chessGameState = this.chessEngine.getGameState();
-            onJoinRoomBroadcastMsg.roomState = this.roomStateEnum;
-
-            this.emitOtherPlayerId(playerId, null, onJoinRoomBroadcastMsg);
-        }
-        */
     }
 
 
-    public _makeMove(playerId : number, opRoomMakeMoveMsg : OpRoomMakeMoveMessage, onRoomMakeMoveMsg : OnRoomMakeMoveMessage, moveTimeStamp : number){
-        let sanStr = opRoomMakeMoveMsg.sanMove;
+    public makeVote(playerId : number, opRoomMakeVoteMoveMsg : OpRoomMakeVoteMessage, onRoomMakeVoteMoveMsg : OnRoomMakeVoteMessage):void{
+        if(this.roomStateEnum != RoomStateEnum.NORMAL || this.chessEngine.getGameState() != ChessGameStateEnum.NORMAL){
+            onRoomMakeVoteMoveMsg.setErrorCode(ErrorCode.DO_MOVE_NOT_ACTIVE_GAME);
+            this.emitPlayerId(playerId, opRoomMakeVoteMoveMsg, onRoomMakeVoteMoveMsg);
+            return;
+        }
+
+        if(!this.playerIds.has(playerId)){
+            onRoomMakeVoteMoveMsg.setErrorCode(ErrorCode.DO_MOVE_NOT_IN_ROOM);
+            this.emitPlayerId(playerId, opRoomMakeVoteMoveMsg, onRoomMakeVoteMoveMsg);
+            return;
+        }
+
+        let sanStr = onRoomMakeVoteMoveMsg.myVoting;
         if(!(sanStr in this.votingData)){
-            onRoomMakeMoveMsg.setErrorCode(ErrorCode.DO_MOVE_INVALID_SAN_MOVE);
-            this.emitPlayerId(playerId, opRoomMakeMoveMsg, onRoomMakeMoveMsg);
+            onRoomMakeVoteMoveMsg.setErrorCode(ErrorCode.DO_MOVE_INVALID_SAN_MOVE);
+            this.emitPlayerId(playerId, opRoomMakeVoteMoveMsg, onRoomMakeVoteMoveMsg);
             return;
         }
 
@@ -120,7 +117,8 @@ export class RoomMultiplayer extends RoomAbstract{
         this.playerIdSanStrMap[playerId] = sanStr;
         this.votingData[sanStr]++;
 
-        this.emitPlayerId(playerId, opRoomMakeMoveMsg, onRoomMakeMoveMsg);
+        this.emitPlayerId(playerId, opRoomMakeVoteMoveMsg, onRoomMakeVoteMoveMsg);
+
     }
 
 
@@ -137,5 +135,52 @@ export class RoomMultiplayer extends RoomAbstract{
         this.emitOtherPlayerId(null, null, onRoomVotingUpdateBroadcastMsg);
 
         this.isVotingDataDirty = false;
+    }
+
+
+    public _tick(timeStamp : number){
+        let isTimeOut : boolean = false;
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE && !isTimeOut; sideType++){
+            isTimeOut = this.gameTimeManager.isLose(sideType, timeStamp);
+
+            if(isTimeOut){
+                //Adjust the timeStamp, so we dont end up loosing by accident
+                timeStamp = timeStamp + this.gameTimeManager.getCurrentTime(sideType, timeStamp);
+            }
+        }
+
+        if(isTimeOut){
+
+
+
+            let topVotingNumber : number = 0;
+            let topVotingMoves : string[] = [];
+            for(let sanStr in this.votingData){
+                let number = this.votingData[sanStr];
+                if(number > topVotingNumber){
+                    topVotingNumber = number;
+                    topVotingMoves = [sanStr];
+                }else if(number == topVotingNumber){
+                    topVotingMoves.push(sanStr);
+                }
+            }
+
+            let sanMove = topVotingMoves[Math.floor(Math.random()*topVotingMoves.length)];
+
+            this.gameTimeManager.doMove(timeStamp);
+            this.chessEngine.doMoveSan(sanMove);
+
+            let onRoomMultiplayerStateBroadcastMsg = new OnRoomMultiplayerStateBroadcastMessage({
+                roomId : this.getRoomId(),
+                sanMove : sanMove,
+                moveTimeStamp : timeStamp
+            });
+
+            this.emitOtherPlayerId(null, null, onRoomMultiplayerStateBroadcastMsg);
+
+            this.initVotingData();
+            this.tickVoting(0.0);
+            //this.votingData["asdf"];
+        }
     }
 }

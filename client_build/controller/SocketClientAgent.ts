@@ -1,16 +1,22 @@
 import Socket = require("socket.io-client");
 import {
     ClientServerMessage,
+    createMessageFromString,
     ErrorCode,
     MessageType,
     OnRoomJoinBroadcastMessage,
     OnRoomJoinMessage,
     OnRoomMakeMoveBroadcastMessage,
     OnRoomMakeMoveMessage,
+    OnRoomMakeVoteMessage,
+    OnRoomMultiplayerStateBroadcastMessage,
     OnRoomTimeOutBroadcastMessage,
+    OnRoomVotingUpdateBroadcastMessage,
     OnUserLoginGuestMessage,
     OpRoomJoinMessage,
+    OpRoomJoinMessageType,
     OpRoomMakeMoveMessage,
+    OpRoomMakeVoteMessage,
     OpUserLoginGuestMessage,
     RoomInitConfig,
     RoomStateConfig,
@@ -69,6 +75,7 @@ export class SocketClientAgent {
 
         this.requestId = 0;
 
+
         this.latency = null;
         this.minTimeDiff = null;
         this.maxTimeDiff = null;
@@ -87,6 +94,12 @@ export class SocketClientAgent {
         this.socket.on(MessageType.OnRoomMakeMoveBroadcast, this.OnRoomMakeMoveBroadcast.bind(this));
 
         this.socket.on(MessageType.OnRoomTimeOutBroadcast, this.OnRoomTimeOutBroadcast.bind(this));
+
+
+        this.socket.on(MessageType.OnRoomMakeVote, this.OnRoomMakeVote.bind(this));
+        this.socket.on(MessageType.OnRoomVotingUpdateBroadcast, this.OnRoomVotingUpdateBroadcast.bind(this));
+
+        this.socket.on(MessageType.OnRoomMultiplayerStateBroadcast, this.OnRoomMultiplayerStateBroadcast.bind(this));
     }
 
 
@@ -171,15 +184,15 @@ export class SocketClientAgent {
 
 
     //Related OpLoginGuest
-    public OpLoginGuest(token ?: string){
-        console.debug("OpLoginGuest ", token);
-        let opLoginGuestMessage : OpUserLoginGuestMessage = new OpUserLoginGuestMessage(token);
+    public OpLoginGuest(guestToken ?: string){
+        console.debug("OpLoginGuest ", guestToken);
+        let opLoginGuestMessage : OpUserLoginGuestMessage = new OpUserLoginGuestMessage({guestToken : guestToken});
 
         this.emitClientServerMessage(opLoginGuestMessage);
     }
     public OnLoginGuest(message : string){
         console.debug("OnLoginGuest ", message);
-        let onLoginGuestMessage : OnUserLoginGuestMessage | null = OnUserLoginGuestMessage.createFromString(message);
+        let onLoginGuestMessage = createMessageFromString(message, OnUserLoginGuestMessage);
         if(onLoginGuestMessage == null){
             return;
         }
@@ -206,18 +219,14 @@ export class SocketClientAgent {
 
 
 
-    public OpRoomJoin(opRoomJoinMsgParams : { roomId ?: number, roomInitConfig ?: RoomInitConfig}){
-        //console.debug("OpRoomJoin ", roomId);
-        let opRoomJoinMsg : OpRoomJoinMessage  = new OpRoomJoinMessage();
-        opRoomJoinMsg.roomId = opRoomJoinMsgParams.roomId;
-        opRoomJoinMsg.roomInitConfig = opRoomJoinMsgParams.roomInitConfig;
-        //opRoomJoinMsg.roomInitConfig = roomInitConfig;
+    public OpRoomJoin(opRoomJoinMsgType : OpRoomJoinMessageType){
+        let opRoomJoinMsg : OpRoomJoinMessage  = new OpRoomJoinMessage(opRoomJoinMsgType);
 
         this.emitClientServerMessage(opRoomJoinMsg);
     }
     public OnRoomJoin(message : string) {
         console.debug("OnRoomJoin ", message);
-        let onRoomJoinMsg: OnRoomJoinMessage | null = OnRoomJoinMessage.createFromString(message);
+        let onRoomJoinMsg = createMessageFromString(message, OnRoomJoinMessage);
         if(onRoomJoinMsg == null){
             return;
         }
@@ -235,7 +244,7 @@ export class SocketClientAgent {
     }
     public OnRoomJoinBroadcast(message : string){
         console.debug("OnRoomJoinBroadcast ", message);
-        let onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage | null = OnRoomJoinBroadcastMessage.createFromString(message);
+        let onRoomJoinBroadcastMsg = createMessageFromString(message, OnRoomJoinBroadcastMessage);
         if(onRoomJoinBroadcastMsg == null){
             return;
         }
@@ -258,13 +267,13 @@ export class SocketClientAgent {
 
     public OpRoomMakeMove(roomId : number, sanMove : string){
         console.debug("OpRoomMakeMove ", roomId, " ", sanMove);
-        let opRoomMakeMoveMsg : OpRoomMakeMoveMessage = new OpRoomMakeMoveMessage(roomId, sanMove);
+        let opRoomMakeMoveMsg : OpRoomMakeMoveMessage = new OpRoomMakeMoveMessage({roomId : roomId, sanMove : sanMove});
 
         this.emitClientServerMessage(opRoomMakeMoveMsg);
     }
     public OnRoomMakeMove(message : string){
         console.debug("OnRoomMakeMove ", message);
-        let onRoomMakeMoveMsg: OnRoomMakeMoveMessage | null = OnRoomMakeMoveMessage.createFromString(message);
+        let onRoomMakeMoveMsg = createMessageFromString(message, OnRoomMakeMoveMessage);
         if(onRoomMakeMoveMsg == null){
             return;
         }
@@ -289,7 +298,7 @@ export class SocketClientAgent {
     }
     public OnRoomMakeMoveBroadcast(message : string){
         console.debug("OnRoomMakeMoveBroadcast ", message);
-        let onRoomMakeMoveBroadcastMsg : OnRoomMakeMoveBroadcastMessage | null = OnRoomMakeMoveBroadcastMessage.createFromString(message);
+        let onRoomMakeMoveBroadcastMsg = createMessageFromString(message, OnRoomMakeMoveBroadcastMessage);
         if(onRoomMakeMoveBroadcastMsg == null){
             return;
         }
@@ -315,7 +324,7 @@ export class SocketClientAgent {
 
     public OnRoomTimeOutBroadcast(message : string){
         console.debug("OnRoomTimeOutBroadcast ", message);
-        let onRoomTimeOutBroadcastMsg : OnRoomTimeOutBroadcastMessage | null = OnRoomTimeOutBroadcastMessage.createFromString(message);
+        let onRoomTimeOutBroadcastMsg = createMessageFromString(message, OnRoomTimeOutBroadcastMessage);
         if(onRoomTimeOutBroadcastMsg == null){
             return;
         }
@@ -329,6 +338,54 @@ export class SocketClientAgent {
         }
 
         this.socketClientInterface.OnRoomTimeOutBroadcast(onRoomTimeOutBroadcastMsg);
+    }
+
+
+    //Has to do with voting
+    public OpRoomMakeVote(roomId : number, myVoting : string){
+        let opRoomMakeVoteMsg = new OpRoomMakeVoteMessage({roomId : roomId, myVoting : myVoting});
+
+        this.emitClientServerMessage(opRoomMakeVoteMsg);
+    }
+
+    public OnRoomMakeVote(message :string){
+        console.debug("OnRoomMakeVote", message);
+        let onRoomMakeVoteMsg = createMessageFromString(message, OnRoomMakeVoteMessage);
+        if(onRoomMakeVoteMsg == null){
+            return;
+        }
+
+        let roomStateConfig = this.roomStateConfigs[onRoomMakeVoteMsg.roomId];
+        roomStateConfig.myVoting = onRoomMakeVoteMsg.myVoting;
+
+        this.socketClientInterface.OnRoomMakeVote(onRoomMakeVoteMsg);
+    }
+
+    public OnRoomVotingUpdateBroadcast(message : string){
+        console.debug("OnRoomVotingUpdateBroadcast ", message);
+        let onRoomVotingUpdateBroadcastMsg = createMessageFromString(message, OnRoomVotingUpdateBroadcastMessage);
+        if(onRoomVotingUpdateBroadcastMsg == null){
+            return;
+        }
+
+        let roomStateConfig = this.roomStateConfigs[onRoomVotingUpdateBroadcastMsg.roomId];
+        roomStateConfig.votingData = onRoomVotingUpdateBroadcastMsg.votingData;
+
+        this.socketClientInterface.OnRoomVotingUpdateBroadcast(onRoomVotingUpdateBroadcastMsg)
+    }
+
+    public OnRoomMultiplayerStateBroadcast(message : string){
+        console.debug("OnRoomMultiplayerStateBroadcast ", message);
+        let onRoomMultiplayerStateBroadcastMsg = createMessageFromString(message, OnRoomMultiplayerStateBroadcastMessage);
+        if(onRoomMultiplayerStateBroadcastMsg == null){
+            return;
+        }
+
+        let roomStateConfig = this.roomStateConfigs[onRoomMultiplayerStateBroadcastMsg.roomId];
+        roomStateConfig.sanMoves.push(onRoomMultiplayerStateBroadcastMsg.sanMove);
+        roomStateConfig.timeStamps.push(onRoomMultiplayerStateBroadcastMsg.moveTimeStamp);
+
+        this.socketClientInterface.OnRoomMultiplayerStateBroadcast(onRoomMultiplayerStateBroadcastMsg);
     }
 
 

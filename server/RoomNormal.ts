@@ -5,7 +5,7 @@ import {
     OnRoomJoinBroadcastMessage, OnRoomJoinBroadcastMessageType,
     OnRoomJoinMessage,
     OnRoomMakeMoveBroadcastMessage, OnRoomMakeMoveBroadcastMessageType,
-    OnRoomMakeMoveMessage,
+    OnRoomMakeMoveMessage, OnRoomTimeOutBroadcastMessage,
     OpRoomJoinMessage,
     OpRoomMakeMoveMessage,
     RoomInitConfig,
@@ -45,6 +45,7 @@ export class RoomNormal extends RoomAbstract {
         }
     }
 
+
     public getSideTypeForPlayerId(playerId : number):SideType | undefined {
         return <SideType>this.sideTypeMapStruct.getKeyForValue(playerId);
     }
@@ -60,6 +61,7 @@ export class RoomNormal extends RoomAbstract {
         }
         this.sideTypeMapStruct.setValueForKey(sideType, playerId)
     }
+
 
 
 
@@ -114,7 +116,29 @@ export class RoomNormal extends RoomAbstract {
     }
 
 
-    public _makeMove(playerId : number, opRoomMakeMoveMsg : OpRoomMakeMoveMessage, onRoomMakeMoveMsg : OnRoomMakeMoveMessage, moveTimeStamp : number):void{
+    public makeMove(playerId : number, opRoomMakeMoveMsg : OpRoomMakeMoveMessage, onRoomMakeMoveMsg : OnRoomMakeMoveMessage):void{
+        let moveTimeStamp = Date.now();
+
+        this._tick(moveTimeStamp);
+        if(this.roomStateEnum != RoomStateEnum.NORMAL || this.chessEngine.getGameState() != ChessGameStateEnum.NORMAL){
+            onRoomMakeMoveMsg.setErrorCode(ErrorCode.DO_MOVE_NOT_ACTIVE_GAME);
+            this.emitPlayerId(playerId, opRoomMakeMoveMsg, onRoomMakeMoveMsg);
+            return;
+        }
+
+        let sideType = this.getSideTypeForPlayerId(playerId);
+        if(sideType == undefined){
+            onRoomMakeMoveMsg.setErrorCode(ErrorCode.DO_MOVE_NOT_IN_ROOM);
+            this.emitPlayerId(playerId, opRoomMakeMoveMsg, onRoomMakeMoveMsg);
+            return;
+        }
+
+        if(sideType != this.chessEngine.getMoveTurn()){
+            onRoomMakeMoveMsg.setErrorCode(ErrorCode.DO_MOVE_NOT_MOVE_TURN);
+            this.emitPlayerId(playerId, opRoomMakeMoveMsg, onRoomMakeMoveMsg);
+            return;
+        }
+
         let isSuccess = this.chessEngine.doMoveSan(onRoomMakeMoveMsg.sanMove);
         if(!isSuccess){
             onRoomMakeMoveMsg.setErrorCode(ErrorCode.DO_MOVE_INVALID_SAN_MOVE);
@@ -155,6 +179,38 @@ export class RoomNormal extends RoomAbstract {
 
 
             this.emitOtherPlayerId(playerId, null, onRoomMakeMoveBroadcastMsg);
+        }
+
+
+        if(this.roomStateEnum == RoomStateEnum.END){
+            this.roomServer.removeRoom(this);
+        }
+    }
+
+    public _tick(timeStamp : number){
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            if(this.gameTimeManager.isLose(sideType, timeStamp)){
+                this.chessEngine.setIsLoseByTime(sideType, true);
+                this.roomStateEnum = RoomStateEnum.END;
+            }
+        }
+
+        if(this.roomStateEnum == RoomStateEnum.END){
+            this.gameTimeManager.end(timeStamp);
+
+
+            let onRoomTimeOutBroadcastMsgType = {
+                roomId : this.getRoomId(),
+                roomState : this.roomStateEnum,
+                chessGameState : this.chessEngine.getGameState(),
+                endTimeStamp : timeStamp,
+                isLoseByTimeMap : this.chessEngine.m_isLoseByTime
+            };
+
+            let onRoomTimeOutBroadcastMsg = new OnRoomTimeOutBroadcastMessage(onRoomTimeOutBroadcastMsgType);
+
+
+            this.emitOtherPlayerId(null, null, onRoomTimeOutBroadcastMsg);
         }
 
 

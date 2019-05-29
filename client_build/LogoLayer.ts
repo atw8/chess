@@ -7,7 +7,7 @@ import {RoomInitConfig} from "../shared/MessageTypes";
 
 
 const ScrollLayerSpeed : number = 10;
-const DisplayPoints : boolean = false;
+const DisplayPoints : boolean = true;
 
 export class LogoLayer extends PIXI.Container {
     //private logo : PIXI.Sprite;

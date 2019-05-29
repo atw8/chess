@@ -33,8 +33,8 @@ export class ChooseGameLayer extends PIXI.Container {
             let roomTypeEnum : RoomTypeEnum = RoomTypeEnum.MULTIPLAYER;
             // @ts-ignore
             let gameTimeStructs : GameTimeStructConfigs = {};
-            gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.MOVE, totalTime : 1 * 60 * 1000, incrTime : 0};
-            gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.MOVE, totalTime : 1 * 60 * 1000, incrTime : 0};
+            gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.MOVE, totalTime : 1 * 5 * 1000};
+            gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.MOVE, totalTime : 1 * 5 * 1000};
 
             let roomInitConfig = new RoomInitConfig(roomTypeEnum, gameTimeStructs);
             roomInitConfig.isChess960 = true;

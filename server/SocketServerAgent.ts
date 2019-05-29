@@ -7,7 +7,7 @@ import {
     ClientServerMessage, ErrorCode, MessageType, OnRoomJoinMessage,
     OnUserLoginGuestMessage, OnRoomMakeMoveMessage, OpRoomJoinMessage,
     OpUserLoginGuestMessage, OpRoomMakeMoveMessage,
-    ServerClientMessage
+    ServerClientMessage, createMessageFromString, OpRoomMakeVoteMessage
 } from "./../shared/MessageTypes";
 import {UserServer} from "./UserServer";
 
@@ -44,6 +44,8 @@ export class SocketServerAgent {
 
         socket.on(MessageType.OpRoomJoin, this.OpJoinRoom.bind(this, socket));
         socket.on(MessageType.OpRoomMakeMove, this.OpRoomMakeMove.bind(this, socket));
+
+        socket.on(MessageType.OpRoomMakeVote, this.OpRoomMakeVote.bind(this, socket));
     }
 
     public onConnectionDisconnect(socket : SocketIO.Socket){
@@ -74,12 +76,13 @@ export class SocketServerAgent {
 
     public OpLoginGuest(socket : SocketIO.Socket, message : string){
         console.log("SocketServerAgent.OpLoginGuest");
-        let opUserLoginGuestMsg : OpUserLoginGuestMessage | null = OpUserLoginGuestMessage.createFromString(message);
+
+        let opUserLoginGuestMsg = createMessageFromString(message, OpUserLoginGuestMessage);
         if(opUserLoginGuestMsg == null){
             return;
         }
 
-        let onUserLoginGuestMsg : OnUserLoginGuestMessage = new OnUserLoginGuestMessage();
+        let onUserLoginGuestMsg : OnUserLoginGuestMessage = new OnUserLoginGuestMessage({guestToken : "", playerId : 0, roomIds : []});
 
         this.userServer.guestLogin(opUserLoginGuestMsg, onUserLoginGuestMsg);
 
@@ -95,19 +98,19 @@ export class SocketServerAgent {
 
     public OpJoinRoom(socket : SocketIO.Socket, message : string){
         console.log("SocketServerAgent.OpJoinRoom");
-        let opJoinRoomMsg : OpRoomJoinMessage | null = OpRoomJoinMessage.createFromString(message);
-        if(opJoinRoomMsg == null){
+        let opRoomJoinMsg = createMessageFromString(message, OpRoomJoinMessage);
+        if(opRoomJoinMsg == null){
             return;
         }
 
 
         let playerId = <number>this.socketPlayerIdMap.get(socket);
-        this.roomServer.joinRoom(playerId, opJoinRoomMsg);
+        this.roomServer.joinRoom(playerId, opRoomJoinMsg);
     }
 
     public OpRoomMakeMove(socket : SocketIO.Socket, message : string){
         console.log("SocketServerAgent.OpRoomMakeMove");
-        let opRoomMakeMoveMsg : OpRoomMakeMoveMessage | null = OpRoomMakeMoveMessage.createFromString(message);
+        let opRoomMakeMoveMsg = createMessageFromString(message, OpRoomMakeMoveMessage);
         if(opRoomMakeMoveMsg == null){
             return;
         }
@@ -118,6 +121,16 @@ export class SocketServerAgent {
         this.roomServer.makeMove(playerId, opRoomMakeMoveMsg);
     }
 
+    public OpRoomMakeVote(socket : SocketIO.Socket, message : string){
+        console.log("SocketServerAgent.OpRoomMakeVote");
+        let opRoomMakeVoteMsg = createMessageFromString(message, OpRoomMakeVoteMessage);
+        if(opRoomMakeVoteMsg == null){
+            return;
+        }
+
+        let playerId = <number>this.socketPlayerIdMap.get(socket);
+        this.roomServer.makeVote(playerId, opRoomMakeVoteMsg);
+    }
 }
 
 

@@ -6,12 +6,6 @@ import {getLocationForImageTag, ImageTag} from "./ImageTag";
 import {LogoLayer} from "./LogoLayer";
 
 import * as TWEEN from '@tweenjs/tween.js'
-import {SideType} from "../shared/engine/SideType";
-import TextStyleOptions = PIXI.TextStyleOptions;
-import {ChooseGameLayer} from './ChooseGameLayer/ChooseGameLayer';
-import {ControllerTest} from "./controller/ControllerTest";
-import {ParentBoardView} from "./BoardViewLayer/ParentBoardView";
-import {ControllerOuter} from "./controller/ControllerOuter";
 
 enum ORIENTATION {
     LANDSCAPE,
@@ -22,6 +16,7 @@ enum ORIENTATION_STRATERGY {
     CONSTANT_WIDTH,
     CONSTANT_HEIGHT,
 }
+
 
 
 export class SimpleGame extends PIXI.Application{
@@ -86,6 +81,7 @@ export class SimpleGame extends PIXI.Application{
 
         applicationOptions.width = window.innerWidth * window.devicePixelRatio * 0.9;
         applicationOptions.height = window.innerHeight * window.devicePixelRatio * 0.9;
+
         applicationOptions.backgroundColor = 0xFFFFFF;
 
 
@@ -185,7 +181,7 @@ export class SimpleGame extends PIXI.Application{
         return 0x000000;
     }
 
-    public static getDefaultTextStyleOptions(fontSize : number):TextStyleOptions{
+    public static getDefaultTextStyleOptions(fontSize : number):PIXI.TextStyleOptions{
         let textStyleOptions : PIXI.TextStyleOptions = {};
         textStyleOptions.fontFamily = "Helvetica";
         textStyleOptions.fontSize = Math.round(fontSize);

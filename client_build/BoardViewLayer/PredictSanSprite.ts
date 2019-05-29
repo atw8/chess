@@ -1,3 +1,5 @@
+/*
+
 import {SideType} from "../../shared/engine/SideType";
 import {SanSprite} from "./SanSprite";
 
@@ -46,11 +48,7 @@ export class PredictSanSprite extends PIXI.Graphics{
         textStyleOptions.fontFamily = "Helvetica";
         textStyleOptions.fontWeight = "Bold";
 
-        this.uiPercentage = new PIXI.Text("");
-        this.uiPercentage.style = new PIXI.TextStyle(textStyleOptions);
-        this.uiPercentage.anchor.set(1.0, 0.5);
-        this.uiPercentage.position.set((this.m_width/2) - 0.5*pieceViewScale*this.m_height, 0.0);
-        this.addChild(this.uiPercentage);
+
 
 
         this.uiPressNode = new PIXI.Graphics();
@@ -61,18 +59,7 @@ export class PredictSanSprite extends PIXI.Graphics{
         this.uiPressNode.visible = true;
 
 
-        let onUp = () => {
-            this.scale.set(1.0);
-        };
-        let onDown = () => {
-            this.scale.set(0.9);
-        };
-        let onClick = () => {
-            this.pressBtnCallback(this);
-        };
-        //onDown : () => void, onClick : () => void
 
-        SimpleGame.addBtnProperties(this, onUp, onDown, onClick);
         //this.onInputUp.add(this.inputUp.bind(this));
     }
 
@@ -144,3 +131,4 @@ export class PredictSanSprite extends PIXI.Graphics{
         return this.m_percentage;
     }
 }
+*/

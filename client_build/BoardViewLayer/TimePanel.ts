@@ -9,8 +9,6 @@ import {SimpleGame} from "../app";
 export class TimePanel extends PIXI.Graphics {
     private m_size : number;
 
-    private sideType : SideType;
-
 
     private uiPieceView : PieceView;
 
@@ -20,12 +18,11 @@ export class TimePanel extends PIXI.Graphics {
     constructor(sideType: SideType, m_size: number) {
         super();
 
-        this.sideType = sideType;
 
         this.m_size = m_size;
 
 
-        this.uiPieceView = new PieceView({sideType : this.sideType, pieceType : PieceType.PAWN}, this.m_size, this.m_size);
+        this.uiPieceView = new PieceView({sideType : sideType, pieceType : PieceType.PAWN}, this.m_size, this.m_size);
         this.addChild(this.uiPieceView);
 
 
@@ -60,6 +57,11 @@ export class TimePanel extends PIXI.Graphics {
     }
 
 
+    public setSideType(sideType : SideType){
+        this.uiPieceView.setPiece({sideType : sideType, pieceType : PieceType.PAWN});
+    }
+
+
     public setTime(timeMilli : number){
         let text : string = "";
         if(isFinite(timeMilli)){
@@ -68,8 +70,12 @@ export class TimePanel extends PIXI.Graphics {
             }
             let minutes = Math.floor(timeMilli / (60 * 1000));
             let seconds = Math.floor(timeMilli/1000) -  minutes * 60;
+            let milliSeconds = Math.floor(timeMilli - (minutes * 60 * 1000 + seconds * 1000));
+            milliSeconds = Math.floor(milliSeconds/100);
 
-            text = this.leftPad(minutes, 2) + ":" + this.leftPad(seconds, 2);
+
+
+            text = this.leftPad(minutes, 2) + ":" + this.leftPad(seconds, 2) + "." + this.rightPad(milliSeconds, 1);
         }else {
             text = " \u221E";
         }
@@ -82,6 +88,14 @@ export class TimePanel extends PIXI.Graphics {
         let ret = String(number);
         while(ret.length < targetLength){
             ret = '0' + ret
+        }
+
+        return ret;
+    }
+    private rightPad(number : number, targetLength : number):string {
+        let ret = String(number);
+        while(ret.length < targetLength){
+            ret = ret + '0';
         }
 
         return ret;

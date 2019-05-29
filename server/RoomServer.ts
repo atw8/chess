@@ -2,24 +2,28 @@ import {
     ClientServerMessage,
     ErrorCode,
     OnRoomJoinMessage,
-    OnRoomMakeMoveMessage,
+    OnRoomMakeMoveMessage, OnRoomMakeVoteMessage,
     OpRoomJoinMessage,
-    OpRoomMakeMoveMessage,
+    OpRoomMakeMoveMessage, OpRoomMakeVoteMessage,
     RoomInitConfig,
     ServerClientMessage
 } from "../shared/MessageTypes";
 
 import {SocketServerAgent} from "./SocketServerAgent";
 
-import {Room} from "./Room"
+import {RoomTypeEnum} from "../shared/RoomTypeEnum";
+
+import {RoomAbstract} from "./RoomAbstract"
+import {RoomMultiplayer} from "./RoomMultiplayer"
+import {RoomNormal} from "./RoomNormal";
+
 import * as SocketIO from "socket.io";
-import {SideType} from "../shared/engine/SideType";
 import {RoomContainer} from "./RoomContainer";
 
 export class RoomServer {
     private socketServerAgent : SocketServerAgent;
 
-    private roomsMap : { [key : number] : Room};
+    private roomsMap : { [key : number] : RoomAbstract};
 
     private roomIdCounter : number;
 
@@ -51,7 +55,20 @@ export class RoomServer {
 
             let roomInitConfig = <RoomInitConfig>opJoinRoomMessage.roomInitConfig;
 
-            let room = new Room(this, roomId, roomInitConfig);
+            let room : RoomAbstract;
+            switch (roomInitConfig.roomTypeEnum){
+                case RoomTypeEnum.NORMAL:
+                    room = new RoomNormal(this, roomId, roomInitConfig);
+                    break;
+                case RoomTypeEnum.MULTIPLAYER:
+                    room = new RoomMultiplayer(this, roomId, roomInitConfig);
+                    break;
+                default:
+                    room = new RoomNormal(this, roomId, roomInitConfig);
+                    break;
+
+            }
+
             this.roomContainer.addRoom(room.getRoomId(), roomInitConfig);
 
             this.roomsMap[roomId] = room;
@@ -72,20 +89,44 @@ export class RoomServer {
     }
 
     public makeMove(playerId : number, opRoomMakeMoveMsg : OpRoomMakeMoveMessage):void{
-        let ret : OnRoomMakeMoveMessage = new OnRoomMakeMoveMessage(opRoomMakeMoveMsg.roomId, opRoomMakeMoveMsg.sanMove, 0);
+        let ret : OnRoomMakeMoveMessage = new OnRoomMakeMoveMessage(opRoomMakeMoveMsg);
 
-        let room : Room = this.roomsMap[ret.roomId];
+        let room : RoomAbstract = this.roomsMap[ret.roomId];
         if(room == undefined){
             ret.setErrorCode(ErrorCode.ROOM_DOES_NOT_EXIST);
             this.emitMessage(playerId, opRoomMakeMoveMsg, ret);
         }else {
-            room.makeMove(playerId, opRoomMakeMoveMsg, ret);
+            let roomTypeEnum = room.getRoomTypeEnum();
+            if(roomTypeEnum != RoomTypeEnum.NORMAL){
+                ret.setErrorCode(ErrorCode.ROOM_DOES_NOT_SUPPORT_MAKE_MOVE);
+                this.emitMessage(playerId, opRoomMakeMoveMsg, ret);
+            }else {
+                (<RoomNormal>room).makeMove(playerId, opRoomMakeMoveMsg, ret);
+            }
+        }
+    }
+
+    public makeVote(playerId : number, opRoomMakeVoteMsg : OpRoomMakeVoteMessage):void{
+        let ret = new OnRoomMakeVoteMessage(opRoomMakeVoteMsg);
+
+        let room : RoomAbstract = this.roomsMap[ret.roomId];
+        if(room == undefined){
+            ret.setErrorCode(ErrorCode.ROOM_DOES_NOT_EXIST);
+            this.emitMessage(playerId, opRoomMakeVoteMsg, ret);
+        }else {
+            let roomTypeEnum = room.getRoomTypeEnum();
+            if(roomTypeEnum != RoomTypeEnum.MULTIPLAYER){
+                ret.setErrorCode(ErrorCode.ROOM_DOES_NOT_SUPPORT_VOTE_MOVE);
+                this.emitMessage(playerId, opRoomMakeVoteMsg, ret);
+            }else {
+                (<RoomMultiplayer>room).makeVote(playerId, opRoomMakeVoteMsg, ret);
+            }
         }
     }
 
 
 
-    public removeRoom(room : Room):void{
+    public removeRoom(room : RoomAbstract):void{
         let roomId = room.getRoomId();
         this.roomContainer.removeRoom(roomId);
         delete this.roomsMap[roomId];

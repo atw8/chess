@@ -1,3 +1,4 @@
+/*
 import {ControllerAbstract} from "./ControllerAbstract";
 import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
 import {MoveClass} from "../../shared/engine/MoveClass";
@@ -7,12 +8,11 @@ import {Matcher} from "anymatch";
 import {PredictPanel} from "../OtherView/PredictPanel";
 import {AbstractEngine} from "../../shared/engine/AbstractEngine";
 
-export class ControllerTest implements ControllerAbstract {
+export class ControllerTest extends ControllerAbstract {
     private uiParentView : ParentBoardView;
     private uiBoardView : BoardView;
     private uiPredictBoardView : BoardView | null;
 
-    private chessEngine : ChessEngine;
 
     public setParentBoardView(opts : {uiParentView : ParentBoardView,
         uiBoardView : BoardView,
@@ -24,7 +24,6 @@ export class ControllerTest implements ControllerAbstract {
         this.uiBoardView = opts.uiBoardView;
         this.uiPredictBoardView = opts.uiPredictBoardView;
 
-        this.chessEngine = new ChessEngine();
         this.uiBoardView.updateViewToModel(this.chessEngine);
 
         let moveClasses = this.chessEngine.getAllLegalMoves(null, false);
@@ -53,17 +52,6 @@ export class ControllerTest implements ControllerAbstract {
     }
 
     public notifyPromote(moveClasses : MoveClass[], uiBoardView : BoardView){
-
-    }
-
-    //Touch related API
-    public onTouchBegan(point : PIXI.Point){
-
-    }
-    public onTouchMoved(point : PIXI.Point){
-
-    }
-    public onTouchEnded(point : PIXI.Point){
 
     }
 
@@ -115,6 +103,5 @@ export class ControllerTest implements ControllerAbstract {
 
         _p();
     }
-
-
 }
+*/

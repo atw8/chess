@@ -1,17 +1,19 @@
 import {SimpleGame} from "../app";
-import InteractionData = PIXI.interaction.InteractionData;
 import InteractionEvent = PIXI.interaction.InteractionEvent;
+import {BoardView} from "./BoardView";
 import {ControllerAbstract} from "../controller/ControllerAbstract";
 
 export class TouchLayer{
-    private controller : ControllerAbstract;
+    private uiBoardView : BoardView;
+    private controllerAbstract : ControllerAbstract;
 
     private identifier : number | null = null;
 
     private isEnabled : boolean;
 
-    constructor(controller : ControllerAbstract){
-        this.controller = controller;
+    constructor(uiBoardView : BoardView, controllerAbstract : ControllerAbstract){
+        this.uiBoardView = uiBoardView;
+        this.controllerAbstract = controllerAbstract;
 
 
         SimpleGame.getInstance().stage.interactive = true;
@@ -41,9 +43,7 @@ export class TouchLayer{
         }
         this.identifier = interactionEvent.data.identifier;
 
-        this.controller.onTouchBegan(interactionEvent.data.global);
-
-        //console.log("onTouchBegan ", interactionEvent.data.global.x,", ", interactionEvent.data.global.y);
+        this.uiBoardView.onTouchBegan(interactionEvent.data.global, this.controllerAbstract.getChessEngine());
     }
     public onTouchMoved(interactionEvent : InteractionEvent){
         //console.log("onTouchMoved");
@@ -51,9 +51,7 @@ export class TouchLayer{
             return;
         }
 
-        this.controller.onTouchMoved(interactionEvent.data.global);
-
-        //console.log("onTouchMoved ", interactionEvent.data.global.x,", ", interactionEvent.data.global.y);
+        this.uiBoardView.onTouchMoved(interactionEvent.data.global, this.controllerAbstract.getChessEngine());
     }
     public onTouchEnded(interactionEvent : InteractionEvent){
         //console.log("onTouchEnded");
@@ -62,8 +60,6 @@ export class TouchLayer{
         }
         this.identifier = null;
 
-        this.controller.onTouchEnded(interactionEvent.data.global);
-
-        //console.log("onTouchEnded ", interactionEvent.data.global.x,", ", interactionEvent.data.global.y);
+        this.uiBoardView.onTouchEnded(interactionEvent.data.global, this.controllerAbstract.getChessEngine());
     }
 }
