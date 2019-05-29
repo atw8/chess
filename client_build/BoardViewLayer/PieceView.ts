@@ -2,7 +2,6 @@ import {SideType} from "../../shared/engine/SideType";
 import {PieceType} from "../../shared/engine/PieceType";
 
 import {ImageTag} from "../ImageTag";
-import {SimpleGame} from "../app";
 import {PieceModel} from "../../shared/engine/PieceModel";
 
 

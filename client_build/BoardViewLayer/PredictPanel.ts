@@ -8,6 +8,7 @@ import {ControllerAbstract} from "../controller/ControllerAbstract";
 import {LanguageHelper, LanguageKey} from "../LanguageHelper";
 import * as PIXI from "pixi.js";
 import * as TWEEN from "@tweenjs/tween.js";
+import {ControllerMultiplayerGame} from "../controller/ControllerMultiplayerGame";
 
 export class PredictPanel extends PIXI.Graphics {
 
@@ -29,14 +30,14 @@ export class PredictPanel extends PIXI.Graphics {
 
 
 
-    private controller : ControllerAbstract;
+    private controller : ControllerMultiplayerGame;
     private positionManager : PositionManager;
 
 
     private m_height : number;
     private m_rowHeight : number;
 
-    constructor(height : number, rowHeight : number, controller : ControllerAbstract){
+    constructor(height : number, rowHeight : number, controller : ControllerMultiplayerGame){
         super();
 
         this.m_height = height;
@@ -176,13 +177,7 @@ export class PredictPanel extends PIXI.Graphics {
 
 
 
-    public setMyMoveSanStr(sanStr : string | null):string | null{
-        let ret = this.uiMyMoveSprite.getSanStr();
 
-        this.uiMyMoveSprite.setSanStr(sanStr);
-
-        return ret;
-    }
     public setMyMovePercentage(percentage : number | null):number | null{
         let ret = this.uiMyMoveSprite.getPercentage();
 
@@ -202,23 +197,35 @@ export class PredictPanel extends PIXI.Graphics {
     }
 
 
-
-
+    public setMyVoting(sanStr : string | null):void{
+        this.uiMyMoveSprite.setSanStr(sanStr);
+    }
     public setVotingData(votingData : { [key : string] : number}){
         let votingDataArray : { sanStr : string, number : number}[] = [];
         for(let k in votingData){
-            votingDataArray.push({sanStr : k, number : votingData[k]});
+            if(votingData[k] != 0){
+                votingDataArray.push({sanStr : k, number : votingData[k]});
+            }
         }
 
         votingDataArray.sort((a:{ sanStr : string, number : number}, b:{ sanStr : string, number : number})=>{
-            return  b.number - a.number;
+            let ret : number;
+            if(b.number == a.number){
+                ret = -b.sanStr.localeCompare(a.sanStr);
+            }else {
+                ret = b.number - a.number;
+            }
+            return ret;
         });
 
 
+        let numOfVotes : number = 0;
         let votedSanMap : { [key : string] : { sanStr : string, number : number, rowPosition : number}} = {};
         for(let i = 0; i < votingDataArray.length; i++){
             let votedData = votingDataArray[i];
             votedSanMap[votingDataArray[i].sanStr] = {sanStr : votedData.sanStr, number : votedData.number, rowPosition : i + 3};
+
+            numOfVotes += votedData.number;
         }
 
 
@@ -263,7 +270,12 @@ export class PredictPanel extends PIXI.Graphics {
             let sprite = new PredictSanSprite(this.getRowWidth(), this.getRowHeight(), this.m_moveTurn, this.predictSanSpriteCallback.bind(this, false))
             sprite.position = this.getPositionForRow(votedData.rowPosition);
             sprite.setSanStr(sanStr);
-            sprite.setPercentage(votedData.number);
+            if(numOfVotes == 0){
+                sprite.setPercentage(0);
+            }else {
+                sprite.setPercentage( 100*(votedData.number)/numOfVotes);
+            }
+
             this.addChild(sprite);
 
             if(this.isPredictMove(sanStr)){
@@ -287,7 +299,12 @@ export class PredictPanel extends PIXI.Graphics {
 
         //Update all the percentages, and the positions
         for(let sanStr in this.uiVotedMovesSprites){
-            this.uiVotedMovesSprites[sanStr].sprite.setPercentage(votedSanMap[sanStr].number);
+            if(numOfVotes == 0){
+                this.uiVotedMovesSprites[sanStr].sprite.setPercentage(0);
+            }else {
+                this.uiVotedMovesSprites[sanStr].sprite.setPercentage(100*(votedSanMap[sanStr].number)/numOfVotes);
+            }
+
             this.uiVotedMovesSprites[sanStr].newRowPosition = votedSanMap[sanStr].rowPosition;
         }
 
