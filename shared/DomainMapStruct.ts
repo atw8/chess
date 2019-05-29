@@ -13,25 +13,6 @@ export class DomainMapStruct<T extends (string | number | symbol), Q>{
         this.domain = domain;
 
         this.domainMap = {};
-
-
-        /*
-        if(typeof(oneMap) == "undefined"){
-            this.oneMap = {};
-        }
-        if(typeof(sideTypePlayerIdMap) == "undefined"){
-            sideTypePlayerIdMap = {}
-        }
-
-        this.sideTypePlayerIdMap = sideTypePlayerIdMap;
-
-
-        for(let sideType in this.sideTypePlayerIdMap){
-            let playerId = <number>this.sideTypePlayerIdMap[sideType];
-
-            this.playerIdSideTypeMap[playerId] = <number><unknown>sideType;
-        }
-        */
     }
 
 
