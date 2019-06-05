@@ -2,6 +2,7 @@ import {POINT_COLORS} from "./PointColorCons";
 
 import {ImageTag} from "../ImageTag";
 import {SimpleGame} from "../app";
+import * as PIXI from 'pixi.js';
 
 
 export class PointColorNode extends PIXI.Sprite {

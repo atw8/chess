@@ -3,7 +3,7 @@ import {PieceType} from "../../shared/engine/PieceType";
 
 import {ImageTag} from "../ImageTag";
 import {PieceModel} from "../../shared/engine/PieceModel";
-
+import * as PIXI from 'pixi.js';
 
 export class PieceView extends PIXI.Sprite {
 

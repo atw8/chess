@@ -1,7 +1,7 @@
 import {SQUARE_COLORS} from "./SquareColorCons";
 
 import {ImageTag} from "../ImageTag";
-import {SimpleGame} from "../app";
+import * as PIXI from 'pixi.js';
 
 
 

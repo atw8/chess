@@ -1,3 +1,4 @@
+/*
 import {RoomInitConfig} from "../../shared/MessageTypes";
 import {SimpleGame} from "../app";
 import {SideType} from "../../shared/engine/SideType";
@@ -98,24 +99,6 @@ export class ChooseGameButton extends PIXI.display.Layer {
         //SimpleGame.arrangeVertically([uiTitleText, uiTimeStyleText]);
 
 
-        /*
-        uiTimeText.parentGroup = pixiGroup;
-        uiTitleText.zOrder = 1;
-        uiTitleText.zIndex = 1;
-        uiTitleText.parentGroup = pixiGroup;
-        uiTitleText.zOrder = 2;
-        uiTitleText.zIndex = 2;
-        uiRect.parentGroup = pixiGroup;
-        uiRect.zOrder = 0;
-        uiRect.zIndex = 0;
-
-        //pixiGroup.doSort()
-
-
-        pixiGroup.enableSort = true;
-        */
-
-
         //this.beginFill(SimpleGame.getLightBrownColor());
         //this.drawRoundedRect(-_width/2, -_height/2, _width, _height, 5);
 
@@ -141,3 +124,4 @@ export class ChooseGameButton extends PIXI.display.Layer {
     }
 
 }
+*/

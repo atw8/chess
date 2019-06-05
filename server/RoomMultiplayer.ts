@@ -11,7 +11,7 @@ import {
     RoomStateConfig,
     ServerClientMessage,
     OnRoomTimeOutBroadcastMessage,
-    OnRoomMultiplayerStateBroadcastMessage
+    OnRoomMultiplayerStateBroadcastMessage, OnRoomMultiplayerStateBroadcastMessageType
 } from "../shared/MessageTypes";
 import {RoomServer} from "./RoomServer";
 import {SideType} from "../shared/engine/SideType";
@@ -20,6 +20,7 @@ import {ChessGameStateEnum} from "../shared/engine/ChessGameStateEnum";
 
 export class RoomMultiplayer extends RoomAbstract{
     private playerIds : Set<number>;
+    private wbPlayerIds : { [key in SideType] : Set<number> };
 
     private isVotingDataDirty : boolean;
     private votingData : {[key : string] : number};
@@ -27,7 +28,13 @@ export class RoomMultiplayer extends RoomAbstract{
 
     constructor(roomServer : RoomServer, roomId : number, roomInitConfig : RoomInitConfig){
         super(roomServer, roomId, roomInitConfig);
+
         this.playerIds = new Set<number>();
+        //@ts-ignore
+        this.wbPlayerIds = {};
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            this.wbPlayerIds[sideType] = new Set<number>();
+        }
 
         this.initVotingData();
 
@@ -54,7 +61,18 @@ export class RoomMultiplayer extends RoomAbstract{
             if(playerId in this.playerIdSanStrMap){
                 roomStateConfig.myVoting = this.playerIdSanStrMap[playerId];
             }
+
+            for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+                let wbPlayerIdSet = this.wbPlayerIds[sideType];
+                if(wbPlayerIdSet.has(playerId)){
+                    roomStateConfig.mySideType = sideType;
+                }
+            }
+
         }
+
+
+        //roomStateConfig.mySideType = thi
     }
 
 
@@ -69,7 +87,31 @@ export class RoomMultiplayer extends RoomAbstract{
 
 
     public joinRoom(playerId : number, opJoinRoomMsg : OpRoomJoinMessage, onJoinRoomMsg : OnRoomJoinMessage):void{
-        this.playerIds.add(playerId);
+
+        if(!this.playerIds.has(playerId)){
+            let whiteSideTypes = this.wbPlayerIds[SideType.WHITE].size;
+            let blackSideTypes = this.wbPlayerIds[SideType.BLACK].size;
+
+            let mySideType : SideType;
+            if(whiteSideTypes > blackSideTypes){
+                mySideType = SideType.BLACK;
+            }else if(whiteSideTypes < blackSideTypes){
+                mySideType = SideType.WHITE;
+            }else {
+                mySideType = SideType.getRandomSideType();
+            }
+
+            this.wbPlayerIds[mySideType].add(playerId);
+            this.playerIds.add(playerId);
+        }
+
+
+
+
+
+
+
+        //this.playerIds.add(playerId);
 
         if(this.roomStateEnum == RoomStateEnum.START){
             this.roomStateEnum = RoomStateEnum.NORMAL;
@@ -101,6 +143,12 @@ export class RoomMultiplayer extends RoomAbstract{
             this.emitPlayerId(playerId, opRoomMakeVoteMoveMsg, onRoomMakeVoteMoveMsg);
             return;
         }
+        if(!this.wbPlayerIds[this.chessEngine.getMoveTurn()].has(playerId)){
+            onRoomMakeVoteMoveMsg.setErrorCode(ErrorCode.DO_MOVE_NOT_MOVE_TURN);
+            this.emitPlayerId(playerId, opRoomMakeVoteMoveMsg, onRoomMakeVoteMoveMsg);
+            return;
+        }
+
 
         let sanStr = onRoomMakeVoteMoveMsg.myVoting;
         if(!(sanStr in this.votingData)){
@@ -170,17 +218,42 @@ export class RoomMultiplayer extends RoomAbstract{
             this.gameTimeManager.doMove(timeStamp);
             this.chessEngine.doMoveSan(sanMove);
 
-            let onRoomMultiplayerStateBroadcastMsg = new OnRoomMultiplayerStateBroadcastMessage({
+
+            let onRoomMultiplayerStateBroadcastMsgType : OnRoomMultiplayerStateBroadcastMessageType = {
                 roomId : this.getRoomId(),
                 sanMove : sanMove,
                 moveTimeStamp : timeStamp
-            });
+            };
+
+            if(this.chessEngine.getGameState() != ChessGameStateEnum.NORMAL){
+                this.roomStateEnum = RoomStateEnum.END;
+            }
+
+
+
+
+            if(this.chessEngine.getGameState()!= ChessGameStateEnum.NORMAL){
+                onRoomMultiplayerStateBroadcastMsgType.chessGameState = this.chessEngine.getGameState();
+            }
+            if(this.roomStateEnum != RoomStateEnum.NORMAL){
+                onRoomMultiplayerStateBroadcastMsgType.roomState = this.roomStateEnum;
+            }
+
+            let onRoomMultiplayerStateBroadcastMsg = new OnRoomMultiplayerStateBroadcastMessage(onRoomMultiplayerStateBroadcastMsgType);
+
+
+
 
             this.emitOtherPlayerId(null, null, onRoomMultiplayerStateBroadcastMsg);
 
             this.initVotingData();
             this.tickVoting(0.0);
-            //this.votingData["asdf"];
+
+
+            if(this.roomStateEnum == RoomStateEnum.END){
+                this.roomServer.removeRoom(this);
+                this.roomServer.createRoom(this.getRoomInitConfig());
+            }
         }
     }
 }

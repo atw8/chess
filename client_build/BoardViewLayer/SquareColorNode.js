@@ -15,6 +15,7 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var SquareColorCons_1 = require("./SquareColorCons");
 var ImageTag_1 = require("../ImageTag");
+var PIXI = require("pixi.js");
 var SquareColorNode = /** @class */ (function (_super) {
     __extends(SquareColorNode, _super);
     function SquareColorNode(squareColor, squareWidth, squareHeight) {

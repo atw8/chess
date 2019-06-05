@@ -1,3 +1,4 @@
+/*
 import {RoomInitConfig} from "../../shared/MessageTypes";
 import {SideType} from "../../shared/engine/SideType";
 import {GameTimeType} from "../../shared/gameTime/GameTimeType";
@@ -33,8 +34,8 @@ export class ChooseGameLayer extends PIXI.Container {
             let roomTypeEnum : RoomTypeEnum = RoomTypeEnum.MULTIPLAYER;
             // @ts-ignore
             let gameTimeStructs : GameTimeStructConfigs = {};
-            gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.MOVE, totalTime : 1 * 5 * 1000};
-            gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.MOVE, totalTime : 1 * 5 * 1000};
+            gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.MOVE, totalTime : 1 * 10 * 1000};
+            gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.MOVE, totalTime : 1 * 10 * 1000};
 
             let roomInitConfig = new RoomInitConfig(roomTypeEnum, gameTimeStructs);
             roomInitConfig.isChess960 = true;
@@ -96,3 +97,4 @@ export class ChooseGameLayer extends PIXI.Container {
 
 
 }
+*/

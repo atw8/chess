@@ -21,7 +21,7 @@ import {PositionManager} from "../PositionManager";
 import {ImageTag} from "../ImageTag";
 import {ControllerAbstract} from "../controller/ControllerAbstract";
 import {TouchLayer} from "./TouchLayer";
-
+import * as PIXI from 'pixi.js';
 
 
 enum TouchTypes {
@@ -127,7 +127,7 @@ export class BoardView extends PIXI.Graphics {
 
         this.controller = controller;
 
-        this.boardFacing = SideType.WHITE;
+        this.boardFacing = SideType.getRandomSideType();
 
 
         this.positionManager = new PositionManager();
@@ -641,12 +641,12 @@ export class BoardView extends PIXI.Graphics {
             fileUi.position = fileUiPosition;
 
 
-            let textStyleOptions : PIXI.TextStyleOptions = {};
-
             let colorType = ChessEngine.getColorTypeForFileRank(fileRank);
             colorType = ChessEngine.getOppositeSideType(colorType);
-            textStyleOptions.fill = this.getColorForColorType_inString(colorType);
-            textStyleOptions.fontSize = Math.round(this.m_opts.size/30);
+
+            let textStyleOptions = { fill : this.getColorForColorType_inString(colorType),
+                fontSize :  Math.round(this.m_opts.size/30)};
+
 
             fileUi.style = new PIXI.TextStyle(textStyleOptions);
         }
@@ -673,11 +673,11 @@ export class BoardView extends PIXI.Graphics {
             rankUi.position = rankUiPosition;
 
 
-            let textStyleOptions : PIXI.TextStyleOptions = {};
             let colorType = ChessEngine.getColorTypeForFileRank(fileRank);
             colorType = ChessEngine.getOppositeSideType(colorType);
-            textStyleOptions.fill = this.getColorForColorType_inString(colorType);
-            textStyleOptions.fontSize = Math.round(this.m_opts.size/30);
+
+            let textStyleOptions = { fill : this.getColorForColorType_inString(colorType),
+                fontSize :  Math.round(this.m_opts.size/30)};
 
             rankUi.style = new PIXI.TextStyle(textStyleOptions);
         }
@@ -741,11 +741,7 @@ export class BoardView extends PIXI.Graphics {
     }
 
     public getPositionForWorldLocation(worldLocation: PIXI.Point): PIXI.Point {
-        let position = new PIXI.Point();
-        this.worldTransform.applyInverse(new PIXI.Point(worldLocation.x, worldLocation.y), position);
-
-
-        return position;
+        return this.toLocal(worldLocation);
     }
 
     public getFileRankForWorldLocation(worldLocation: PIXI.Point): FileRank {

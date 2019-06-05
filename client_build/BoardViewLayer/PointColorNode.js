@@ -15,6 +15,7 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var PointColorCons_1 = require("./PointColorCons");
 var ImageTag_1 = require("../ImageTag");
+var PIXI = require("pixi.js");
 var PointColorNode = /** @class */ (function (_super) {
     __extends(PointColorNode, _super);
     function PointColorNode(pointColor, squareWidth, squareHeight) {

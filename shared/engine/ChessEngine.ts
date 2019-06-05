@@ -21,24 +21,76 @@ export namespace ChessEngine {
         "promotionPieceModel" ?: PieceModel.Interface;
     }
 
-
     export interface CastlingStruct {
         "isCastling" : boolean;
         "sideType" ?: SideType;
         "castleType" ?: CastleType;
     }
 
-
     export interface TwoPawnMoveStruct {
         "isTwoPawn" : boolean;
         "enPassantSquare" ?: FileRank
     }
+
+    /*
+    export interface RunParams {
+        generateSan : boolean;
+        generateUCI : boolean;
+        generateFenStr : boolean;
+    }
+    */
+}
+
+function getSanMoveAnnotationExpr():string {
+    return "[\#\+\!\?]*";
+}
+function getSanMovePiecePatternRegExp():RegExp{
+    let pieceType = "([NBRQK])?";
+    let fileFrom = "([a-h])?";
+    let rankFrom = "([1-8])?";
+    let isCapture = "(x)?";
+    let fileRankTo = "([a-h][1-8])";
+    let promotionPieceType = "(?:=([NBRQ]))?";
+
+    let str = "^"  + pieceType + fileFrom + rankFrom + isCapture + fileRankTo + promotionPieceType + getSanMoveAnnotationExpr() + "$";
+    let sanMovePiecePatternRegExp = new RegExp(str);
+
+    return sanMovePiecePatternRegExp;
+}
+function getSanMoveKingCastleRegExp():RegExp{
+    return new RegExp("^O-O" + getSanMoveAnnotationExpr() + "$");
+}
+function getSanMoveQueenCastleRegExp():RegExp{
+    return new RegExp("^O-O-O" + getSanMoveAnnotationExpr() + "$");
+
+}
+
+function getFenStrRegExp():RegExp{
+    let piecePlacementStr = "((?:[pnbrqkPNBRQK12345678]+\/){7}[pnbrqkPNBRQK12345678]+)";
+    let sideTypeStr = "([wb])";
+    let castlingStr = "((?:[KABCDEFGH]?[QABCDEFGH]?[kabcdefgh]?[qabcdefgh]?)|-)";
+    let enPassantStr = "((?:[abcdefgh][12345678])|-)";
+    let halfMoveStr = "(\\d+)";
+    let moveNumberStr = "(\\d+)";
+
+
+    let str = "^" + piecePlacementStr + " " + sideTypeStr + " " + castlingStr + " " + enPassantStr + " " + halfMoveStr + " " + moveNumberStr + "$";
+    let fenStrRegExp = new RegExp(str);
+
+    return fenStrRegExp;
+}
+function getFenStrRowRegExp():RegExp{
+    return new RegExp("[pnbrqkPNBRQK12345678]+", "g");
+}
+
+function getUciMoveRegExp():RegExp{
+    return new RegExp("^([a-h][1-8])([a-h][1-8])([nbrq])?$");
 }
 
 
 
 export class ChessEngine extends  AbstractEngine {
-    public initParam : {isChess960 : boolean, beginFenStr : string};
+    public initParam : {isChess960 : boolean, beginFenStr : string, isAskDraw : boolean};
 
     private captureFairy:{ [key in SideType] : { [key in PieceType] : Fairy}};
     private normalFairy : { [key in SideType] : { [key in PieceType] : Fairy}};
@@ -70,14 +122,15 @@ export class ChessEngine extends  AbstractEngine {
     public m_isForfeit : { [key in SideType] : boolean};
     public m_askForDraw : { [key in SideType] : boolean};
 
-    private uciMoveRegExp : RegExp;
+    private static uciMoveRegExp : RegExp = getUciMoveRegExp();
 
-    private sanMovePiecePatternRegExp : RegExp;
-    private sanMoveKingCastleRegExp : RegExp;
-    private sanMoveQueenCastleRegExp : RegExp;
 
-    private fenStrRegExp : RegExp;
-    private fenStrRowRegExp : RegExp;
+    public static sanMovePiecePatternRegExp : RegExp = getSanMovePiecePatternRegExp();
+    public static sanMoveKingCastleRegExp : RegExp = getSanMoveKingCastleRegExp();
+    public static sanMoveQueenCastleRegExp : RegExp = getSanMoveQueenCastleRegExp();
+
+    public static fenStrRegExp : RegExp = getFenStrRegExp();
+    public static fenStrRowRegExp : RegExp = getFenStrRowRegExp();
 
 
     public static getNumOfFiles():number{
@@ -114,8 +167,29 @@ export class ChessEngine extends  AbstractEngine {
 
 
 
-    constructor(initParam ?: {isChess960 ?: boolean, beginFenStr ?: string}){
+    /*
+            generateSan : boolean;
+        generateUCI : boolean;
+        generateFenStr : boolean;
+     */
+    constructor(initParam : {isChess960 ?: boolean, beginFenStr ?: string, isAskDraw : boolean}){
         super(ChessEngine.getNumOfFiles(), ChessEngine.getNumOfRanks(),[PieceType.PAWN, PieceType.KNIGHT, PieceType.BISHOP, PieceType.ROOK, PieceType.QUEEN, PieceType.KING], [SideType.WHITE, SideType.BLACK]);
+
+        /*
+        if(runParams == undefined){
+            runParams = {};
+        }
+        if(runParams.generateSan == undefined){
+            runParams.generateSan = true;
+        }
+        if(runParams.generateSan == undefined){
+            runParams.generateUCI = true;
+        }
+        if(runParams.generateFenStr == undefined){
+            runParams.generateFenStr = true;
+        }
+        this.runParams = <RunParams>runParams;
+        */
 
         this.initGlobal();
         this.init(initParam);
@@ -273,44 +347,6 @@ export class ChessEngine extends  AbstractEngine {
             this.pawn2MoveFairy[SideType.BLACK] = blackFairyStupid;
         }
 
-
-
-        this.uciMoveRegExp = new RegExp("^([a-h][1-8])([a-h][1-8])([nbrq])?$");
-
-        {
-            let piecePlacementStr = "((?:[pnbrqkPNBRQK12345678]+\/){7}[pnbrqkPNBRQK12345678]+)";
-            let sideTypeStr = "([wb])";
-            let castlingStr = "((?:[KABCDEFGH]?[QABCDEFGH]?[kabcdefgh]?[qabcdefgh]?)|-)";
-            let enPassantStr = "((?:[abcdefgh][12345678])|-)";
-            let halfMoveStr = "(\\d+)";
-            let moveNumberStr = "(\\d+)";
-
-
-            let str = "^" + piecePlacementStr + " " + sideTypeStr + " " + castlingStr + " " + enPassantStr + " " + halfMoveStr + " " + moveNumberStr + "$";
-            this.fenStrRegExp = new RegExp(str);
-
-            this.fenStrRowRegExp = new RegExp("[pnbrqkPNBRQK12345678]+", "g");
-        }
-
-
-        {
-            let annotationExpr = "[\#\+\!\?]*";
-
-            this.sanMoveKingCastleRegExp = new RegExp("^O-O" + annotationExpr + "$");
-            this.sanMoveQueenCastleRegExp = new RegExp("^O-O-O" + annotationExpr + "$");
-
-
-            let pieceType = "([NBRQK])?";
-            let fileFrom = "([a-h])?";
-            let rankFrom = "([1-8])?";
-            let isCapture = "(x)?";
-            let fileRankTo = "([a-h][1-8])";
-            let promotionPieceType = "(?:=([NBRQ]))?";
-
-
-            let str = "^"  + pieceType + fileFrom + rankFrom + isCapture + fileRankTo + promotionPieceType + annotationExpr + "$";
-            this.sanMovePiecePatternRegExp = new RegExp(str);
-        }
     };
 
 
@@ -417,12 +453,8 @@ export class ChessEngine extends  AbstractEngine {
 
 
 
-    public init(_initParam ?: {isChess960 ?: boolean, beginFenStr ?: string}){
-        let initParam : {isChess960 ?: boolean, beginFenStr ?: string} = {};
-        if(_initParam != undefined){
-            initParam.isChess960 = _initParam.isChess960;
-            initParam.beginFenStr = _initParam.beginFenStr;
-        }
+    public init(_initParam : {isChess960 ?: boolean, beginFenStr ?: string, isAskDraw : boolean}){
+        let initParam : {isChess960 ?: boolean, beginFenStr ?: string, isAskDraw : boolean} = {isAskDraw : _initParam.isAskDraw};
 
         if(initParam["isChess960"] == undefined){
             initParam["isChess960"] = false;
@@ -495,7 +527,7 @@ export class ChessEngine extends  AbstractEngine {
                 initParam["beginFenStr"] = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
             }
         }
-        this.initParam = <{isChess960 : boolean, beginFenStr : string}>initParam;
+        this.initParam = <{isChess960 : boolean, beginFenStr : string, isAskDraw : boolean}>initParam;
 
         this.outit();
         //SET THE KINGS TO ROYAL PIECES
@@ -513,7 +545,7 @@ export class ChessEngine extends  AbstractEngine {
         }
         */
 
-        let fenStrResult : RegExpExecArray | null = this.fenStrRegExp.exec(this.initParam["beginFenStr"]);
+        let fenStrResult : RegExpExecArray | null = ChessEngine.fenStrRegExp.exec(this.initParam["beginFenStr"]);
         if(fenStrResult == null){
             return;
         }
@@ -525,7 +557,7 @@ export class ChessEngine extends  AbstractEngine {
             let piecePlacementStr = fenStrResult[1];
 
 
-            let regexMatch = <RegExpMatchArray>piecePlacementStr.match(this.fenStrRowRegExp);
+            let regexMatch = <RegExpMatchArray>piecePlacementStr.match(ChessEngine.fenStrRowRegExp);
 
             for(let i = 0; i < regexMatch.length; i++){
                 let rank = this.getNumOfRanks() - i;
@@ -680,7 +712,10 @@ export class ChessEngine extends  AbstractEngine {
 
         this.updateEnPassantSquare();
 
-        this.fenStrings.push(this.getFenStrFromCurrentBoard());
+        //if(this.runParams.generateFenStr){
+            this.fenStrings.push(this.getFenStrFromCurrentBoard());
+        //}
+
 
 
         // @ts-ignore
@@ -803,15 +838,13 @@ export class ChessEngine extends  AbstractEngine {
             this.m_gameState = ChessGameStateEnum.BLACK_WIN_FORFEIT;
         }else if(this.getIsForfeit(SideType.BLACK)){
             this.m_gameState = ChessGameStateEnum.WHITE_WIN_FORFEIT;
-        }else if(this.getIsAskForDraw(SideType.WHITE) || this.getIsAskForDraw(SideType.BLACK)){
+        }else if(this.getIsAskForDraw(SideType.WHITE) || this.getIsAskForDraw(SideType.BLACK) || this.initParam.isAskDraw){
             if(this.getIsAskForDraw(SideType.WHITE) && this.getIsAskForDraw(SideType.BLACK)){
                 this.m_gameState = ChessGameStateEnum.DRAW_AGREEMENT;
             }else if(this.isDrawBy50Moves()){
                 this.m_gameState = ChessGameStateEnum.DRAW_50MOVES;
             }else if(this.isDrawByThreeRepetition()){
                 this.m_gameState = ChessGameStateEnum.DRAW_REPETITION;
-            }else {
-                this.m_gameState = ChessGameStateEnum.NORMAL;
             }
         }
 
@@ -1075,14 +1108,18 @@ export class ChessEngine extends  AbstractEngine {
 
 
         if(generateData){
-            this.uciMoves.push(this.getUCIMoveForMoveClass(moveClass));
-            console.log("the uciMove is " + this.getLastUCIMove());
+            //if(this.runParams.generateUCI){
+                this.uciMoves.push(this.getUCIMoveForMoveClass(moveClass));
+            //}
 
-            this.sanMoves.push(this.getSANMoveForLastMoveClass());
-            console.log("the sanMove is " + this.getLastSanMove());
+            //if(this.runParams.generateSan){
+                this.sanMoves.push(this.getSANMoveForLastMoveClass());
+            //}
 
-            this.fenStrings.push(this.getFenStrFromCurrentBoard());
-            console.log("the fenStr is " + this.getLastFenStr());
+            //if(this.runParams.generateFenStr){
+                this.fenStrings.push(this.getFenStrFromCurrentBoard());
+            //}
+
         }
     }
 
@@ -1107,11 +1144,17 @@ export class ChessEngine extends  AbstractEngine {
 
 
         if(generateData){
-            this.uciMoves.pop();
+            //if(this.runParams.generateUCI){
+                this.uciMoves.pop();
+            //}
 
-            this.sanMoves.pop();
+            //if(this.runParams.generateSan){
+                this.sanMoves.pop();
+            //}
 
-            this.fenStrings.pop();
+            //if(this.runParams.generateFenStr){
+                this.fenStrings.pop();
+            //}
         }
     }
 
@@ -1654,16 +1697,12 @@ export class ChessEngine extends  AbstractEngine {
         let sideType = this.getMoveTurn();
 
 
-        console.debug("parsing sanMove ", sanMove);
 
-
-
-
-        if(this.sanMoveKingCastleRegExp.test(sanMove) || this.sanMoveQueenCastleRegExp.test(sanMove)){
+        if(ChessEngine.sanMoveKingCastleRegExp.test(sanMove) || ChessEngine.sanMoveQueenCastleRegExp.test(sanMove)){
             let castleType : CastleType = CastleType.KING_SIDE;
-            if(this.sanMoveKingCastleRegExp.test(sanMove)){
+            if(ChessEngine.sanMoveKingCastleRegExp.test(sanMove)){
                 castleType = CastleType.KING_SIDE;
-            }else if(this.sanMoveQueenCastleRegExp.test(sanMove)){
+            }else if(ChessEngine.sanMoveQueenCastleRegExp.test(sanMove)){
                 castleType = CastleType.QUEEN_SIDE;
             }
 
@@ -1677,7 +1716,7 @@ export class ChessEngine extends  AbstractEngine {
                 ret = legalMove[0]
             }
         }else {
-            let sanPatternResult = this.sanMovePiecePatternRegExp.exec(sanMove);
+            let sanPatternResult = ChessEngine.sanMovePiecePatternRegExp.exec(sanMove);
             if(sanPatternResult == null){
                 return null;
             }
@@ -1947,7 +1986,7 @@ export class ChessEngine extends  AbstractEngine {
         //checking whether this uciMove is valid
 
 
-        let uciPatternResult : RegExpExecArray | null = this.uciMoveRegExp.exec(uciMove);
+        let uciPatternResult : RegExpExecArray | null = ChessEngine.uciMoveRegExp.exec(uciMove);
 
         if(uciPatternResult == null){
             return null;

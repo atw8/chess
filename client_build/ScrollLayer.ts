@@ -1,5 +1,6 @@
+import * as PIXI from 'pixi.js';
+
 import * as TWEEN from '@tweenjs/tween.js'
-import {SimpleGame} from "./app";
 
 export namespace ScrollLayer {
     export const enum DIRECTION {
@@ -13,7 +14,7 @@ export namespace ScrollLayer {
 export class ScrollLayer extends PIXI.Container{
     private direction : ScrollLayer.DIRECTION;
 
-    private layers : PIXI.DisplayObject[];
+    private layers : (PIXI.DisplayObject & {onResizeScreen() : void})[];
     private currentLayerIndex : number;
 
     private tweenIndex : number;
@@ -22,10 +23,11 @@ export class ScrollLayer extends PIXI.Container{
     private widthHeight : number;
     private speed : number;
 
-    constructor(direction : ScrollLayer.DIRECTION, size : {width : number, height : number}, widthHeight : number, speed : number){
+    constructor(direction : ScrollLayer.DIRECTION, widthHeight : number, speed : number){
         super();
 
         this.direction = direction;
+
         this.widthHeight = widthHeight;
         this.speed = speed;
 
@@ -38,10 +40,7 @@ export class ScrollLayer extends PIXI.Container{
         this.tweenIndex = 0;
 
 
-        this.mask = new PIXI.Graphics();
 
-        this.mask.beginFill(0xFFFFFF);
-        this.mask.drawRect(-size.width/2, -size.height/2, size.width, size.height);
         /*
 
         */
@@ -51,7 +50,14 @@ export class ScrollLayer extends PIXI.Container{
         this.on("added", this.onAdded);
     }
     public onAdded(){
-        (<PIXI.Graphics>this.mask).position = this.toGlobal(new PIXI.Point(0, 0));
+
+        /*
+        this.mask = new PIXI.Graphics();
+
+        this.mask.beginFill(0xFFFFFF);
+        this.mask.drawRect(-this.m_size.width/2, -this.m_size.height/2, this.m_size.width, this.m_size.height);
+        this.mask.position = this.toGlobal(new PIXI.Point(0, 0));
+        */
     }
 
 
@@ -69,7 +75,7 @@ export class ScrollLayer extends PIXI.Container{
     }
 
 
-    public goToLayer(layer : PIXI.DisplayObject, isAnimation : boolean){
+    public goToLayer(layer : PIXI.DisplayObject & {onResizeScreen() : void}, isAnimation : boolean){
         this.goToLayerIndex(this.getLayerIndexForLayer(layer), isAnimation);
     }
     public goToLayerIndex(currentLayerIndex : number, isAnimation : boolean){
@@ -115,13 +121,13 @@ export class ScrollLayer extends PIXI.Container{
     }
 
 
-    public addLayer(layer : PIXI.DisplayObject){
+    public addLayer(layer : PIXI.DisplayObject & {onResizeScreen() : void}){
         this.layers.push(layer);
         this.scrollNode.addChild(layer);
         layer.position = this.getPositionForLayerIndex(this.layers.length - 1);
     }
 
-    public removeLayer(layer: PIXI.DisplayObject){
+    public removeLayer(layer: (PIXI.DisplayObject & {onResizeScreen() : void})){
         let layerIndex = this.getLayerIndexForLayer(layer);
 
         this.scrollNode.removeChild(layer);
@@ -132,36 +138,34 @@ export class ScrollLayer extends PIXI.Container{
         }
     }
 
-    /*
-    // @ts-ignore
-    public addChild<T extends PIXI.DisplayObject>(...children): T {
-        for(let i = 0; i < children.length; i++){
-            let layer = children[i];
 
-            this.layers.push(layer);
-            this.scrollNode.addChild(layer);
+    public setWidthHeight(widthHeight : number):void{
+        if(this.widthHeight == widthHeight){
+            return;
+        }
+        this.widthHeight = widthHeight;
 
-            layer.position = this.getPositionForLayerIndex(this.layers.length - 1);
+
+        //Made sure no animation is occuring
+        this.tweenIndex++;
+
+        for(let i = 0; i < this.layers.length; i++){
+            let layer = this.layers[i];
+            layer.position = this.getPositionForLayerIndex(i);
         }
 
-        return children[0];
+        this.scrollNode.position = this.getPositionForLayerIndex(this.currentLayerIndex);
+        this.scrollNode.position.x *= -1;
+        this.scrollNode.position.y *= -1;
+    }
+    public getLayers():(PIXI.DisplayObject & {onResizeScreen() : void})[]{
+        return this.layers;
     }
 
-    public addChildAt<T extends PIXI.DisplayObject>(child: T, index: number): T {
-        return this.addChild(child);
-    }
-
-
-
-    public removeChildAt<T extends PIXI.DisplayObject = PIXI.Container>(index: number): T {
-        return this.removeChild(this.getChildAt(index));
-    }
-*/
-
-    public getLayerForLayerIndex(layerIndex : number):PIXI.DisplayObject{
+    public getLayerForLayerIndex(layerIndex : number):(PIXI.DisplayObject & {onResizeScreen() : void}){
         return this.layers[layerIndex];
     }
-    public getLayerIndexForLayer(layer : PIXI.DisplayObject):number{
+    public getLayerIndexForLayer(layer : PIXI.DisplayObject & {onResizeScreen() : void}):number{
         for(let i = 0; i < this.layers.length; i++){
             if(layer == this.layers[i]){
                 return i;

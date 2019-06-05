@@ -16,10 +16,17 @@ import {
 import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 import {RoomStateEnum} from "../../shared/RoomStateEnum";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
-import {PredictPanel} from "../BoardViewLayer/PredictPanel";
 import {SideType} from "../../shared/engine/SideType";
+import {PredictPanel} from "../BoardViewLayer/PredictPanel";
+import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
 
 export class ControllerMultiplayerGame extends ControllerAbstract {
+
+    private uiPredictBoardView : BoardView;
+
+    public isFlipBoardBtn():boolean{
+        return false;
+    }
     constructor(roomId :number, controllerOuter : ControllerOuter){
         super(roomId, RoomTypeEnum.MULTIPLAYER, controllerOuter);
     }
@@ -32,6 +39,13 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
         this.uiBoardView.updatePieceViewsToDefault();
     }
     public notifyPromote(moveClass : MoveClass[], uiBoardView : BoardView):void{
+        this.uiBoardView.setTouchEnabled(false);
+
+        this.uiParentView.showPromotePieceLayer(moveClass, (moveClass : MoveClass)=>{
+            this.uiBoardView.setTouchEnabled(true);
+            this.notifyMove(moveClass, this.uiBoardView);
+        })
+
         /*
         this.uiBoardView.setTouchEnabled(false);
 
@@ -39,10 +53,24 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
         */
     }
 
+    public setParentBoardView(opts: {
+        uiParentView: ParentBoardView,
+        uiBoardView: BoardView,
+        uiPredictBoardView: BoardView
+    }){
+        super.setParentBoardView(opts);
+
+        this.uiPredictBoardView = opts.uiPredictBoardView;
+
+    }
+
     public _OnRoomJoin(onRoomJoinMsg : OnRoomJoinMessage):void{
         let roomStateConfig = <RoomStateConfig>onRoomJoinMsg.roomStateConfig;
         this.uiParentView.setMyVoting(roomStateConfig.myVoting);
         this.uiParentView.setVotingData(roomStateConfig.votingData);
+
+        this.uiBoardView.setBoardFacing(roomStateConfig.mySideType, false);
+        this.uiPredictBoardView.setBoardFacing(roomStateConfig.mySideType, false)
 
         this.syncrhonizeRoomState();
     }
@@ -69,7 +97,7 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
         if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
             this.uiBoardView.setTouchEnabled(false);
         }else {
-            this.uiBoardView.setTouchEnabled(true);
+            this.uiBoardView.setTouchEnabled(roomStateConfig.mySideType == this.chessEngine.getMoveTurn());
         }
 
         this.uiParentView.setMoveTurn(this.chessEngine.getMoveTurn());
@@ -84,10 +112,10 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
         this.predictMoveSideType = null;
         this.predictMoveSanStr = null;
 
-        (<BoardView>this.uiPredictBoardView).updateViewToModel(null);
+        this.uiPredictBoardView.updateViewToModel(null);
 
         if(oldPredictMoveSideType != null && oldPredictMoveSanStr != null){
-            (<PredictPanel>this.uiPredictPanel).setIsHighlighted(oldPredictMoveSanStr, false);
+            this.uiParentView.setIsHighlighted(oldPredictMoveSanStr, false);
         }
 
         if(oldPredictMoveSideType == predictMoveSideType && oldPredictMoveSanStr == predictMoveSanStr){
@@ -107,12 +135,12 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
             }
 
             moveClass = ChessEngine.flipMoveClass(moveClass);
-            (<BoardView>this.uiPredictBoardView).doMove(moveClass, cb);
+            this.uiPredictBoardView.doMove(moveClass, cb);
         };
 
-        (<BoardView>this.uiPredictBoardView).doMove(moveClass, cb);
+        this.uiPredictBoardView.doMove(moveClass, cb);
 
-        (<PredictPanel>this.uiPredictPanel).setIsHighlighted(this.predictMoveSanStr, true);
+        this.uiParentView.setIsHighlighted(this.predictMoveSanStr, true);
     }
 
     public OnRoomMultiplayerStateBroadcast(onRoomMultiplayerStateBroadcastMsg : OnRoomMultiplayerStateBroadcastMessage):void{
@@ -125,6 +153,8 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
         this.uiParentView.setMoveTurn(this.chessEngine.getMoveTurn());
         this.uiParentView.setMyVoting("");
         this.uiParentView.setVotingData({});
+
+        this.syncrhonizeRoomState();
     }
 }
 

@@ -1,4 +1,5 @@
 import {SimpleGame} from "../../app";
+import * as PIXI from 'pixi.js';
 
 export class DefaultButton extends PIXI.Graphics {
     protected m_width : number;

@@ -1,12 +1,10 @@
 import {MoveClass} from "../../shared/engine/MoveClass";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
-import {SideType} from "../../shared/engine/SideType";
-import {PieceType} from "../../shared/engine/PieceType";
 import {PieceView} from "./PieceView";
-import InteractionData = PIXI.interaction.InteractionData;
-import InteractionEvent = PIXI.interaction.InteractionEvent;
 
 import {PieceModel} from "../../shared/engine/PieceModel";
+
+import * as PIXI from 'pixi.js';
 
 export class PromotePieceLayer extends PIXI.Graphics{
     private moveClasses : MoveClass[];
@@ -60,11 +58,11 @@ export class PromotePieceLayer extends PIXI.Graphics{
         this.drawRoundedRect(fromX, -this.m_height/2, toX - fromX, this.m_height, 10);
     }
 
-    public onButtonDown(pieceSprite : PieceView, moveClass : MoveClass, interactionEvent : InteractionEvent){
+    public onButtonDown(pieceSprite : PieceView, moveClass : MoveClass, interactionEvent : PIXI.interaction.InteractionEvent){
         console.log("onButtonDown");
         pieceSprite.scale.set(1.1, 1.1);
     }
-    public onButtonUp(pieceSprite : PieceView, moveClass : MoveClass, interactionEvent : InteractionEvent){
+    public onButtonUp(pieceSprite : PieceView, moveClass : MoveClass, interactionEvent : PIXI.interaction.InteractionEvent){
         console.log("onButtonUp");
         pieceSprite.scale.set(1.0, 1.0);
         this.m_callback(moveClass);

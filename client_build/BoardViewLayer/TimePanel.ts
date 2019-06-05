@@ -26,11 +26,8 @@ export class TimePanel extends PIXI.Graphics {
         this.addChild(this.uiPieceView);
 
 
-        this.uiText = new PIXI.Text();
-        let textStyleOptions: PIXI.TextStyleOptions = {};
-        textStyleOptions.fontSize = this.m_size;
-        textStyleOptions.fontFamily = "Helvetica";
-        this.uiText.style = new PIXI.TextStyle(textStyleOptions);
+        this.uiText = new PIXI.Text("");
+        this.uiText.style = new PIXI.TextStyle(SimpleGame.getDefaultTextStyleOptions(this.m_size));
 
         this.uiText.anchor.set(0.0, 0.5);
         this.addChild(this.uiText);
@@ -59,6 +56,9 @@ export class TimePanel extends PIXI.Graphics {
 
     public setSideType(sideType : SideType){
         this.uiPieceView.setPiece({sideType : sideType, pieceType : PieceType.PAWN});
+    }
+    public getSideType():SideType{
+        return this.uiPieceView.getSideType();
     }
 
 

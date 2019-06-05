@@ -17,6 +17,7 @@ import {ControllerNormalGame} from "./ControllerNormalGame";
 import {ControllerMultiplayerGame} from "./ControllerMultiplayerGame";
 
 import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
+import {LocalStorageManager} from "../LocalStorageManager";
 
 export class ControllerOuter implements SocketClientInterface{
     private uiLogoLayer : LogoLayer;
@@ -100,6 +101,10 @@ export class ControllerOuter implements SocketClientInterface{
     }
     public OnDisconnect() : void {
 
+    }
+
+    public OpLoginGuest(){
+        this.socketClientAgent.OpLoginGuest(LocalStorageManager.getGuestToken());
     }
 
     public OnLoginGuest(onLoginGuestMsg :OnUserLoginGuestMessage) :void {

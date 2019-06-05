@@ -2,6 +2,8 @@ import {SimpleGame} from "../app";
 import * as TWEEN from '@tweenjs/tween.js'
 import {LanguageHelper, LanguageKey} from "../LanguageHelper";
 
+import * as PIXI from 'pixi.js';
+
 export class WaitingNode extends PIXI.Container{
     private uiText : PIXI.Text;
 
@@ -49,12 +51,7 @@ export class WaitingNode extends PIXI.Container{
         tween.start();
 
 
-
-        let textStyleOptions : PIXI.TextStyleOptions = {};
-        textStyleOptions.fontFamily = "Helvetica";
-        textStyleOptions.fontSize = this.m_size;
-        textStyleOptions.fontWeight = "bold";
-        this.uiText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.Waiting), textStyleOptions);
+        this.uiText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.Waiting), SimpleGame.getDefaultTextStyleOptions(this.m_size));
         this.uiText.anchor.set(0.5, 0.5);
         this.addChild(this.uiText);
 

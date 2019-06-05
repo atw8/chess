@@ -15,11 +15,8 @@ import {
 } from "../shared/MessageTypes";
 
 
-import {SideType} from "../shared/engine/SideType";
 import {RoomStateEnum} from "../shared/RoomStateEnum";
-import {ChessGameStateEnum} from "../shared/engine/ChessGameStateEnum";
 import {GameTimeManager} from "../shared/gameTime/GameTimeManager";
-import {DomainMapStruct} from "../shared/DomainMapStruct";
 import {RoomTypeEnum} from "../shared/RoomTypeEnum";
 
 export abstract class RoomAbstract {

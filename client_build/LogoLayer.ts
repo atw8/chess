@@ -1,13 +1,15 @@
 import {ScrollLayer} from "./ScrollLayer";
 import {SimpleGame} from "./app";
-import {ChooseGameLayer} from "./ChooseGameLayer/ChooseGameLayer";
 import {ImageTag} from "./ImageTag";
 import {ControllerOuter} from "./controller/ControllerOuter";
-import {RoomInitConfig} from "../shared/MessageTypes";
 
+import * as PIXI from 'pixi.js';
+import {SplashScreenLayer} from "./SplashScreenLayer";
+import {ChessEngine} from "../shared/engine/ChessEngine";
+import {MoveClass} from "../shared/engine/MoveClass";
 
 const ScrollLayerSpeed : number = 10;
-const DisplayPoints : boolean = true;
+const DisplayPoints : boolean = false;
 
 export class LogoLayer extends PIXI.Container {
     //private logo : PIXI.Sprite;
@@ -19,25 +21,45 @@ export class LogoLayer extends PIXI.Container {
     constructor(){
         super();
 
+        /*
+        let chessEngine = new ChessEngine({isAskDraw : true});
+        let sanMoves :string[] = [];
+        sanMoves.push("Nf3");
+        sanMoves.push("Nf6");
+        sanMoves.push("Ng1");
+        sanMoves.push("Ng8");
+
+
+        let milliStart = Date.now();
+        let iIterations = 10000;
+        for(let i = 0; i < iIterations; i++){
+            for(let j = 0; j < sanMoves.length; j++){
+                let sanMove = sanMoves[j];
+                let moveClass = <MoveClass>chessEngine.getMoveClassForCurrentBoardAndSanMove(sanMove);
+                chessEngine.doMove(moveClass)
+            }
+        }
+        let milliEnd = Date.now();
+        let milliElapsed = milliEnd - milliStart;
+        alert("hell world " + iIterations + ", dateElapsed " + milliElapsed/1000);
+        */
         this.on("added", this.onAdded);
     }
 
 
     public onAdded(){
         //let size = {width : SimpleGame.getDesignWidth(), height : SimpleGame.getDesignHeight()};
-        let size = {width : SimpleGame.getDesignWidth(), height : SimpleGame.getDesignHeight()};
-        this.scrollLayer = new ScrollLayer(ScrollLayer.DIRECTION.HORIZONTAL, size, SimpleGame.getDesignWidth(), ScrollLayerSpeed);
+        this.scrollLayer = new ScrollLayer(ScrollLayer.DIRECTION.HORIZONTAL, SimpleGame.getDesignWidth(), ScrollLayerSpeed);
         this.addChild(this.scrollLayer);
 
+        //for(let i = 0; i < 10; i++){
+            this.scrollLayer.addLayer(new SplashScreenLayer());
+        //}
 
-
-
-        //this.scrollLayer.addLayer(new ChooseGameLayer());
-        //this.scrollLayer.addLayer(new ChooseGameLayer());
 
 
         this.points = [];
-        this.addLayer(new ChooseGameLayer(this.onClickCallback.bind(this)));
+        //this.addLayer(new ChooseGameLayer(this.onClickCallback.bind(this)));
 
 
         this.controller = new ControllerOuter(this);
@@ -54,15 +76,31 @@ export class LogoLayer extends PIXI.Container {
         let uiWinNode = new WinNode(45, ChessGameStateEnum.WHITE_WIN_CHECKMATE);
         this.addChild(uiWinNode);
         */
+
+
+
     }
 
 
-    public onClickCallback(roomInitConfig : RoomInitConfig){
-        this.controller.OpRoomJoin({roomInitConfig : roomInitConfig});
+    public onResizeScreen(){
+        this.scrollLayer.setWidthHeight(SimpleGame.getDesignWidth());
+
+        let layers = this.scrollLayer.getLayers();
+        for(let i = 0; i < layers.length; i++){
+            let layer = layers[i];
+            layer.onResizeScreen();
+        }
+
+        for(let i = 0; i < this.points.length; i++){
+            let point = this.points[i];
+            point.y = SimpleGame.getDesignHeight()/2 - point.height;
+        }
+
     }
 
 
-    public addLayer(layer : PIXI.DisplayObject){
+
+    public addLayer(layer : PIXI.DisplayObject & {onResizeScreen() : void}){
         this.scrollLayer.addLayer(layer);
         this.scrollLayer.goToLayer(layer, true);
 
@@ -70,7 +108,7 @@ export class LogoLayer extends PIXI.Container {
         this.updatePointTexture();
     }
 
-    public removeLayer(layer : PIXI.DisplayObject){
+    public removeLayer(layer : PIXI.DisplayObject & {onResizeScreen() : void}){
         let layerIndex = this.scrollLayer.getLayerIndexForLayer(layer);
         this.scrollLayer.removeLayer(layer);
         this.scrollLayer.goToLayerIndex(layerIndex - 1, true);
@@ -158,4 +196,6 @@ export class LogoLayer extends PIXI.Container {
 
         this.updatePointTexture();
     }
+
+
 }

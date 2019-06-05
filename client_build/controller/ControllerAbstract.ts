@@ -1,7 +1,6 @@
 import {MoveClass} from "../../shared/engine/MoveClass";
 import {BoardView} from "../BoardViewLayer/BoardView";
 import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
-import {PredictPanel} from "../BoardViewLayer/PredictPanel";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
 import {ControllerOuter} from "./ControllerOuter";
 import {SocketClientInterface} from "./SocketClientInterface";
@@ -12,10 +11,12 @@ import {
     OnUserLoginGuestMessage, RoomInitConfig, RoomStateConfig
 } from "../../shared/MessageTypes";
 import {GameTimeManager} from "../../shared/gameTime/GameTimeManager";
-import {DomainMapStruct} from "../../shared/DomainMapStruct";
 import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 import {SideType} from "../../shared/engine/SideType";
 import {RoomStateEnum} from "../../shared/RoomStateEnum";
+import {PredictPanel} from "../BoardViewLayer/PredictPanel";
+
+import {SimpleGame} from "../app";
 
 
 export abstract class ControllerAbstract implements SocketClientInterface {
@@ -26,21 +27,22 @@ export abstract class ControllerAbstract implements SocketClientInterface {
     protected readonly controllerOuter: ControllerOuter;
 
 
+    public abstract isFlipBoardBtn():boolean;
+
     protected gameTimeManager: GameTimeManager;
 
     protected uiParentView: ParentBoardView;
     protected uiBoardView: BoardView;
-    protected uiPredictPanel: PredictPanel | null;
-    protected uiPredictBoardView: BoardView | null;
 
     constructor(roomId: number, roomTypeEnum: RoomTypeEnum, controllerOuter: ControllerOuter) {
         this.roomId = roomId;
         this.roomTypeEnum = roomTypeEnum;
         this.controllerOuter = controllerOuter;
 
-        this.chessEngine = new ChessEngine();
+        let roomInitConfig = this.controllerOuter.getRoomInitConfig(this.roomId);
+        this.chessEngine = new ChessEngine(roomInitConfig);
 
-        PIXI.ticker.shared.add(this.tick, this);
+        SimpleGame.getInstance().ticker.add(this.tick, this);
     }
     public getRoomTypeEnum():RoomTypeEnum{
         return this.roomTypeEnum;
@@ -52,16 +54,12 @@ export abstract class ControllerAbstract implements SocketClientInterface {
 
     public setParentBoardView(opts: {
         uiParentView: ParentBoardView,
-        uiBoardView: BoardView,
-        uiPredictPanel: PredictPanel | null,
-        uiPredictBoardView: BoardView | null
+        uiBoardView: BoardView
     }) {
 
 
         this.uiParentView = opts.uiParentView;
         this.uiBoardView = opts.uiBoardView;
-        this.uiPredictPanel = opts.uiPredictPanel;
-        this.uiPredictBoardView = opts.uiPredictBoardView;
 
         this.uiBoardView.updateViewToModel(null);
     }
@@ -165,6 +163,7 @@ export abstract class ControllerAbstract implements SocketClientInterface {
         if (roomStateConfig.roomState == RoomStateEnum.END) {
             let OnRoomFinish = () => {
                 this.controllerOuter.removeController(this.roomId);
+                this.controllerOuter.OpLoginGuest();
             };
 
             this.uiParentView.showWinNode(roomStateConfig.chessGameState, OnRoomFinish);

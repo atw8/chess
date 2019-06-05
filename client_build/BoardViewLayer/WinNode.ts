@@ -116,17 +116,12 @@ export class WinNode extends PIXI.Graphics {
         let textBottom = LanguageHelper.getTextForLanguageKey(textBottomKey);
 
 
-        let textStyleOptions : PIXI.TextStyleOptions = {};
-        textStyleOptions.fontSize = this.m_size;
-        textStyleOptions.fontFamily = "Helvetica";
-        textStyleOptions.fill = SimpleGame.getBlackColor();
-        textStyleOptions.fontWeight = "bold";
-        this.uiTopText = new PIXI.Text(textTop, textStyleOptions);
+        this.uiTopText = new PIXI.Text(textTop, SimpleGame.getDefaultTextStyleOptions(this.m_size));
         this.uiTopText.anchor.set(0.5, 0.5);
         this.addChild(this.uiTopText);
 
 
-        textStyleOptions.fontSize = Math.round(this.m_size*0.6);
+        let textStyleOptions = SimpleGame.getDefaultTextStyleOptions(this.m_size*0.6);
         textStyleOptions.fill = SimpleGame.getLightBrownColor();
         this.uiBottomText = new PIXI.Text(textBottom, textStyleOptions);
         this.uiBottomText.anchor.set(0.5, 0.5);
@@ -153,13 +148,7 @@ export class WinNode extends PIXI.Graphics {
 
         this.uiOkButton = new PIXI.Graphics();
         {
-            let textStyleOptions : PIXI.TextStyleOptions = {};
-            textStyleOptions.fontSize = this.m_size;
-            textStyleOptions.fontFamily = "Helvetica";
-            textStyleOptions.fill = SimpleGame.getBlackColor();
-            textStyleOptions.fontWeight = "bold";
-
-            let uiOkText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.Ok), textStyleOptions);
+            let uiOkText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.Ok), SimpleGame.getDefaultTextStyleOptions(this.m_size));
             uiOkText.anchor.set(0.5, 0.5);
 
 

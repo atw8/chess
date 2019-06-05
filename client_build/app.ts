@@ -1,15 +1,78 @@
-import * as PIXI from 'pixi.js';
-import 'pixi-layers'
 
 
 import {getLocationForImageTag, ImageTag} from "./ImageTag";
+import * as TWEEN from '@tweenjs/tween.js'
 import {LogoLayer} from "./LogoLayer";
 
-import * as TWEEN from '@tweenjs/tween.js'
 
-enum ORIENTATION {
-    LANDSCAPE,
-    PORTRAIT
+import "hammerjs"
+
+
+import * as PIXI from 'pixi.js';
+declare module "pixi.js" {
+    interface Matrix {
+        applyVector(pos : PIXI.Point, newPos ?: PIXI.Point):PIXI.Point;
+
+        applyInverseVector(pos : PIXI.Point, newPos ?: PIXI.Point):PIXI.Point;
+    }
+
+    interface PointConstructor {
+        lerp(posFrom : PIXI.Point, posTo : PIXI.Point, t : number, posOut ?: PIXI.Point):PIXI.Point;
+    }
+}
+
+
+/*
+PIXI.Point.lerp = function(posFrom : PIXI.Point, posTo : PIXI.Point, t : number, posOut ?: PIXI.Point){
+    if(posOut === undefined){
+        posOut = new PIXI.Point();
+    }
+
+    posOut.x = (1 - t)*posFrom.x + t*posTo.x;
+    posOut.y = (1 - t)*posFrom.y + t*posTo.y;
+
+    return posOut;
+}
+*/
+
+
+
+PIXI.Matrix.prototype.applyVector = function(pos : PIXI.Point, newPos ?: PIXI.Point){
+    let rememTx = this.tx;
+    let rememTy = this.ty;
+    this.tx = 0;
+    this.ty = 0;
+    newPos = <PIXI.Point>this.apply(pos, newPos);
+    this.tx = rememTx;
+    this.ty = rememTy;
+
+    return newPos;
+};
+
+PIXI.Matrix.prototype.applyInverseVector = function(pos : PIXI.Point, newPos ?: PIXI.Point){
+    let rememTx = this.tx;
+    let rememTy = this.ty;
+    this.tx = 0;
+    this.ty = 0;
+    newPos = <PIXI.Point>this.applyInverse(pos, newPos);
+    this.tx = rememTx;
+    this.ty = rememTy;
+
+    return newPos;
+};
+
+
+
+const windowInnerScale = 0.9;
+
+
+
+
+export enum ORIENTATION {
+    LANDSCAPE = 0,
+    PORTRAIT = 1,
+    FIRST_ORIENTATION = LANDSCAPE,
+    LAST_ORIENTATION = PORTRAIT
 }
 
 enum ORIENTATION_STRATERGY {
@@ -24,10 +87,14 @@ export class SimpleGame extends PIXI.Application{
     private static designWidth : number;
     private static designHeight : number;
 
+    private stageDefaultPosition : PIXI.Point;
+    private maxStageScale : number;
+    private minStageScale : number;
+
     private static gInstance : SimpleGame;
 
     public static getInstance():SimpleGame{
-        if(typeof (this.gInstance) == "undefined"){
+        if(this.gInstance == undefined){
             this.gInstance = new SimpleGame();
         }
 
@@ -63,7 +130,7 @@ export class SimpleGame extends PIXI.Application{
     public static isLandscape():boolean{
         return SimpleGame.getOrientation() == ORIENTATION.LANDSCAPE;
     }
-    private static getOrientation():ORIENTATION{
+    public static getOrientation():ORIENTATION{
         let width = SimpleGame._getScreenWidth();
         let height = SimpleGame._getScreenHeight();
 
@@ -74,49 +141,99 @@ export class SimpleGame extends PIXI.Application{
 
 
     private constructor(){
-        let applicationOptions : PIXI.ApplicationOptions = {};
-        //applicationOptions.transparent = true;
-
-        //let widthHeight = Math.min(window.innerWidth, window.innerHeight) * window.devicePixelRatio;
-
-        applicationOptions.width = window.innerWidth * window.devicePixelRatio * 0.9;
-        applicationOptions.height = window.innerHeight * window.devicePixelRatio * 0.9;
-
-        applicationOptions.backgroundColor = 0xFFFFFF;
-
-
-        super(applicationOptions);
+        //super({backgroundColor : 0xFFFFFF, resizeTo : });
+        super({backgroundColor : 0xFFFFFF, width : window.innerWidth * windowInnerScale, height : window.innerHeight * windowInnerScale});
 
         let divElement : HTMLDivElement = <HTMLDivElement> document.createElement( "div" );
-        //divElement.setAttribute("text-align", "center");
         divElement.setAttribute("align", "center");
-        //divElement.setAttribute("style", "border: 5px solid red");
-        //divElement.setAttribute("margin", "0 auto");
         divElement.appendChild(this.view);
 
 
 
         document.body.appendChild(divElement);
 
+        /*
+        {
+            let hammerTime = new Hammer(this.view);
+            hammerTime.get('pinch').set({ enable: true });
 
 
-        for(let imageTag in ImageTag){
-            PIXI.loader.add(imageTag, getLocationForImageTag(<ImageTag>imageTag));
+            let pinchEnd : PIXI.Point | null;
+            let pinchStart : PIXI.Point | null;
+            let pinchScale : number = this.stage.scale.x;
+
+
+            hammerTime.on("pinch", (e : HammerInput)=>{
+                if(pinchStart == null || pinchEnd == null){
+                    pinchStart = this.stage.position.clone();
+
+                    {
+                        let point = new PIXI.Point();
+                        this.renderer.plugins.interaction.mapPositionToPoint(point, e.center.x, e.center.y);
+
+                        let localPoint = this.stage.toLocal(point);
+                        let localOrigin = this.stage.toLocal(new PIXI.Point(SimpleGame._getScreenWidth()/2, SimpleGame._getScreenHeight()/2));
+
+                        let localDiff = new PIXI.Point(localOrigin.x - localPoint.x, localOrigin.y - localPoint.y);
+                        let globalDiff = this.stage.worldTransform.applyVector(localDiff);
+
+                        pinchEnd = new PIXI.Point(this.stage.position.x + globalDiff.x, this.stage.position.y + globalDiff.y);
+                    }
+                }
+
+
+                //Update the scale
+                let scale = pinchScale * e.scale;
+                scale = Math.min(this.maxStageScale, scale);
+                scale = Math.max(this.minStageScale, scale);
+
+
+                //this.stage.scale.set(scale);
+
+
+                //Update the position
+                {
+                    let position = new PIXI.Point();
+
+
+
+                    let t = (scale - this.minStageScale)/(this.maxStageScale - this.minStageScale);
+                    //alert("this.maxStageScale " + this.maxStageScale + ", this.minStageScale " + this.minStageScale + ", this.scale " + scale + ",t " + t);
+                        //(scale - pinchScale)*(this.maxStageScale - pinchScale);
+
+                    position.x = pinchStart.x + (pinchEnd.x - pinchStart.x)*t;
+                    position.y = pinchStart.y + (pinchEnd.y - pinchStart.y)*t;
+
+                    this.stage.position = position;
+                }
+
+            });
+            hammerTime.on("pinchend", (e : HammerInput)=>{
+                pinchStart = null;
+                pinchEnd = null;
+                pinchScale = this.stage.scale.x;
+            });
         }
-        PIXI.loader.load(this.onLoad.bind(this));
-    }
+        */
 
 
 
-    public onLoad(){
         // @ts-ignore
         SimpleGame.OrientationStatergy = {};
         SimpleGame.OrientationStatergy[ORIENTATION.LANDSCAPE] = {"stratergy" : ORIENTATION_STRATERGY.CONSTANT_HEIGHT, widthHeight : SimpleGame.getDefaultHeight()};
         SimpleGame.OrientationStatergy[ORIENTATION.PORTRAIT] = {"stratergy" : ORIENTATION_STRATERGY.CONSTANT_WIDTH, widthHeight : SimpleGame.getDefaultWidth()};
 
 
+        for(let imageTag in ImageTag){
+            this.loader.add(imageTag, getLocationForImageTag(<ImageTag>imageTag));
+        }
+        this.loader.load(this.onLoad.bind(this));
+    }
 
-        this.stage = new PIXI.display.Stage();
+
+    public onResizeScreen(){
+        this.renderer.resize(window.innerWidth * windowInnerScale, window.innerHeight * windowInnerScale);
+
 
         let orientationStratergy = SimpleGame.OrientationStatergy[SimpleGame.getOrientation()];
         let scale : number = 0;
@@ -126,14 +243,37 @@ export class SimpleGame extends PIXI.Application{
             scale = SimpleGame._getScreenHeight()/orientationStratergy.widthHeight;
         }
 
-        this.stage.scale.set(scale, scale);
+
+        this.stage.scale.set(scale);
         this.stage.position.set(SimpleGame._getScreenWidth()/2, SimpleGame._getScreenHeight()/2);
 
         SimpleGame.designWidth = SimpleGame._getScreenWidth()/scale;
         SimpleGame.designHeight = SimpleGame._getScreenHeight()/scale;
 
 
+        this.minStageScale = scale;
+        this.maxStageScale = this.minStageScale*3;
+
+        this.stageDefaultPosition = this.stage.position.clone();
+
+        if(this.activeLayer != null){
+            this.activeLayer.onResizeScreen();
+        }
+    }
+
+
+
+    public onLoad(){
+        this.onResizeScreen();
+
+
         this.runLayer(new LogoLayer());
+
+
+        //Add pinch hammerTime
+
+
+        //this.runLayer(new LogoLayer());
         /*
         let controllerOuter = new ControllerOuter()
         let controllerTest = new ControllerInner();
@@ -143,9 +283,19 @@ export class SimpleGame extends PIXI.Application{
     }
 
 
-    public runLayer(layer : PIXI.DisplayObject){
-        this.stage.removeChildren();
-        this.stage.addChild(layer);
+
+
+    private activeLayer : PIXI.DisplayObject & {onResizeScreen() : void} | null = null;
+    public runLayer(layer : PIXI.DisplayObject & {onResizeScreen() : void} | null){
+        if(this.activeLayer != null){
+            this.stage.removeChild(this.activeLayer);
+            this.activeLayer = null;
+        }
+
+        this.activeLayer = layer;
+        if(this.activeLayer != null){
+            this.stage.addChild(this.activeLayer);
+        }
     }
 
 
@@ -181,11 +331,16 @@ export class SimpleGame extends PIXI.Application{
         return 0x000000;
     }
 
-    public static getDefaultTextStyleOptions(fontSize : number):PIXI.TextStyleOptions{
-        let textStyleOptions : PIXI.TextStyleOptions = {};
-        textStyleOptions.fontFamily = "Helvetica";
-        textStyleOptions.fontSize = Math.round(fontSize);
-        textStyleOptions.fontWeight = "bold";
+    public static getDefaultTextStyleOptions(fontSize : number):{fontFamily ?: string,
+        fontSize ?: number,
+        fontWeight ?: string,
+        fill ?: number}{
+
+        let textStyleOptions = {
+            fontFamily : "Helvetica",
+            fontSize : Math.round(fontSize),
+            fontWeight : "bold"
+        };
 
         return textStyleOptions;
     }
@@ -338,5 +493,16 @@ window.onload = () => {
 
     requestAnimationFrame(animate);
 
+
+    window.addEventListener('resize', ()=>{
+        SimpleGame.getInstance().onResizeScreen();
+    });
+
     SimpleGame.getInstance();
+
+
+
+
+
+
 };

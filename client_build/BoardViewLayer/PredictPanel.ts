@@ -93,6 +93,10 @@ class PredictButton  extends DefaultButton {
     }
 }
 
+
+let predictBtnWidthScale = 0.9;
+let predictBtnHeightScale = 0.8
+
 export class PredictPanel extends PIXI.Graphics {
 
     private uiMyMoveText : PIXI.Text;
@@ -120,13 +124,15 @@ export class PredictPanel extends PIXI.Graphics {
     private m_height : number;
     private m_width : number;
     private m_rowHeight : number;
+    private m_numOfCols : number;
 
-    constructor(height : number, width : number, rowHeight : number, controller : ControllerMultiplayerGame){
+    constructor(height : number, width : number, rowHeight : number, numOfCols : number, controller : ControllerMultiplayerGame){
         super();
 
         this.m_height = height;
         this.m_width = width;
         this.m_rowHeight = rowHeight;
+        this.m_numOfCols = numOfCols;
 
         this.m_moveTurn = SideType.WHITE;
 
@@ -160,21 +166,23 @@ export class PredictPanel extends PIXI.Graphics {
         {
             this.uiMyMoveText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.MyMove), SimpleGame.getDefaultTextStyleOptions(this.m_rowHeight));
             this.uiMyMoveText.anchor.set(0.5, 0.5);
-            this.uiMyMoveText.position = this.getPositionForRow(0);
+            this.uiMyMoveText.position = this.getPositionForRow(1);
 
             this.addChild(this.uiMyMoveText);
         }
         {
             this.uiVotedMovesText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.VotedMoves), SimpleGame.getDefaultTextStyleOptions(this.m_rowHeight));
             this.uiVotedMovesText.anchor.set(0.5, 0.5);
-            this.uiVotedMovesText.position = this.getPositionForRow(2);
+            this.uiVotedMovesText.position = this.getPositionForRow(3);
 
 
             this.addChild(this.uiVotedMovesText);
         }
 
-        this.uiMyMoveSprite = new PredictButton(this.getRowWidth(), this.getRowHeight(), this.predictBtnCallback.bind(this));
-        this.uiMyMoveSprite.position = this.getPositionForRow(1);
+        this.uiMyMoveSprite = new PredictButton(this.getRowWidth()*predictBtnWidthScale,
+            this.getRowHeight()*predictBtnHeightScale,
+            this.predictBtnCallback.bind(this));
+        this.uiMyMoveSprite.position = this.getPositionForRow(2);
         this.addChild(this.uiMyMoveSprite);
 
 
@@ -184,29 +192,13 @@ export class PredictPanel extends PIXI.Graphics {
 
 
     private getRowWidth():number{
-        /*
-
-        let widthOffset = 10;
-        let width = this.getRowWidth() + widthOffset;
-
-        return width;
-         */
-
-        return this.m_width - 10;
-
-        //return this.m_rowHeight * 7;
+        return this.m_width/this.m_numOfCols;
     }
     private getRowHeight():number{
         return this.m_rowHeight;
     }
     private _getHeight():number{
         return this.m_height;
-        /*
-        let heightOffset = 40;
-        let height = this.getRowHeight() * this.m_numOfRows + heightOffset;
-
-        return height;
-        */
     }
     private _getWidth():number{
         return this.m_width;
@@ -214,11 +206,29 @@ export class PredictPanel extends PIXI.Graphics {
 
     private getPositionForRow(row : number):PIXI.Point {
         let ret = new PIXI.Point();
-        ret.x = 0;
 
-        let rowHeight = this.getRowHeight();
 
-        ret.y = -this.m_height/2 + (rowHeight*1.3)*row + rowHeight/2 + rowHeight/4;
+        ret.x = -this.m_width/2 + this.getRowWidth()/2;
+        ret.y = -this.m_height/2 - this.getRowHeight()/2;
+
+
+
+
+        let x = 0;
+        let y = row;
+
+        let maxNumOfRows = Math.floor(this._getHeight()/this.getRowHeight());
+        while(y > maxNumOfRows){
+            x++;
+            y -= maxNumOfRows;
+        }
+
+
+        ret.x += x * this.getRowWidth();
+        ret.y += y * this.getRowHeight();
+
+
+
 
         return ret;
     }
@@ -298,7 +308,7 @@ export class PredictPanel extends PIXI.Graphics {
         let votedSanMap : { [key : string] : { sanStr : string, number : number, rowPosition : number}} = {};
         for(let i = 0; i < votingDataArray.length; i++){
             let votedData = votingDataArray[i];
-            votedSanMap[votingDataArray[i].sanStr] = {sanStr : votedData.sanStr, number : votedData.number, rowPosition : i + 3};
+            votedSanMap[votingDataArray[i].sanStr] = {sanStr : votedData.sanStr, number : votedData.number, rowPosition : i + 4};
 
             numOfVotes += votedData.number;
         }
@@ -342,7 +352,9 @@ export class PredictPanel extends PIXI.Graphics {
             let sanStr = addUiVotedMoveSprites[i];
             let votedData : { sanStr : string, number : number, rowPosition : number}  = votedSanMap[sanStr];
 
-            let sprite = new PredictButton(this.getRowWidth(), this.getRowHeight(), this.predictBtnCallback.bind(this));
+            let sprite = new PredictButton(this.getRowWidth()*predictBtnWidthScale,
+                this.getRowHeight()*predictBtnHeightScale,
+                this.predictBtnCallback.bind(this));
             sprite.position = this.getPositionForRow(votedData.rowPosition);
             sprite.setSanStr(sanStr, this.m_moveTurn);
             if(numOfVotes == 0){

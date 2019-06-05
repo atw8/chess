@@ -254,7 +254,6 @@ export class SocketClientAgent {
             let roomStateConfig = this.roomStateConfigs[onRoomJoinBroadcastMsg.roomId];
 
             roomStateConfig.roomState = onRoomJoinBroadcastMsg.roomState;
-            roomStateConfig.sideTypeMap = onRoomJoinBroadcastMsg.sideTypeMap;
 
             roomStateConfig.chessGameState = onRoomJoinBroadcastMsg.chessGameState;
             roomStateConfig.roomState = onRoomJoinBroadcastMsg.roomState;
@@ -371,6 +370,8 @@ export class SocketClientAgent {
         let roomStateConfig = this.roomStateConfigs[onRoomVotingUpdateBroadcastMsg.roomId];
         roomStateConfig.votingData = onRoomVotingUpdateBroadcastMsg.votingData;
 
+
+
         this.socketClientInterface.OnRoomVotingUpdateBroadcast(onRoomVotingUpdateBroadcastMsg)
     }
 
@@ -384,6 +385,13 @@ export class SocketClientAgent {
         let roomStateConfig = this.roomStateConfigs[onRoomMultiplayerStateBroadcastMsg.roomId];
         roomStateConfig.sanMoves.push(onRoomMultiplayerStateBroadcastMsg.sanMove);
         roomStateConfig.timeStamps.push(onRoomMultiplayerStateBroadcastMsg.moveTimeStamp);
+
+        if(onRoomMultiplayerStateBroadcastMsg.chessGameState != undefined){
+            roomStateConfig.chessGameState = onRoomMultiplayerStateBroadcastMsg.chessGameState
+        }
+        if(onRoomMultiplayerStateBroadcastMsg.roomState != undefined){
+            roomStateConfig.roomState = onRoomMultiplayerStateBroadcastMsg.roomState;
+        }
 
         this.socketClientInterface.OnRoomMultiplayerStateBroadcast(onRoomMultiplayerStateBroadcastMsg);
     }

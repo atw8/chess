@@ -16,7 +16,6 @@ import {OnRoomJoinMessage, OnRoomMultiplayerStateBroadcastMessage} from "../../s
 import {SideType} from "../../shared/engine/SideType";
 
 import {RoomStateEnum} from "../../shared/RoomStateEnum";
-import {DomainMapStruct} from "../../shared/DomainMapStruct";
 import {ControllerOuter} from "./ControllerOuter";
 
 
@@ -24,16 +23,14 @@ import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 
 
 export class ControllerNormalGame extends ControllerAbstract{
-    private sideTypeMapStruct : DomainMapStruct<SideType, number>;
-
     constructor(roomId : number, controllerOuter : ControllerOuter){
         super(roomId, RoomTypeEnum.NORMAL, controllerOuter);
-
-        this.sideTypeMapStruct = new DomainMapStruct<SideType, number>([SideType.WHITE, SideType.BLACK]);
-
-
     }
 
+
+    public isFlipBoardBtn():boolean{
+        return false;
+    }
 
     public notifyMove(moveClass : MoveClass, uiBoardView : BoardView):void{
         this.uiBoardView.setTouchEnabled(false);
@@ -56,17 +53,13 @@ export class ControllerNormalGame extends ControllerAbstract{
     public _OnRoomJoin(onRoomJoinMsg : OnRoomJoinMessage){
         let roomStateConfig = <RoomStateConfig>onRoomJoinMsg.roomStateConfig;
 
-        this.sideTypeMapStruct.setDomainMap(roomStateConfig.sideTypeMap);
-
-        let mySideType = <SideType>this.sideTypeMapStruct.getKeyForValue(this.controllerOuter.getPlayerId());
+        let mySideType = roomStateConfig.mySideType;
         this.uiBoardView.setBoardFacing(mySideType, false);
 
         this.syncrhonizeRoomState();
     }
 
     public _OnRoomJoinBroadcast(onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage){
-        this.sideTypeMapStruct.setDomainMap(onRoomJoinBroadcastMsg.sideTypeMap);
-
         this.syncrhonizeRoomState();
     }
 
@@ -118,8 +111,7 @@ export class ControllerNormalGame extends ControllerAbstract{
         if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
             this.uiBoardView.setTouchEnabled(false);
         }else {
-            let mySideType = <SideType>this.sideTypeMapStruct.getKeyForValue(this.controllerOuter.getPlayerId());
-
+            let mySideType = roomStateConfig.mySideType;
             this.uiBoardView.setTouchEnabled(this.chessEngine.getMoveTurn() == mySideType);
         }
 

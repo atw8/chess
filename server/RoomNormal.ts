@@ -14,7 +14,7 @@ import {
 } from "../shared/MessageTypes";
 import {RoomServer} from "./RoomServer";
 import {SideType} from "../shared/engine/SideType";
-import {DomainMapStruct} from "../shared/DomainMapStruct";
+import {DomainMapStruct} from "./Containers/DomainMapStruct";
 import {RoomStateEnum} from "../shared/RoomStateEnum";
 import {ChessGameStateEnum} from "../shared/engine/ChessGameStateEnum";
 
@@ -28,7 +28,10 @@ export class RoomNormal extends RoomAbstract {
     }
 
     public _getRoomStateConfig(playerId : number | null, roomStateConfig : RoomStateConfig):void{
-        roomStateConfig.sideTypeMap = this.sideTypeMapStruct.getDomainMap();
+        if(playerId != null){
+            roomStateConfig.mySideType = <SideType>this.sideTypeMapStruct.getKeyForValue(playerId);
+        }
+
     }
     /*
     public isInRoom(playerId : number):boolean{

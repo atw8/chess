@@ -5,7 +5,7 @@ import {RoomStateEnum} from "../shared/RoomStateEnum";
 import {ChessGameStateEnum} from "./engine/ChessGameStateEnum";
 import {RoomTypeEnum} from "./RoomTypeEnum";
 import {GameTimeStructConfigs} from "./gameTime/GameTimeManager";
-import {type} from "os";
+
 
 
 export enum MessageType {
@@ -91,6 +91,16 @@ let validator : Validator;
 
         return ret;
     };
+    validator.customFormats.SideType = function(input : number){
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            if(input == sideType){
+                return true;
+            }
+        }
+
+        return false;
+    };
+
     validator.customFormats.RoomTypeEnum = function(input : number){
         return input >= RoomTypeEnum.FIRST_ROOM_TYPE && input <= RoomTypeEnum.LAST_ROOM_TYPE;
     };
@@ -175,9 +185,13 @@ let validator : Validator;
                 },
                 "beginFenStr" : {
                     "type" : "string",
+                },
+                "isAskDraw" : {
+                    "type" : "boolean"
                 }
+
             },
-            "required" : ["roomTypeEnum", "gameTimeStructs"]
+            "required" : ["roomTypeEnum", "gameTimeStructs", "isAskDraw"]
         };
         validator.addSchema(roomInitConfig, "/RoomInitConfig");
 
@@ -201,9 +215,9 @@ let validator : Validator;
                         "type" : "integer",
                     },
                 },
-                "sideTypeMap" : {
-                    "type" : "object",
-                    "additionalProperties": {"type" : "integer"},
+                "mySideType" : {
+                    "type" : "number",
+                    "format" : "SideType"
                 },
                 "votingData" : {
                     "type": "object",
@@ -249,11 +263,13 @@ export class RoomInitConfig {
 
     public isChess960 ?: boolean;
     public beginFenStr ?: string;
+    public isAskDraw : boolean;
 
 
-    constructor(roomTypeEnum : RoomTypeEnum, gameTimeStructs : { [key in SideType] : {"timeType" : GameTimeType, "totalTime" ?: number, "incrTime" ?: number}}){
+    constructor(roomTypeEnum : RoomTypeEnum, gameTimeStructs : { [key in SideType] : {"timeType" : GameTimeType, "totalTime" ?: number, "incrTime" ?: number}}, isAskDraw : boolean){
         this.roomTypeEnum = roomTypeEnum;
         this.gameTimeStructs = gameTimeStructs;
+        this.isAskDraw = isAskDraw;
     }
 
     public static getRoomInitConfigStr(roomInitConfig : RoomInitConfig):string{
@@ -287,8 +303,9 @@ export class RoomInitConfig {
 
         let roomTypeEnum : RoomTypeEnum = json.roomTypeEnum;
         let gameTimeStructs : GameTimeStructConfigs = json.gameTimeStructs;
+        let isAskDraw : boolean = json.isAskDraw
 
-        let roomInitConfig : RoomInitConfig = new RoomInitConfig(roomTypeEnum, gameTimeStructs);
+        let roomInitConfig : RoomInitConfig = new RoomInitConfig(roomTypeEnum, gameTimeStructs, isAskDraw);
 
         roomInitConfig.beginFenStr = json.beginFenStr;
         roomInitConfig.isChess960 = json.isChess960;
@@ -298,10 +315,10 @@ export class RoomInitConfig {
 }
 
 export class RoomStateConfig {
-    public sideTypeMap : { [key in SideType] ?: number};
-
     public votingData : { [key : string] : number};
     public myVoting : string;
+
+    public mySideType : SideType;
 
     public currentFenStr : string;
 
@@ -367,7 +384,7 @@ export class RoomStateConfig {
         roomStateConfig.sanMoves = json.sanMoves;
         roomStateConfig.timeStamps = json.timeStamps;
 
-        roomStateConfig.sideTypeMap = json.sideTypeMap;
+        roomStateConfig.mySideType = json.mySideType;
 
         roomStateConfig.votingData = json.votingData;
         roomStateConfig.myVoting = json.myVoting;
@@ -999,12 +1016,25 @@ export class OnRoomVotingUpdateBroadcastMessage extends ServerClientMessage {
     }
 }
 
+/*
+                onRoomMultiplayerStateBroadcastMsgType.chessGameState = this.chessEngine.getGameState();
+            }
+            if(this.roomStateEnum != RoomStateEnum.NORMAL){
+                onRoomMultiplayerStateBroadcastMsgType.roomState = this.roomStateEnum;
+ */
 
-export type OnRoomMultiplayerStateBroadcastMessageType = {roomId : number, sanMove : string, moveTimeStamp : number} & ServerClientMessageType;
+export type OnRoomMultiplayerStateBroadcastMessageType = {roomId : number,
+    sanMove : string,
+    moveTimeStamp : number,
+    chessGameState ?: ChessGameStateEnum,
+    roomState ?: RoomStateEnum} & ServerClientMessageType;
 export class OnRoomMultiplayerStateBroadcastMessage extends ServerClientMessage {
     public roomId : number;
     public sanMove : string;
     public moveTimeStamp : number;
+
+    public chessGameState ?: ChessGameStateEnum;
+    public roomState ?: RoomStateEnum;
 
     constructor(json : OnRoomMultiplayerStateBroadcastMessageType){
         super(MessageType.OnRoomMultiplayerStateBroadcast, json);
@@ -1012,6 +1042,9 @@ export class OnRoomMultiplayerStateBroadcastMessage extends ServerClientMessage 
         this.roomId = json.roomId;
         this.sanMove = json.sanMove;
         this.moveTimeStamp = json.moveTimeStamp;
+
+        this.chessGameState = json.chessGameState;
+        this.roomState = json.roomState;
     }
 
     public static getSchema():Schema {
@@ -1027,7 +1060,15 @@ export class OnRoomMultiplayerStateBroadcastMessage extends ServerClientMessage 
                 },
                 "moveTimeStamp" : {
                     "type" : "number"
-                }
+                },
+                "chessGameState" : {
+                    "type" : "integer",
+                    "format" : "ChessGameStateEnum"
+                },
+                "roomState" : {
+                    "type" : "integer",
+                    "format" : "RoomStateEnum"
+                },
             },
             "required" : ["roomId", "sanMove", "moveTimeStamp"],
             "$ref": "/ServerClientMessage"

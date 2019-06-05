@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var TWEEN = require("@tweenjs/tween.js");
+var PIXI = require("pixi.js");
 var PositionManager = /** @class */ (function () {
     function PositionManager(delay) {
         if (delay == undefined) {
