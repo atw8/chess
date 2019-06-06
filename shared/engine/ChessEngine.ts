@@ -2086,10 +2086,13 @@ export class ChessEngine extends  AbstractEngine {
         fenStr += " ";
 
         //Deal with the move side
-        if(this.getMoveTurn() == SideType.WHITE){
-            fenStr += "w"
-        }else if(this.getMoveTurn() == SideType.BLACK){
-            fenStr += "b";
+        switch(this.getMoveTurn()){
+            case SideType.WHITE:
+                fenStr += "w";
+                break;
+            case SideType.BLACK:
+                fenStr += "b";
+                break;
         }
 
         fenStr += " ";
@@ -2165,11 +2168,7 @@ export class ChessEngine extends  AbstractEngine {
         if(this.enPassantSquare == null){
             fenStr += "-"
         }else if(this.enPassantSquare != null){
-            let fileNumber = this.enPassantSquare.x;
-            let file = <string>ChessEngine.convertFileNumberToFile(fileNumber);
-            let rank = this.enPassantSquare.y;
-
-            fenStr += file.toString() + rank.toString();
+            fenStr += ChessEngine.convertFileRankToFileRankStr(this.enPassantSquare);
         }
 
         fenStr += " ";
@@ -2636,7 +2635,7 @@ export class ChessEngine extends  AbstractEngine {
 
         let rank = fileRank.y;
 
-        return fileNumber + rank.toString();
+        return file + rank.toString();
     }
 
 
