@@ -1932,8 +1932,7 @@ export class ChessEngine extends  AbstractEngine {
                 }else if(numOfRankAmbiguous == 0){
                     str = str + String(originFileRank.y);
                 }else {
-                    str = str + ChessEngine.convertFileNumberToFile(originFileRank.x);
-                    str = str + String(originFileRank.y);
+                    str += ChessEngine.convertFileRankToFileRankStr(originFileRank);
                 }
             }
 
@@ -1941,8 +1940,7 @@ export class ChessEngine extends  AbstractEngine {
                 str = str + "x";
             }
 
-            str = str + ChessEngine.convertFileNumberToFile(destFileRank.x);
-            str = str + String(destFileRank.y);
+            str += ChessEngine.convertFileRankToFileRankStr(destFileRank);
 
             let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
             if(isPromotionMove.isPromotion){
@@ -1975,19 +1973,11 @@ export class ChessEngine extends  AbstractEngine {
         return ret;
     }
     public getUCIMoveForMoveClass(moveClass : MoveClass):string{
-        let uciMove = "";
+        let originFileRankStr = ChessEngine.convertFileRankToFileRankStr(moveClass.originFileRank);
+        let destFileRankStr = ChessEngine.convertFileRankToFileRankStr(moveClass.destFileRank);
 
-        let originFileRank = moveClass.originFileRank;
-        let originFileNumber = originFileRank.x;
-        let originFile = ChessEngine.convertFileNumberToFile(originFileNumber);
-        let originRank = originFileRank.y;
 
-        let destFileRank = moveClass.destFileRank;
-        let destFileNumber = destFileRank.x;
-        let destFile = ChessEngine.convertFileNumberToFile(destFileNumber);
-        let destRank = destFileRank.y;
-
-        uciMove = originFile + originRank.toString() + destFile + destRank.toString();
+        let uciMove = originFileRankStr + destFileRankStr;
 
         let isPromotionMove = ChessEngine.isPromotionMove(moveClass);
 
