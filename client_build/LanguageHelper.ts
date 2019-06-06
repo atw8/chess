@@ -1,3 +1,4 @@
+
 export enum LanguageKey {
     Waiting,
 
@@ -18,9 +19,11 @@ export enum LanguageKey {
 
     Draw,
     Move50Rule,
+    Move75Rule,
     DrawAgreement,
     InsufficientMaerial,
     ThreefoldRepetition,
+    FivefoldRepetition,
     Stalemate,
 
     OneZero,
@@ -72,6 +75,9 @@ export namespace LanguageHelper {
             case LanguageKey.Move50Rule:
                 ret = "50-move rule";
                 break;
+            case LanguageKey.Move75Rule:
+                ret = "75-move rule";
+                break;
             case LanguageKey.DrawAgreement:
                 ret = "Draw by agreement";
                 break;
@@ -81,10 +87,12 @@ export namespace LanguageHelper {
             case LanguageKey.ThreefoldRepetition:
                 ret = "Threefold repetition";
                 break;
+            case LanguageKey.FivefoldRepetition:
+                ret = "Fivefold repetition";
+                break;
             case LanguageKey.Stalemate:
                 ret = "Stalemate";
                 break;
-
             case LanguageKey.OneZero:
                 ret = "1-0";
                 break;

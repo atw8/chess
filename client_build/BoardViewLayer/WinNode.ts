@@ -54,9 +54,11 @@ export class WinNode extends PIXI.Graphics {
                 break;
 
             case ChessGameStateEnum.DRAW_50MOVES:
+            case ChessGameStateEnum.DRAW_75MOVES:
             case ChessGameStateEnum.DRAW_AGREEMENT:
             case ChessGameStateEnum.DRAW_INSUFFICIENT_MATERIAL:
-            case ChessGameStateEnum.DRAW_REPETITION:
+            case ChessGameStateEnum.DRAW_THREEFOLD_REPETITION:
+            case ChessGameStateEnum.DRAW_FIVEFOLD_REPETITION:
             case ChessGameStateEnum.DRAW_STALEMATE:
                 textTopKey = LanguageKey.Draw;
                 break;
@@ -81,14 +83,20 @@ export class WinNode extends PIXI.Graphics {
             case ChessGameStateEnum.DRAW_50MOVES:
                 textBottomKey = LanguageKey.Move50Rule;
                 break;
+            case ChessGameStateEnum.DRAW_75MOVES:
+                textBottomKey = LanguageKey.Move75Rule;
+                break;
             case ChessGameStateEnum.DRAW_AGREEMENT:
                 textBottomKey = LanguageKey.DrawAgreement;
                 break;
             case ChessGameStateEnum.DRAW_INSUFFICIENT_MATERIAL:
                 textBottomKey = LanguageKey.InsufficientMaerial;
                 break;
-            case ChessGameStateEnum.DRAW_REPETITION:
+            case ChessGameStateEnum.DRAW_THREEFOLD_REPETITION:
                 textBottomKey = LanguageKey.ThreefoldRepetition;
+                break;
+            case ChessGameStateEnum.DRAW_FIVEFOLD_REPETITION:
+                textBottomKey = LanguageKey.FivefoldRepetition;
                 break;
             case ChessGameStateEnum.DRAW_STALEMATE:
                 textBottomKey = LanguageKey.Stalemate;

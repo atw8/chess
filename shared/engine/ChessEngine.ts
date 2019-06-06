@@ -826,6 +826,10 @@ export class ChessEngine extends  AbstractEngine {
             }
         }else if(this.isDrawByInsufficientMaterial()){
             this.m_gameState = ChessGameStateEnum.DRAW_INSUFFICIENT_MATERIAL;
+        }else if(this.isDrawByRepetition(5)) {
+            this.m_gameState = ChessGameStateEnum.DRAW_FIVEFOLD_REPETITION;
+        }else if(this.isDrawByNMoves(75)){
+            this.m_gameState = ChessGameStateEnum.DRAW_75MOVES;
         }else if(this.getIsLoseByTime(SideType.WHITE)){
             this.m_gameState = ChessGameStateEnum.BLACK_WIN_TIME;
         }else if(this.getIsLoseByTime(SideType.BLACK)){
@@ -841,10 +845,10 @@ export class ChessEngine extends  AbstractEngine {
         }else if(this.getIsAskForDraw(SideType.WHITE) || this.getIsAskForDraw(SideType.BLACK) || this.initParam.isAskDraw){
             if(this.getIsAskForDraw(SideType.WHITE) && this.getIsAskForDraw(SideType.BLACK)){
                 this.m_gameState = ChessGameStateEnum.DRAW_AGREEMENT;
-            }else if(this.isDrawBy50Moves()){
+            }else if(this.isDrawByNMoves(50)){
                 this.m_gameState = ChessGameStateEnum.DRAW_50MOVES;
-            }else if(this.isDrawByThreeRepetition()){
-                this.m_gameState = ChessGameStateEnum.DRAW_REPETITION;
+            }else if(this.isDrawByRepetition(3)){
+                this.m_gameState = ChessGameStateEnum.DRAW_THREEFOLD_REPETITION;
             }
         }
 
@@ -872,7 +876,9 @@ export class ChessEngine extends  AbstractEngine {
             case ChessGameStateEnum.DRAW_STALEMATE:
             case ChessGameStateEnum.DRAW_INSUFFICIENT_MATERIAL:
             case ChessGameStateEnum.DRAW_50MOVES:
-            case ChessGameStateEnum.DRAW_REPETITION:
+            case ChessGameStateEnum.DRAW_75MOVES:
+            case ChessGameStateEnum.DRAW_THREEFOLD_REPETITION:
+            case ChessGameStateEnum.DRAW_FIVEFOLD_REPETITION:
             case ChessGameStateEnum.DRAW_AGREEMENT:
                 chessGameResult = ChessGameResultEnum.DRAW;
                 break;
@@ -1653,10 +1659,13 @@ export class ChessEngine extends  AbstractEngine {
         return isDraw;
     };
 
-    public isDrawBy50Moves():boolean{
-        return this.halfMoveClockVector[this.halfMoveClockVector.length - 1] >= 100;
+
+    public isDrawByNMoves(numOfMoves : number):boolean{
+        return this.halfMoveClockVector[this.halfMoveClockVector.length - 1] >= 2 * numOfMoves;
     }
-    public isDrawByThreeRepetition():boolean {
+
+
+    public isDrawByRepetition(numOfRepetition : number):boolean{
         let lastFenStr = this.getLastFenStr();
         let lastSplitFenStr = lastFenStr.split(" ");
 
@@ -1686,7 +1695,7 @@ export class ChessEngine extends  AbstractEngine {
             }
         }
 
-        return numSame >= 3
+        return numSame >= numOfRepetition;
     }
 
 
