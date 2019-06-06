@@ -1675,8 +1675,11 @@ export class ChessEngine extends  AbstractEngine {
         let lastEnPassant = lastSplitFenStr[3];
 
         let numSame = 0;
-        for(let i = this.fenStrings.length - 1; i >= 0; i--){
-            let iterFenStr = this.fenStrings[i];
+
+        let fromFenStrIndex = this.fenStrings.length - 1;
+        let toFenStrIndex = Math.max(0, this.fenStrings.length - 1 - this.halfMoveClockVector[this.halfMoveClockVector.length - 1]);
+        for(let fenStrIndex = fromFenStrIndex; fenStrIndex >= toFenStrIndex; fenStrIndex--){
+            let iterFenStr = this.fenStrings[fenStrIndex];
             let iterFenStrSplit = iterFenStr.split(" ");
 
             let iterPiecePlacement = iterFenStrSplit[0];
@@ -1692,10 +1695,14 @@ export class ChessEngine extends  AbstractEngine {
 
             if(isSame){
                 numSame += 1;
+
+                if(numSame >= numOfRepetition){
+                    return true;
+                }
             }
         }
 
-        return numSame >= numOfRepetition;
+        return false;
     }
 
 
