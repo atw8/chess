@@ -3,7 +3,7 @@ import {SideType} from "../../shared/engine/SideType";
 import {PieceType} from "../../shared/engine/PieceType";
 
 import {PieceView} from "./PieceView";
-import {SimpleGame} from "../app";
+import {SimpleGame} from "../SimpleGame";
 
 
 export class TimePanel extends PIXI.Graphics {

@@ -1,7 +1,7 @@
 import {SideType} from "../../shared/engine/SideType";
 import {PositionManager} from "../PositionManager";
 
-import {SimpleGame} from "../app";
+import {SimpleGame} from "../SimpleGame";
 import {LanguageHelper, LanguageKey} from "../LanguageHelper";
 import * as PIXI from "pixi.js";
 import * as TWEEN from "@tweenjs/tween.js";
@@ -11,8 +11,7 @@ import {DefaultButton} from "./Button/DefaultButton";
 import {SanSprite} from "./SanSprite";
 
 class PredictButton  extends DefaultButton {
-    private m_sanStr : string;
-    private m_moveTurn : SideType;
+    private sanObject : {sanStr : string, sideType : SideType} | null;
 
     private uiPercentage : PIXI.Text;
     private uiSanSprite : SanSprite | null = null;
@@ -23,8 +22,8 @@ class PredictButton  extends DefaultButton {
     constructor(width : number, height : number, cb : (d : DefaultButton) => void){
         super(width, height, cb);
 
-        //this.m_moveTurn = SideType.WHITE;
-        //this.m_sanStr = "";
+
+
 
         this.uiHighlight = new PIXI.Graphics();
         this.uiHighlight.lineStyle(5,  SimpleGame.getDarkBrownColor(), 1.0);
@@ -39,29 +38,10 @@ class PredictButton  extends DefaultButton {
         this.uiPercentage.anchor.set(1.0, 0.5);
         this.uiPercentage.position.set((this.m_width/2) - 0.5*this.pieceViewScale*this.m_height, 0.0);
         this.addChild(this.uiPercentage);
-
-
-
     }
 
 
-    public setSanStr(sanStr : string, moveTurn : SideType){
-        if(sanStr == this.m_sanStr && moveTurn == this.m_moveTurn){
-            return;
-        }
-        this.m_sanStr = sanStr;
-        this.m_moveTurn = moveTurn;
 
-        if(this.uiSanSprite != null){
-            this.uiSanSprite.parent.removeChild(this.uiSanSprite);
-            this.uiSanSprite = null;
-        }
-
-        this.uiSanSprite = new SanSprite(sanStr, moveTurn, this.m_height*this.pieceViewScale);
-        this.addChild(this.uiSanSprite);
-
-        this.uiSanSprite.position.set(-this.m_width/2 + this.uiSanSprite.width/2 + 0.5*this.pieceViewScale*this.m_height, 0.0);
-    }
 
 
     public setPercentage(percentage : number | null){
@@ -75,11 +55,25 @@ class PredictButton  extends DefaultButton {
         this.uiPercentage.text = str;
     }
 
-    public getSanStr():string{
-        return this.m_sanStr;
+    public getSanObject():{sanStr : string, sideType : SideType}|null{
+        return this.sanObject;
     }
-    public getMoveTurn():SideType{
-        return this.m_moveTurn;
+    public setSanObject(sanObject : {sanStr : string, sideType : SideType} | null){
+        this.sanObject = sanObject;
+
+
+        if(this.uiSanSprite != null){
+            this.uiSanSprite.parent.removeChild(this.uiSanSprite);
+            this.uiSanSprite = null;
+        }
+
+
+        if(this.sanObject != null){
+            this.uiSanSprite = new SanSprite(this.sanObject, this.m_height*this.pieceViewScale);
+            this.addChild(this.uiSanSprite);
+
+            this.uiSanSprite.position.set(-this.m_width/2 + this.uiSanSprite.width/2 + 0.5*this.pieceViewScale*this.m_height, 0.0);
+        }
     }
 
 
@@ -95,7 +89,7 @@ class PredictButton  extends DefaultButton {
 
 
 let predictBtnWidthScale = 0.9;
-let predictBtnHeightScale = 0.8
+let predictBtnHeightScale = 0.8;
 
 export class PredictPanel extends PIXI.Graphics {
 
@@ -103,17 +97,7 @@ export class PredictPanel extends PIXI.Graphics {
     private uiMyMoveSprite : PredictButton;
 
     private uiVotedMovesText : PIXI.Text;
-    private uiVotedMovesSprites : { [key : string] : { sprite : PredictButton, lastRowPosition : number, newRowPosition : number } };
-
-
-
-    private m_moveTurn : SideType;
-    public setMoveTurn(moveTurn : SideType){
-        this.m_moveTurn = moveTurn;
-    }
-    public getMoveTurn():SideType{
-        return this.m_moveTurn;
-    }
+    private uiVotedMovesSprites : { [key in SideType] : { [key : string] : { sprite : PredictButton, lastRowPosition : number, newRowPosition : number } } };
 
 
 
@@ -134,12 +118,14 @@ export class PredictPanel extends PIXI.Graphics {
         this.m_rowHeight = rowHeight;
         this.m_numOfCols = numOfCols;
 
-        this.m_moveTurn = SideType.WHITE;
-
         this.controller = controller;
 
-
+        //@ts-ignore
         this.uiVotedMovesSprites = {};
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            this.uiVotedMovesSprites[sideType] = {};
+        }
+
         this.positionManager = new PositionManager();
 
 
@@ -240,13 +226,13 @@ export class PredictPanel extends PIXI.Graphics {
 
 
 
-
-    public setIsHighlighted(sanStr : string, isHighlighted : boolean):void{
-        if(this.uiMyMoveSprite.getSanStr() == sanStr){
+    public setIsHighlighted(sanObject : {sanStr : string, sideType : SideType}, isHighlighted : boolean):void{
+        let myMoveSanObject = this.uiMyMoveSprite.getSanObject();
+        if(myMoveSanObject != null && (myMoveSanObject.sanStr == sanObject.sanStr && myMoveSanObject.sideType == sanObject.sideType)){
             this.uiMyMoveSprite.setIsHighlighted(isHighlighted);
         }
 
-        let uiVotedMoveSprite = this.uiVotedMovesSprites[sanStr];
+        let uiVotedMoveSprite = this.uiVotedMovesSprites[sanObject.sideType][sanObject.sanStr];
         if(uiVotedMoveSprite == undefined){
             return;
         }
@@ -262,30 +248,29 @@ export class PredictPanel extends PIXI.Graphics {
 
     public predictBtnCallback(predictButton : PredictButton){
         //console.debug("isMyMove", isMyMove);
-        let sanStr : string | null = predictButton.getSanStr();
-        if(sanStr == null){
+        let sanObject : {sanStr : string, sideType : SideType} | null = predictButton.getSanObject();
+        if(sanObject == null){
             return;
         }
 
 
         if(predictButton != this.uiMyMoveSprite){
-            if(this.uiVotedMovesSprites[sanStr] == undefined){
+            if(this.uiVotedMovesSprites[sanObject.sideType][sanObject.sanStr] == undefined){
                 return;
             }
-            if(this.uiVotedMovesSprites[sanStr].sprite != predictButton){
+            if(this.uiVotedMovesSprites[sanObject.sideType][sanObject.sanStr].sprite != predictButton){
                 return;
             }
         }
 
-
-        this.controller.predictMovePress(this.m_moveTurn, sanStr);
+        this.controller.predictMovePress(sanObject);
     }
 
 
-    public setMyVoting(sanStr : string):void{
-        this.uiMyMoveSprite.setSanStr(sanStr, this.m_moveTurn);
+    public setMyVoting(sanStr : string, moveTurn : SideType):void{
+        this.uiMyMoveSprite.setSanObject({sanStr : sanStr, sideType : moveTurn});
     }
-    public setVotingData(votingData : { [key : string] : number}){
+    public setVotingData(votingData : { [key : string] : number}, moveTurn : SideType){
         let votingDataArray : { sanStr : string, number : number}[] = [];
         for(let k in votingData){
             if(votingData[k] != 0){
@@ -305,26 +290,34 @@ export class PredictPanel extends PIXI.Graphics {
 
 
         let numOfVotes : number = 0;
-        let votedSanMap : { [key : string] : { sanStr : string, number : number, rowPosition : number}} = {};
+        //@ts-ignore
+        let votedSanMap : { [key in SideType] : {[key : string] : { sanStr : string, number : number, rowPosition : number}}} = {};
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            votedSanMap[sideType] = {};
+        }
         for(let i = 0; i < votingDataArray.length; i++){
             let votedData = votingDataArray[i];
-            votedSanMap[votingDataArray[i].sanStr] = {sanStr : votedData.sanStr, number : votedData.number, rowPosition : i + 4};
+            votedSanMap[moveTurn][votedData.sanStr] = {sanStr : votedData.sanStr, number : votedData.number, rowPosition : i + 4};
 
             numOfVotes += votedData.number;
         }
 
 
         //remove all the old uiVotedMoveSprites
-        let removeUiVotedMoveSprites : string[] = [];
-        for(let sanStr in this.uiVotedMovesSprites){
-            if(votedSanMap[sanStr] == undefined){
-                removeUiVotedMoveSprites.push(sanStr);
+        let removeUiVotedMoveSprites : {sanStr : string, sideType : SideType}[] = [];
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            for(let sanStr in this.uiVotedMovesSprites[sideType]){
+                if(votedSanMap[sideType][sanStr] == undefined){
+                    removeUiVotedMoveSprites.push({sanStr : sanStr, sideType :sideType});
+                }
             }
         }
         for(let i = 0; i < removeUiVotedMoveSprites.length; i++){
-            let sanStr = removeUiVotedMoveSprites[i];
-            let uiVotedMoveSprite = this.uiVotedMovesSprites[sanStr];
-            delete this.uiVotedMovesSprites[sanStr];
+            let sanStr = removeUiVotedMoveSprites[i].sanStr;
+            let sideType = removeUiVotedMoveSprites[i].sideType;
+
+            let uiVotedMoveSprite = this.uiVotedMovesSprites[sideType][sanStr];
+            delete this.uiVotedMovesSprites[sideType][sanStr];
 
             let sprite = uiVotedMoveSprite.sprite;
 
@@ -342,21 +335,25 @@ export class PredictPanel extends PIXI.Graphics {
         }
 
         //Add all the new uiVotedMoveSprites
-        let addUiVotedMoveSprites : string[] = [];
-        for(let sanStr in votedSanMap){
-            if(this.uiVotedMovesSprites[sanStr] == undefined){
-                addUiVotedMoveSprites.push(sanStr);
+        let addUiVotedMoveSprites : {sanStr : string, sideType : SideType}[] = [];
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            for(let sanStr in votedSanMap[sideType]) {
+                addUiVotedMoveSprites.push({sanStr : sanStr, sideType : sideType});
             }
         }
+
+
         for(let i = 0; i < addUiVotedMoveSprites.length; i++){
-            let sanStr = addUiVotedMoveSprites[i];
-            let votedData : { sanStr : string, number : number, rowPosition : number}  = votedSanMap[sanStr];
+            let sanStr = addUiVotedMoveSprites[i].sanStr;
+            let sideType = addUiVotedMoveSprites[i].sideType;
+
+            let votedData : { sanStr : string, number : number, rowPosition : number}  = votedSanMap[sideType][sanStr];
 
             let sprite = new PredictButton(this.getRowWidth()*predictBtnWidthScale,
                 this.getRowHeight()*predictBtnHeightScale,
                 this.predictBtnCallback.bind(this));
             sprite.position = this.getPositionForRow(votedData.rowPosition);
-            sprite.setSanStr(sanStr, this.m_moveTurn);
+            sprite.setSanObject(addUiVotedMoveSprites[i]);
             if(numOfVotes == 0){
                 sprite.setPercentage(0);
             }else {
@@ -380,41 +377,46 @@ export class PredictPanel extends PIXI.Graphics {
             tween.start();
 
 
-            this.uiVotedMovesSprites[sanStr] = { sprite : sprite, lastRowPosition : votedData.rowPosition, newRowPosition : votedData.rowPosition};
+            this.uiVotedMovesSprites[sideType][sanStr] = { sprite : sprite, lastRowPosition : votedData.rowPosition, newRowPosition : votedData.rowPosition};
         }
 
 
         //Update all the percentages, and the positions
-        for(let sanStr in this.uiVotedMovesSprites){
-            if(numOfVotes == 0){
-                this.uiVotedMovesSprites[sanStr].sprite.setPercentage(0);
-            }else {
-                this.uiVotedMovesSprites[sanStr].sprite.setPercentage(100*(votedSanMap[sanStr].number)/numOfVotes);
-            }
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            for(let sanStr in this.uiVotedMovesSprites[sideType]){
+                if(numOfVotes == 0){
+                    this.uiVotedMovesSprites[sideType][sanStr].sprite.setPercentage(0);
+                }else {
+                    this.uiVotedMovesSprites[sideType][sanStr].sprite.setPercentage(100*(votedSanMap[sideType][sanStr].number)/numOfVotes);
+                }
 
-            this.uiVotedMovesSprites[sanStr].newRowPosition = votedSanMap[sanStr].rowPosition;
+                this.uiVotedMovesSprites[sideType][sanStr].newRowPosition = votedSanMap[sideType][sanStr].rowPosition;
+            }
         }
 
         //Make all the sprites move into the rightful position
-        for(let sanStr in this.uiVotedMovesSprites){
-            let uiVotedMoveSprite = this.uiVotedMovesSprites[sanStr];
-            if(uiVotedMoveSprite.lastRowPosition == uiVotedMoveSprite.newRowPosition){
-                continue;
+        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+            for(let sanStr in this.uiVotedMovesSprites[sideType]){
+                let uiVotedMoveSprite = this.uiVotedMovesSprites[sideType][sanStr];
+                if(uiVotedMoveSprite.lastRowPosition == uiVotedMoveSprite.newRowPosition){
+                    continue;
+                }
+                let sprite = uiVotedMoveSprite.sprite;
+
+                let positionFrom = this.getPositionForRow(uiVotedMoveSprite.lastRowPosition);
+                let positionTo = this.getPositionForRow(uiVotedMoveSprite.newRowPosition);
+
+
+                this.positionManager.moveTo(sprite, null, positionTo, 0.5);
+
+                uiVotedMoveSprite.lastRowPosition = uiVotedMoveSprite.newRowPosition;
             }
-            let sprite = uiVotedMoveSprite.sprite;
-
-            let positionFrom = this.getPositionForRow(uiVotedMoveSprite.lastRowPosition);
-            let positionTo = this.getPositionForRow(uiVotedMoveSprite.newRowPosition);
-
-
-            this.positionManager.moveTo(sprite, null, positionTo, 0.5);
-
-            uiVotedMoveSprite.lastRowPosition = uiVotedMoveSprite.newRowPosition;
         }
 
 
+
         if(this.uiMyMoveSprite.getIsHighlighted()){
-            this.setIsHighlighted(this.uiMyMoveSprite.getSanStr(), true);
+            this.setIsHighlighted(<{sanStr : string, sideType : SideType}>this.uiMyMoveSprite.getSanObject(), true);
         }
     }
 }

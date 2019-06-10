@@ -1,5 +1,5 @@
 import {BoardView} from "./BoardView";
-import {ORIENTATION, SimpleGame} from "../app";
+import {ORIENTATION, SimpleGame} from "../SimpleGame";
 import {PromotePieceLayer} from "./PromotePieceLayer";
 import {MoveClass} from "../../shared/engine/MoveClass";
 import {WaitingNode} from "./WaitingNode";
@@ -11,7 +11,7 @@ import {ControllerAbstract} from "../controller/ControllerAbstract";
 import {PredictPanel} from "./PredictPanel";
 import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 import {ControllerMultiplayerGame} from "../controller/ControllerMultiplayerGame";
-import {LanguageKey} from "../LanguageHelper";
+import {LanguageHelper, LanguageKey} from "../LanguageHelper";
 import {LanguageButton} from "./Button/LanguageButton";
 
 
@@ -120,7 +120,7 @@ export class ParentBoardView extends PIXI.Container {
 
 
         //Add the uiWaitingNode
-        this.uiWaitingNode = new WaitingNode(80);
+        this.uiWaitingNode = new WaitingNode(80, LanguageKey.Waiting);
         this.uiWaitingNode.zIndex = 2;
         this.addChild(this.uiWaitingNode);
 
@@ -241,20 +241,20 @@ export class ParentBoardView extends PIXI.Container {
         }
     }
 
-    public setVotingData(votingData : { [key : string] : number}){
+    public setVotingData(votingData : { [key : string] : number}, sideType : SideType){
         for(let orientation = ORIENTATION.FIRST_ORIENTATION; orientation <= ORIENTATION.LAST_ORIENTATION; orientation++){
-            this.uiPredictPanel[orientation].setVotingData(votingData);
+            this.uiPredictPanel[orientation].setVotingData(votingData, sideType);
         }
 
     }
-    public setMyVoting(myVoting : string){
+    public setMyVoting(myVoting : string, sideType : SideType){
         for(let orientation = ORIENTATION.FIRST_ORIENTATION; orientation <= ORIENTATION.LAST_ORIENTATION; orientation++) {
-            this.uiPredictPanel[orientation].setMyVoting(myVoting);
+            this.uiPredictPanel[orientation].setMyVoting(myVoting, sideType);
         }
     }
-    public setIsHighlighted(sanStr : string, isHighlighted : boolean){
+    public setIsHighlighted(sanObject : {sanStr : string, sideType : SideType}, isHighlighted : boolean){
         for(let orientation = ORIENTATION.FIRST_ORIENTATION; orientation <= ORIENTATION.LAST_ORIENTATION; orientation++){
-            this.uiPredictPanel[orientation].setIsHighlighted(sanStr, isHighlighted);
+            this.uiPredictPanel[orientation].setIsHighlighted(sanObject, isHighlighted);
         }
     }
 
@@ -294,11 +294,9 @@ export class ParentBoardView extends PIXI.Container {
     }
 
     public setMoveTurn(moveTurn : SideType){
-        for(let orientation = ORIENTATION.FIRST_ORIENTATION; orientation <= ORIENTATION.LAST_ORIENTATION; orientation++){
-            this.uiPredictPanel[orientation].setMoveTurn(moveTurn);
-        }
-
         this.uiTimePanel.setSideType(moveTurn);
+
+        SimpleGame.setTitle(moveTurn);
     }
 
 
