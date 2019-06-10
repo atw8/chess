@@ -51,11 +51,6 @@ export class ControllerNormalGame extends ControllerAbstract{
 
 
     public _OnRoomJoin(onRoomJoinMsg : OnRoomJoinMessage){
-        let roomStateConfig = <RoomStateConfig>onRoomJoinMsg.roomStateConfig;
-
-        let mySideType = roomStateConfig.mySideType;
-        this.uiBoardView.setBoardFacing(mySideType, false);
-
         this.syncrhonizeRoomState();
     }
 
@@ -105,18 +100,6 @@ export class ControllerNormalGame extends ControllerAbstract{
 
     public OnRoomMultiplayerStateBroadcast(onRoomMultiplayerStateBroadcastMsg : OnRoomMultiplayerStateBroadcastMessage):void{}
 
-    public _synchronizeRoomState():void {
-        let roomStateConfig = this.controllerOuter.getRoomStateConfig(this.roomId);
-
-        if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
-            this.uiBoardView.setTouchEnabled(false);
-        }else {
-            let mySideType = roomStateConfig.mySideType;
-            this.uiBoardView.setTouchEnabled(this.chessEngine.getMoveTurn() == mySideType);
-        }
-
-        this.uiParentView.setMoveTurn(this.chessEngine.getMoveTurn());
-    }
 
 
 

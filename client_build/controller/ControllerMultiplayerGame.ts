@@ -17,11 +17,11 @@ import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 import {RoomStateEnum} from "../../shared/RoomStateEnum";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
 import {SideType} from "../../shared/engine/SideType";
-import {PredictPanel} from "../BoardViewLayer/PredictPanel";
 import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
 
-export class ControllerMultiplayerGame extends ControllerAbstract {
+import * as underscore from "underscore";
 
+export class ControllerMultiplayerGame extends ControllerAbstract {
     private uiPredictBoardView : BoardView;
 
     public isFlipBoardBtn():boolean{
@@ -45,12 +45,6 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
             this.uiBoardView.setTouchEnabled(true);
             this.notifyMove(moveClass, this.uiBoardView);
         })
-
-        /*
-        this.uiBoardView.setTouchEnabled(false);
-
-        this.uiParentView.showPromotePieceLayer(moveClass, this.notifyMove.bind(this))
-        */
     }
 
     public setParentBoardView(opts: {
@@ -66,11 +60,10 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
 
     public _OnRoomJoin(onRoomJoinMsg : OnRoomJoinMessage):void{
         let roomStateConfig = <RoomStateConfig>onRoomJoinMsg.roomStateConfig;
-        this.uiParentView.setMyVoting(roomStateConfig.myVoting);
-        this.uiParentView.setVotingData(roomStateConfig.votingData);
+        this.uiParentView.setMyVoting(roomStateConfig.myVoting, this.chessEngine.getMoveTurn());
+        this.uiParentView.setVotingData(roomStateConfig.votingData, this.chessEngine.getMoveTurn());
 
-        this.uiBoardView.setBoardFacing(roomStateConfig.mySideType, false);
-        this.uiPredictBoardView.setBoardFacing(roomStateConfig.mySideType, false)
+        this.uiPredictBoardView.setBoardFacing(roomStateConfig.mySideType, false);
 
         this.syncrhonizeRoomState();
     }
@@ -83,54 +76,41 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
 
 
     public OnRoomMakeVote(onRoomMakeVoteMsg : OnRoomMakeVoteMessage):void{
-        this.uiParentView.setMyVoting(onRoomMakeVoteMsg.myVoting);
-        this.predictMovePress(this.chessEngine.getMoveTurn(), onRoomMakeVoteMsg.myVoting);
+        this.uiParentView.setMyVoting(onRoomMakeVoteMsg.myVoting, this.chessEngine.getMoveTurn());
+
+        this.predictMovePress({sanStr : onRoomMakeVoteMsg.myVoting, sideType : this.chessEngine.getMoveTurn()} );
     }
 
     public OnRoomVotingUpdateBroadcast(onRoomVotingUpdateBroadcastMsg : OnRoomVotingUpdateBroadcastMessage):void{
-        this.uiParentView.setVotingData(onRoomVotingUpdateBroadcastMsg.votingData);
+        this.uiParentView.setVotingData(onRoomVotingUpdateBroadcastMsg.votingData,  this.chessEngine.getMoveTurn());
     }
 
-    public _synchronizeRoomState():void{
-        let roomStateConfig = this.controllerOuter.getRoomStateConfig(this.roomId);
 
-        if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
-            this.uiBoardView.setTouchEnabled(false);
-        }else {
-            this.uiBoardView.setTouchEnabled(roomStateConfig.mySideType == this.chessEngine.getMoveTurn());
-        }
+    private predictMoveSanObject : {sanStr : string, sideType : SideType} | null = null;
+    public predictMovePress(sanObject : {sanStr : string, sideType : SideType} | null){
+        let oldPredictMoveSanObject = this.predictMoveSanObject;
 
-        this.uiParentView.setMoveTurn(this.chessEngine.getMoveTurn());
-    }
-
-    private predictMoveSideType : SideType | null = null;
-    private predictMoveSanStr : string | null = null;
-    public predictMovePress(predictMoveSideType : SideType | null, predictMoveSanStr : string | null){
-        let oldPredictMoveSideType = this.predictMoveSideType;
-        let oldPredictMoveSanStr = this.predictMoveSanStr;
-
-        this.predictMoveSideType = null;
-        this.predictMoveSanStr = null;
+        this.predictMoveSanObject = null;
 
         this.uiPredictBoardView.updateViewToModel(null);
 
-        if(oldPredictMoveSideType != null && oldPredictMoveSanStr != null){
-            this.uiParentView.setIsHighlighted(oldPredictMoveSanStr, false);
+        if(oldPredictMoveSanObject != null){
+            this.uiParentView.setIsHighlighted(oldPredictMoveSanObject, false);
         }
 
-        if(oldPredictMoveSideType == predictMoveSideType && oldPredictMoveSanStr == predictMoveSanStr){
+        if(underscore.isEqual(oldPredictMoveSanObject, sanObject)){
             return;
         }
-        this.predictMoveSideType = predictMoveSideType;
-        this.predictMoveSanStr = predictMoveSanStr;
-        if(this.predictMoveSideType == null || this.predictMoveSanStr == null){
+        this.predictMoveSanObject = sanObject;
+
+        if(this.predictMoveSanObject == null){
             return;
         }
 
-        let moveClass = <MoveClass>this.chessEngine.getMoveClassForCurrentBoardAndSanMove(this.predictMoveSanStr);
+        let moveClass = <MoveClass>this.chessEngine.getMoveClassForCurrentBoardAndSanMove(this.predictMoveSanObject.sanStr);
 
         let cb = (moveClass : MoveClass)=>{
-            if(this.predictMoveSideType == null || this.predictMoveSanStr == null){
+            if(this.predictMoveSanObject == null){
                 return;
             }
 
@@ -140,7 +120,7 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
 
         this.uiPredictBoardView.doMove(moveClass, cb);
 
-        this.uiParentView.setIsHighlighted(this.predictMoveSanStr, true);
+        this.uiParentView.setIsHighlighted(this.predictMoveSanObject, true);
     }
 
     public OnRoomMultiplayerStateBroadcast(onRoomMultiplayerStateBroadcastMsg : OnRoomMultiplayerStateBroadcastMessage):void{
@@ -149,10 +129,10 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
 
         this.uiBoardView.doMove(<MoveClass>this.chessEngine.getLastMoveClass());
 
-        this.predictMovePress(null, null);
+        this.predictMovePress(null);
         this.uiParentView.setMoveTurn(this.chessEngine.getMoveTurn());
-        this.uiParentView.setMyVoting("");
-        this.uiParentView.setVotingData({});
+        this.uiParentView.setMyVoting("", this.chessEngine.getMoveTurn());
+        this.uiParentView.setVotingData({}, this.chessEngine.getMoveTurn());
 
         this.syncrhonizeRoomState();
     }

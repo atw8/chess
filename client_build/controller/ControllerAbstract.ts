@@ -14,9 +14,8 @@ import {GameTimeManager} from "../../shared/gameTime/GameTimeManager";
 import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 import {SideType} from "../../shared/engine/SideType";
 import {RoomStateEnum} from "../../shared/RoomStateEnum";
-import {PredictPanel} from "../BoardViewLayer/PredictPanel";
 
-import {SimpleGame} from "../app";
+import {SimpleGame} from "../SimpleGame";
 
 
 export abstract class ControllerAbstract implements SocketClientInterface {
@@ -76,13 +75,15 @@ export abstract class ControllerAbstract implements SocketClientInterface {
 
 
     public OnConnect(): void {
-    };
-
+    }
     public OnDisconnect(): void {
-    };
+    }
+    public OnConnectError() : void{
+    }
+    public OnConnectTimeOut() : void{
+    }
 
-    public OnLoginGuest(onLoginGuestMsg: OnUserLoginGuestMessage): void {
-    };
+    public OnLoginGuest(onLoginGuestMsg: OnUserLoginGuestMessage): void {}
 
 
     public OnRoomJoin(onRoomJoinMsg: OnRoomJoinMessage): void {
@@ -126,9 +127,9 @@ export abstract class ControllerAbstract implements SocketClientInterface {
             }
         }
 
+        this.uiBoardView.setBoardFacing(roomStateConfig.mySideType, false);
 
         this._OnRoomJoin(onRoomJoinMsg);
-        //this.syncrhonizeRoomState();
     }
 
     public abstract _OnRoomJoin(onRoomJoinMsg: OnRoomJoinMessage): void;
@@ -169,10 +170,14 @@ export abstract class ControllerAbstract implements SocketClientInterface {
             this.uiParentView.showWinNode(roomStateConfig.chessGameState, OnRoomFinish);
         }
 
-        this._synchronizeRoomState();
-    }
+        if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
+            this.uiBoardView.setTouchEnabled(false);
+        }else {
+            this.uiBoardView.setTouchEnabled(roomStateConfig.mySideType == this.chessEngine.getMoveTurn());
+        }
 
-    public abstract _synchronizeRoomState(): void;
+        this.uiParentView.setMoveTurn(this.chessEngine.getMoveTurn());
+    }
 
 
     public tick(dt : number):void{
