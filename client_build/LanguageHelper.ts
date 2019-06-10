@@ -2,6 +2,8 @@
 export enum LanguageKey {
     Waiting,
 
+    Connecting,
+
     Error,
 
     WhiteVictorious,
@@ -36,6 +38,10 @@ export enum LanguageKey {
     VotedMoves,
 
     FlipBoard,
+
+    VoteChess,
+    WhiteMove,
+    BlackMove,
 }
 
 export namespace LanguageHelper {
@@ -44,6 +50,15 @@ export namespace LanguageHelper {
         switch (languageKey) {
             case LanguageKey.Error:
                 ret = "ERROR";
+                break;
+            case LanguageKey.WhiteMove:
+                ret = "White to move";
+                break;
+            case LanguageKey.BlackMove:
+                ret = "Black to move";
+                break;
+            case LanguageKey.VoteChess:
+                ret = "Vote Chess";
                 break;
             case LanguageKey.Checkmate:
                 ret = "Checkmate.";
@@ -104,6 +119,9 @@ export namespace LanguageHelper {
                 break;
             case LanguageKey.Waiting:
                 ret = "Waiting";
+                break;
+            case LanguageKey.Connecting:
+                ret = "Connecting";
                 break;
             case LanguageKey.Ok:
                 ret = "Ok";
