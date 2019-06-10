@@ -3,7 +3,7 @@ const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-    entry: './client_build/app.ts',
+    entry: './client_build/SimpleGame.ts',
     mode : "development",
 
     devtool: 'source-map',

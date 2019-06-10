@@ -1,10 +1,31 @@
 const path = require('path');
 
 const CopyPlugin = require('copy-webpack-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 module.exports = {
-    entry: './client_build/app.ts',
+    entry: './client_build/SimpleGame.ts',
     mode : "production",
+
+    optimization: {
+        minimizer: [new UglifyJsPlugin({
+            cache: true,
+            parallel: true,
+            uglifyOptions: {
+                output: {
+                    comments: false,
+                },
+            },
+            uglifyOptions: {
+                warnings: false,
+                mangle: true, // Note `mangle.properties` is `false` by default.
+                toplevel: true,
+                ie8: false,
+                keep_fnames: false,
+            },
+
+        })],
+    },
 
     output: {
         filename: 'bundle.js',
