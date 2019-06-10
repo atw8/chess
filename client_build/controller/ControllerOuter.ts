@@ -18,6 +18,7 @@ import {ControllerMultiplayerGame} from "./ControllerMultiplayerGame";
 
 import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 import {LocalStorageManager} from "../LocalStorageManager";
+import {SimpleGame} from "../SimpleGame";
 
 export class ControllerOuter implements SocketClientInterface{
     private uiLogoLayer : LogoLayer;
@@ -97,9 +98,29 @@ export class ControllerOuter implements SocketClientInterface{
 
 
     public OnConnect() : void {
-
+        console.log()
     }
     public OnDisconnect() : void {
+        let removeRoomIds : number[] = [];
+
+        for(let _roomId in this.roomIdMap){
+            let roomId = parseInt(_roomId);
+
+            removeRoomIds.push(roomId);
+        }
+
+        for(let i = 0; i < removeRoomIds.length; i++){
+            let roomId = removeRoomIds[i];
+
+            this.removeController(roomId);
+        }
+
+        SimpleGame.setTitle(null);
+    }
+    public OnConnectError() : void{
+
+    }
+    public OnConnectTimeOut() : void{
 
     }
 

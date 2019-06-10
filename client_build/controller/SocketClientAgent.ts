@@ -1,4 +1,7 @@
-import Socket = require("socket.io-client");
+import SocketIO = require("socket.io-client");
+//import * as SocketIO from "socket.io-client";
+
+
 import {
     ClientServerMessage,
     createMessageFromString,
@@ -80,9 +83,19 @@ export class SocketClientAgent {
         this.minTimeDiff = null;
         this.maxTimeDiff = null;
 
-        this.socket = Socket();
+        let socketOpts : SocketIOClient.ConnectOpts = {};
+        socketOpts.autoConnect = true;
+        socketOpts.reconnection = true;
+        socketOpts.reconnectionAttempts = Infinity;
+        //opts.
+        this.socket = SocketIO(socketOpts);
+
 
         this.socket.on("connect", this.OnConnect.bind(this));
+
+        this.socket.on("connect_error", this.OnConnectError.bind(this));
+        this.socket.on("connect_timeout", this.OnConnectTimeOut.bind(this));
+
         this.socket.on("disconnect", this.OnDisconnect.bind(this));
 
         this.socket.on(MessageType.OnLoginGuest, this.OnLoginGuest.bind(this));
@@ -111,6 +124,23 @@ export class SocketClientAgent {
 
         this.OpLoginGuest(LocalStorageManager.getGuestToken());
     }
+
+    public isConnected():boolean{
+        return this.socket.connected;
+    }
+
+
+    public OnConnectError(){
+        console.debug("OnConnectError");
+
+        this.socketClientInterface.OnConnectError();
+    }
+    public OnConnectTimeOut(){
+        console.debug("OnConnectTimeOut");
+
+        this.socketClientInterface.OnConnectTimeOut();
+    }
+
     public OnDisconnect(){
         console.debug("onDisconnect");
 
