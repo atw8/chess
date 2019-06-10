@@ -5,10 +5,10 @@ import * as TWEEN from '@tweenjs/tween.js'
 import {LogoLayer} from "./LogoLayer";
 
 
-import "hammerjs"
-
 
 import * as PIXI from 'pixi.js';
+import {SideType} from "../shared/engine/SideType";
+import {LanguageHelper, LanguageKey} from "./LanguageHelper";
 declare module "pixi.js" {
     interface Matrix {
         applyVector(pos : PIXI.Point, newPos ?: PIXI.Point):PIXI.Point;
@@ -121,6 +121,9 @@ export class SimpleGame extends PIXI.Application{
     public static getDefaultHeight():number{
         return 800;
     }
+
+
+
 
 
 
@@ -463,6 +466,7 @@ export class SimpleGame extends PIXI.Application{
     }
 
 
+
     public static arrangeList(startX : number, endX : number, numOfCols : number, startY : number, diffY : number, sprs : PIXI.DisplayObject[]){
         let y = startY - diffY;
 
@@ -482,6 +486,27 @@ export class SimpleGame extends PIXI.Application{
             //sprs[i].visible = i < numOfCols;
         //}
     }
+
+
+    public static setTitle(moveTurn : SideType | null){
+        let str = LanguageHelper.getTextForLanguageKey(LanguageKey.VoteChess)
+
+        let langKey : LanguageKey | null = null;
+        switch (moveTurn){
+            case SideType.WHITE:
+                langKey = LanguageKey.WhiteMove;
+                break;
+            case SideType.BLACK:
+                langKey = LanguageKey.BlackMove;
+                break;
+        }
+
+        if(langKey != null){
+            str += ", " + LanguageHelper.getTextForLanguageKey(langKey);
+        }
+
+        document.title = str;
+    }
 }
 
 
@@ -499,10 +524,4 @@ window.onload = () => {
     });
 
     SimpleGame.getInstance();
-
-
-
-
-
-
 };

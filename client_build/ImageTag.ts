@@ -28,15 +28,7 @@ export enum ImageTag {
     squareGreen = "squareGreen",
     squareRed = "squareRed",
 
-    btnGreen = "btnGreen",
-    btnGreenPress = "btnGreenPress",
 
-    btnPrompt = "btnPrompt",
-    btnPromptPress = "btnPromptPress",
-
-
-    pointOn = "pointOn",
-    pointOff = "pointOff",
 
     null = "",
 }
@@ -110,24 +102,6 @@ export function getLocationForImageTag(imageTag : ImageTag):string{
             break;
         case ImageTag.squareRed:
             ret = "image/squareRed.png";
-            break;
-        case ImageTag.btnGreen:
-            ret = "image/btn_play_green_little.png";
-            break;
-        case ImageTag.btnGreenPress:
-            ret = "image/btn_play_green_little_press.png";
-            break;
-        case ImageTag.btnPrompt:
-            ret = "image/btn_prompt.png";
-            break;
-        case ImageTag.btnPromptPress:
-            ret = "image/btn_prompt_press.png";
-            break;
-        case ImageTag.pointOff:
-            ret = "image/img_point_2.png";
-            break;
-        case ImageTag.pointOn:
-            ret = "image/img_point_1.png";
             break;
     }
 
