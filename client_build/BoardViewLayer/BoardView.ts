@@ -31,6 +31,20 @@ enum TouchTypes {
 }
 
 
+const ZORDER = {
+    SELECT_LIGHT : 1,
+    OPTION_CYCLE : 1,
+
+    SQUARE : 2,
+    POINT : 3,
+
+
+    NORMAL_SPRITE : 4,
+    MOVING_SPRITE : 5,
+
+    FILE_RANK_NUMBER : 6,
+};
+
 
 export class BoardView extends PIXI.Graphics {
     private uiTouchLayer : TouchLayer;
@@ -84,14 +98,14 @@ export class BoardView extends PIXI.Graphics {
 
 
 
-    private fileRankNumberGroup : PIXI.Container;
-    private pointGroup: PIXI.Container;
-    private squareGroup : PIXI.Container;
-    private bottomGroup : PIXI.Container;
+    //private fileRankNumberGroup : PIXI.Container;
+    //private pointGroup: PIXI.Container;
+    //private squareGroup : PIXI.Container;
+    //private bottomGroup : PIXI.Container;
 
 
-    private pieceSpriteGroup : PIXI.Container;
-    private movingSpriteGroup : PIXI.Container;
+    //private pieceSpriteGroup : PIXI.Container;
+    //private movingSpriteGroup : PIXI.Container;
 
 
     constructor(m_opts:  {size : number,
@@ -105,6 +119,7 @@ export class BoardView extends PIXI.Graphics {
         moveSpeedFlipBoard ?: number}, controller: ControllerAbstract) {
 
         super();
+        this.sortableChildren = true;
 
         if(m_opts.pieceAlpha == undefined){
             m_opts.pieceAlpha = 1.0;
@@ -157,6 +172,7 @@ export class BoardView extends PIXI.Graphics {
         }
 
 
+        /*
         this.pointGroup = new PIXI.Container();
         this.addChild(this.pointGroup);
 
@@ -174,7 +190,7 @@ export class BoardView extends PIXI.Graphics {
 
         this.fileRankNumberGroup = new PIXI.Container();
         this.addChild(this.fileRankNumberGroup);
-
+        */
 
 
 
@@ -188,15 +204,17 @@ export class BoardView extends PIXI.Graphics {
 
         //The select light of the board
         this.uiSelectLightSprite = PIXI.Sprite.from(ImageTag.select_light);
-        this.bottomGroup.addChild(this.uiSelectLightSprite);
+        this.uiSelectLightSprite.zIndex = ZORDER.SELECT_LIGHT;
+        this.addChild(this.uiSelectLightSprite);
         this.uiSelectLightSprite.scale.set(this.m_opts.size / 700);
         this.uiSelectLightSprite.anchor.set(0.5, 0.5);
-        this.uiSelectLightFileRank = null
+        this.uiSelectLightFileRank = null;
         this.hideSelectLightSprite();
 
         //The option cycle sprite
         this.uiOptionCycleSprite = PIXI.Sprite.from(ImageTag.option_light);
-        this.bottomGroup.addChild(this.uiOptionCycleSprite);
+        this.uiOptionCycleSprite.zIndex = ZORDER.OPTION_CYCLE;
+        this.addChild(this.uiOptionCycleSprite);
         this.uiOptionCycleSprite.scale.set(this.m_opts.size / 700);
         this.uiOptionCycleSprite.anchor.set(0.5, 0.5);
         this.uiOptionCycleSprite.alpha = 0.3;
@@ -254,34 +272,43 @@ export class BoardView extends PIXI.Graphics {
 
     public createPieceView(pieceModel : PieceModel.Interface):PieceView{
         let pieceSprite = new PieceView(pieceModel, this.getSquareWidth(), this.getSquareHeight());
+        pieceSprite.zIndex = ZORDER.NORMAL_SPRITE;
         pieceSprite.alpha = this.m_opts.pieceAlpha;
         pieceSprite.buttonMode = true;
-        this.pieceSpriteGroup.addChild(pieceSprite);
+        this.addChild(pieceSprite);
 
         return pieceSprite;
     }
 
-    public removePieceView(pieceView : PieceView){
-        pieceView.parent.removeChild(pieceView);
+    public removePieceView(pieceSprite : PieceView){
+        this.removeChild(pieceSprite);
     }
-    public moveToPieceSpriteGroup(pieceView : PieceView){
-        pieceView.setNormal();
-
-        if(pieceView.parent != null){
-            pieceView.parent.removeChild(pieceView);
+    public setPieceSpriteToNormal(pieceSprite : PieceView){
+        pieceSprite.setNormal();
+        pieceSprite.zIndex = ZORDER.NORMAL_SPRITE;
+    }
+    public setPieceSpriteToMoving(pieceSprite : PieceView, isMovingFlag : boolean){
+        if(isMovingFlag){
+            pieceSprite.setMoving();
         }
 
-        this.pieceSpriteGroup.addChild(pieceView);
+        pieceSprite.zIndex = ZORDER.MOVING_SPRITE;
     }
-    public moveToMovingSpriteGroup(pieceView : PieceView){
-        pieceView.setMoving();
+    public movePieceSprite(pieceSprite: PieceView, callback : (() => void) | null, positionTo : PIXI.Point, speed : number){
+        this.setPieceSpriteToMoving(pieceSprite, false);
 
-        if(pieceView.parent != null){
-            pieceView.parent.removeChild(pieceView);
-        }
+        this.positionManager.moveTo(pieceSprite, ()=>{
+            if(!this.positionManager.isMoving(pieceSprite)){
+                this.setPieceSpriteToNormal(pieceSprite);
+            }
 
-        this.movingSpriteGroup.addChild(pieceView);
+            if(callback != null){
+                callback();
+            }
+
+        },positionTo, speed*this.m_opts.size);
     }
+
 
 
 
@@ -372,7 +399,7 @@ export class BoardView extends PIXI.Graphics {
 
                     this.touchType = TouchTypes.DRAG_TOUCH;
 
-                    this.moveToMovingSpriteGroup(this.originSprite);
+                    this.setPieceSpriteToMoving(this.originSprite, true);
                     this._onTouchMoved(this.currentTouchLocation, chessEngine);
                 }, 200);
 
@@ -445,7 +472,7 @@ export class BoardView extends PIXI.Graphics {
             legalMoves = chessEngine.getLegalMoves(<FileRank>this.originFileRank, fileRank, true);
         }
 
-        this.moveToPieceSpriteGroup(<PieceView>this.originSprite);
+        this.setPieceSpriteToNormal(<PieceView>this.originSprite);
 
 
 
@@ -463,7 +490,7 @@ export class BoardView extends PIXI.Graphics {
         if(legalMoves.length == 0){
             let positionTo = this.getPositionForFileRank(<FileRank>lastOriginFileRank);
 
-            this.positionManager.moveTo(<PieceView>lastOriginSprite, null, positionTo,this.m_opts.moveSpeedIllegal*this.m_opts.size);
+            this.movePieceSprite(<PieceView>lastOriginSprite, null, positionTo, this.m_opts.moveSpeedIllegal);
 
             if(lastTouchType == TouchTypes.ONE_TOUCH && chessEngine != null){
                 this._onTouchBegan(worldLocation, chessEngine);
@@ -510,7 +537,7 @@ export class BoardView extends PIXI.Graphics {
 
 
                     if(isAnimation){
-                        this.positionManager.moveTo(sprite, null, positionTo,this.m_opts.moveSpeedFlipBoard*this.m_opts.size);
+                        this.movePieceSprite(sprite, null, positionTo, this.m_opts.moveSpeedFlipBoard);
                     }else {
                         sprite.position = positionTo;
                     }
@@ -594,23 +621,23 @@ export class BoardView extends PIXI.Graphics {
             let file = <string>ChessEngine.convertFileNumberToFile(fileNumber);
 
             let fileUi = new PIXI.Text(file);
+            fileUi.zIndex = ZORDER.FILE_RANK_NUMBER;
             fileUi.visible = this.m_opts.isBoardVisible;
             this.uiBoardFiles[fileNumber] = fileUi;
 
             fileUi.anchor.set(0.0, 0.0);
+            this.addChild(fileUi);
 
-            this.fileRankNumberGroup.addChild(fileUi);
         }
         for(let rank = 1; rank <= ChessEngine.getNumOfRanks(); rank++){
 
-            let rankUi = new PIXI.Text(String(rank));
+            let rankUi = new PIXI.Text(rank.toString());
+            rankUi.zIndex = ZORDER.FILE_RANK_NUMBER;
             rankUi.visible = this.m_opts.isBoardVisible;
             this.uiBoardRanks[rank] = rankUi;
 
             rankUi.anchor.set(1.0, 1.0);
-
-
-            this.fileRankNumberGroup.addChild(rankUi);
+            this.addChild(rankUi);
         }
     }
 
@@ -785,8 +812,6 @@ export class BoardView extends PIXI.Graphics {
                     this.setPieceSpriteForFileRank(fileRank, null);
                     this.removePieceView(pieceSprite);
 
-                    pieceSprite.setNormal();
-
                     rememPieceMap[pieceSprite.getSideType()][pieceSprite.getPieceType()].push(pieceSprite)
                 }
             }
@@ -808,7 +833,7 @@ export class BoardView extends PIXI.Graphics {
                     let pieceSprite : PieceView;
                     if(rememPieceMap[sideType][pieceType].length > 0){
                         pieceSprite = <PieceView>rememPieceMap[sideType][pieceType].pop();
-                        this.moveToPieceSpriteGroup(pieceSprite);
+                        this.setPieceSpriteToNormal(pieceSprite);
                     }else {
                         pieceSprite = this.createPieceView({sideType : sideType, pieceType : pieceType});
                     }
@@ -834,7 +859,7 @@ export class BoardView extends PIXI.Graphics {
                     let positionFrom: PIXI.Point = this.positionManager.getPosition(sprite);
                     let positionTo: PIXI.Point = this.getPositionForFileRank(fileRank);
 
-                    this.positionManager.moveTo(sprite, null, positionTo,this.m_opts.moveSpeedFlipBoard*this.m_opts.size);
+                    this.movePieceSprite(sprite, null, positionTo, this.m_opts.moveSpeedFlipBoard);
                 }
             }
         }
@@ -862,17 +887,18 @@ export class BoardView extends PIXI.Graphics {
 
         if (this.uiPoints[pointColor][hash] == undefined) {
             let uiPoint = new PointColorNode(pointColor, this.getSquareWidth(), this.getSquareHeight());
-            this.pointGroup.addChild(uiPoint);
+            uiPoint.zIndex = ZORDER.POINT;
 
             uiPoint.position = this.getPositionForFileRank(fileRank);
 
             this.uiPoints[pointColor][hash] = uiPoint;
+            this.addChild(uiPoint);
         }
     }
 
     public removePointsByColor(pointColor: POINT_COLORS) {
         for (let hash in this.uiPoints[pointColor]) {
-            this.pointGroup.removeChild(this.uiPoints[pointColor][hash]);
+            this.removeChild(this.uiPoints[pointColor][hash]);
         }
         this.uiPoints[pointColor] = {};
     }
@@ -913,22 +939,23 @@ export class BoardView extends PIXI.Graphics {
         if(this.uiSquares[squareColor][hash] == undefined){
 
             let uiSquare = new SquareColorNode(squareColor, this.getSquareWidth(), this.getSquareHeight());
+            uiSquare.zIndex = ZORDER.SQUARE;
             uiSquare.position = this.getPositionForFileRank(fileRank);
 
             this.uiSquares[squareColor][hash] = uiSquare;
 
-            this.squareGroup.addChild(uiSquare);
+            this.addChild(uiSquare);
         }
     }
 
 
     public removeSquaresByColor(squareColor: SQUARE_COLORS) {
         for(let _hash in this.uiSquares[squareColor]){
-            let hash = Number(_hash);
+            let hash = parseInt(_hash);
 
             let uiSquare = this.uiSquares[squareColor][hash];
 
-            this.squareGroup.removeChild(uiSquare);
+            this.removeChild(uiSquare);
         }
 
 
@@ -1204,7 +1231,7 @@ export class BoardView extends PIXI.Graphics {
                 }
 
                 let speed : number = isUndoMove ? this.m_opts.moveSpeedUndo : this.m_opts.moveSpeedNormal;
-                this.positionManager.moveTo(sprite, localMoveCallback, positionTo, this.m_opts.size*speed);
+                this.movePieceSprite(sprite, localMoveCallback, positionTo, speed);
             }
 
 
