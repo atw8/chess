@@ -1,4 +1,4 @@
-import {SimpleGame} from "../../app";
+import {SimpleGame} from "../../SimpleGame";
 import * as PIXI from 'pixi.js';
 
 export class DefaultButton extends PIXI.Graphics {

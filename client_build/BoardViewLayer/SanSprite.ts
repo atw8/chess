@@ -4,14 +4,12 @@ import {PieceView} from "./PieceView";
 import {PieceModel} from "../../shared/engine/PieceModel";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
 
-import {SimpleGame} from "../app";
+import {SimpleGame} from "../SimpleGame";
 import * as PIXI from 'pixi.js';
-import {type} from "os";
 
 
 export class SanSprite extends PIXI.Container{
-    private sanStr : string;
-    private sideType : SideType;
+    private sanObject : {sanStr : string, sideType : SideType};
     private m_size : number;
 
 
@@ -23,24 +21,23 @@ export class SanSprite extends PIXI.Container{
     //private uiPieceView : PieceView | null;
     //private uiSanText : PIXI.Text;
 
-    constructor(sanStr : string, sideType : SideType, m_size : number){
+    constructor(sanObject : {sanStr : string, sideType : SideType}, m_size : number){
         super();
 
 
-        this.sanStr = sanStr;
-        this.sideType = sideType;
+        this.sanObject = sanObject;
 
         this.m_size = m_size;
 
 
 
         let pieceTypeStrArray : (PieceType | string)[] = [];
-        if(ChessEngine.sanMoveKingCastleRegExp.test(this.sanStr) || ChessEngine.sanMoveQueenCastleRegExp.test(this.sanStr)){
-            pieceTypeStrArray.push(this.sanStr);
+        if(ChessEngine.sanMoveKingCastleRegExp.test(this.sanObject.sanStr) || ChessEngine.sanMoveQueenCastleRegExp.test(this.sanObject.sanStr)){
+            pieceTypeStrArray.push(this.sanObject.sanStr);
         }else {
-            let sanPatternResult = ChessEngine.sanMovePiecePatternRegExp.exec(this.sanStr);
+            let sanPatternResult = ChessEngine.sanMovePiecePatternRegExp.exec(this.sanObject.sanStr);
             if(sanPatternResult == null){
-                pieceTypeStrArray.push(this.sanStr);
+                pieceTypeStrArray.push(this.sanObject.sanStr);
             }else {
 
                 if(sanPatternResult[1] != undefined){
@@ -92,7 +89,7 @@ export class SanSprite extends PIXI.Container{
                 displayContainers.push(uiText);
             }else {
                 let sizeConst : number = 1.1;
-                let uiPieceView = new PieceView({sideType : this.sideType, pieceType : pieceTypeStr}, this.m_size * sizeConst, this.m_size * sizeConst);
+                let uiPieceView = new PieceView({sideType : this.sanObject.sideType, pieceType : pieceTypeStr}, this.m_size * sizeConst, this.m_size * sizeConst);
                 uiPieceView.anchor.set(0.5, 0.5);
                 this.addChild(uiPieceView);
 

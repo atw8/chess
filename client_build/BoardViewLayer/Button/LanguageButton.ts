@@ -1,6 +1,6 @@
 import {DefaultButton} from "./DefaultButton";
 import {LanguageHelper, LanguageKey} from "../../LanguageHelper";
-import {SimpleGame} from "../../app";
+import {SimpleGame} from "../../SimpleGame";
 import * as PIXI from 'pixi.js';
 
 export class LanguageButton extends DefaultButton {

@@ -76,7 +76,11 @@ export class ScrollLayer extends PIXI.Container{
 
 
     public goToLayer(layer : PIXI.DisplayObject & {onResizeScreen() : void}, isAnimation : boolean){
-        this.goToLayerIndex(this.getLayerIndexForLayer(layer), isAnimation);
+        let layerIndex = this.getLayerIndexForLayer(layer);
+        if(layerIndex == undefined){
+            return;
+        }
+        this.goToLayerIndex(layerIndex, isAnimation);
     }
     public goToLayerIndex(currentLayerIndex : number, isAnimation : boolean){
         if(this.currentLayerIndex == currentLayerIndex){
@@ -129,12 +133,18 @@ export class ScrollLayer extends PIXI.Container{
 
     public removeLayer(layer: (PIXI.DisplayObject & {onResizeScreen() : void})){
         let layerIndex = this.getLayerIndexForLayer(layer);
+        if(layerIndex == undefined){
+            return;
+        }
 
         this.scrollNode.removeChild(layer);
         this.layers.splice(layerIndex, 1);
 
         for(let i = layerIndex; i < this.layers.length; i++){
             this.layers[i].position = this.getPositionForLayerIndex(i);
+        }
+        if(this.currentLayerIndex > (this.getNumOfLayers() - 1)){
+            this.goToLayerIndex(this.getNumOfLayers() - 1, false);
         }
     }
 
@@ -165,14 +175,14 @@ export class ScrollLayer extends PIXI.Container{
     public getLayerForLayerIndex(layerIndex : number):(PIXI.DisplayObject & {onResizeScreen() : void}){
         return this.layers[layerIndex];
     }
-    public getLayerIndexForLayer(layer : PIXI.DisplayObject & {onResizeScreen() : void}):number{
+    public getLayerIndexForLayer(layer : PIXI.DisplayObject & {onResizeScreen() : void}):number | undefined{
         for(let i = 0; i < this.layers.length; i++){
             if(layer == this.layers[i]){
                 return i;
             }
         }
 
-        return -1;
+        return undefined;
     }
 
 

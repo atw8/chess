@@ -1,4 +1,4 @@
-import {SimpleGame} from "../app";
+import {SimpleGame} from "../SimpleGame";
 import * as TWEEN from '@tweenjs/tween.js'
 import {LanguageHelper, LanguageKey} from "../LanguageHelper";
 
@@ -12,10 +12,12 @@ export class WaitingNode extends PIXI.Container{
     //private uiBalls : PIXI.Graphics[];
 
     private m_size : number;
+    private m_languageKey : LanguageKey;
 
-    constructor(m_size : number) {
+    constructor(m_size : number, languageKey : LanguageKey) {
         super();
         this.m_size = m_size;
+        this.m_languageKey = languageKey;
 
 
         this.uiBallsNode = new PIXI.Container();
@@ -28,7 +30,7 @@ export class WaitingNode extends PIXI.Container{
         for(let i = 0; i < uiNumOfBalls; i++){
             let uiBall = new PIXI.Graphics();
 
-            uiBall.beginFill(0xFFFFFF, 1);
+            uiBall.beginFill(0x000000, 1);
             uiBall.drawCircle(0, 0, this.m_size * sizeRadiusConstant);
 
             let angle : number = 2.0 * Math.PI * (i/uiNumOfBalls);
@@ -51,7 +53,7 @@ export class WaitingNode extends PIXI.Container{
         tween.start();
 
 
-        this.uiText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(LanguageKey.Waiting), SimpleGame.getDefaultTextStyleOptions(this.m_size));
+        this.uiText = new PIXI.Text(LanguageHelper.getTextForLanguageKey(this.m_languageKey), SimpleGame.getDefaultTextStyleOptions(this.m_size));
         this.uiText.anchor.set(0.5, 0.5);
         this.addChild(this.uiText);
 

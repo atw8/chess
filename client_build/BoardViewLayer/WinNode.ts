@@ -1,7 +1,7 @@
 import {ChessGameStateEnum} from "../../shared/engine/ChessGameStateEnum";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
 import {ChessGameResultEnum} from "../../shared/engine/ChessGameResultEnum";
-import {SimpleGame} from "../app";
+import {SimpleGame} from "../SimpleGame";
 import {LanguageHelper, LanguageKey} from "../LanguageHelper";
 import * as PIXI from "pixi.js";
 

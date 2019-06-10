@@ -1,5 +1,5 @@
 import {ScrollLayer} from "./ScrollLayer";
-import {SimpleGame} from "./app";
+import {SimpleGame} from "./SimpleGame";
 import {ImageTag} from "./ImageTag";
 import {ControllerOuter} from "./controller/ControllerOuter";
 
@@ -15,8 +15,10 @@ export class LogoLayer extends PIXI.Container {
     //private logo : PIXI.Sprite;
 
     private scrollLayer : ScrollLayer;
-    private points : PIXI.Sprite[];
     private controller : ControllerOuter;
+
+    private timeStamp : number;
+    private timeDiffConstat : number = 2000;
 
     constructor(){
         super();
@@ -31,7 +33,7 @@ export class LogoLayer extends PIXI.Container {
 
 
         let milliStart = Date.now();
-        let iIterations = 10000;
+        let iIterations = 1000;
         for(let i = 0; i < iIterations; i++){
             for(let j = 0; j < sanMoves.length; j++){
                 let sanMove = sanMoves[j];
@@ -43,22 +45,22 @@ export class LogoLayer extends PIXI.Container {
         let milliElapsed = milliEnd - milliStart;
         alert("hell world " + iIterations + ", dateElapsed " + milliElapsed/1000);
         */
+
         this.on("added", this.onAdded);
     }
 
 
     public onAdded(){
+        this.timeStamp = Date.now();
+
         //let size = {width : SimpleGame.getDesignWidth(), height : SimpleGame.getDesignHeight()};
         this.scrollLayer = new ScrollLayer(ScrollLayer.DIRECTION.HORIZONTAL, SimpleGame.getDesignWidth(), ScrollLayerSpeed);
         this.addChild(this.scrollLayer);
 
-        //for(let i = 0; i < 10; i++){
-            this.scrollLayer.addLayer(new SplashScreenLayer());
-        //}
+        this.scrollLayer.addLayer(new SplashScreenLayer());
 
 
-
-        this.points = [];
+        //this.points = [];
         //this.addLayer(new ChooseGameLayer(this.onClickCallback.bind(this)));
 
 
@@ -91,10 +93,12 @@ export class LogoLayer extends PIXI.Container {
             layer.onResizeScreen();
         }
 
+        /*
         for(let i = 0; i < this.points.length; i++){
             let point = this.points[i];
             point.y = SimpleGame.getDesignHeight()/2 - point.height;
         }
+        */
 
     }
 
@@ -102,20 +106,32 @@ export class LogoLayer extends PIXI.Container {
 
     public addLayer(layer : PIXI.DisplayObject & {onResizeScreen() : void}){
         this.scrollLayer.addLayer(layer);
-        this.scrollLayer.goToLayer(layer, true);
 
-        this.arrangePoints();
-        this.updatePointTexture();
+        let timeStamp2 = Date.now();
+        let timeDiff = timeStamp2 - this.timeStamp;
+        if(timeDiff > this.timeDiffConstat){
+            this.scrollLayer.goToLayer(layer, true);
+        }else {
+            let delay = this.timeDiffConstat - timeDiff;
+
+            setTimeout(()=>{
+                this.scrollLayer.goToLayer(layer, true);
+            }, delay)
+        }
+
+
+        //this.arrangePoints();
+        //this.updatePointTexture();
     }
 
     public removeLayer(layer : PIXI.DisplayObject & {onResizeScreen() : void}){
-        let layerIndex = this.scrollLayer.getLayerIndexForLayer(layer);
         this.scrollLayer.removeLayer(layer);
-        this.scrollLayer.goToLayerIndex(layerIndex - 1, true);
-
-        this.arrangePoints();
-        this.updatePointTexture();
+        //this.arrangePoints();
+        //this.updatePointTexture();
     }
+
+
+
 
     /*
     public addParentBoardView(controllerInner : ControllerInner){
@@ -131,7 +147,7 @@ export class LogoLayer extends PIXI.Container {
 
 
 
-
+    /*
     public arrangePoints(){
         if(!DisplayPoints){
             return;
@@ -169,6 +185,7 @@ export class LogoLayer extends PIXI.Container {
         }
     }
 
+
     public updatePointTexture(){
         for(let i = 0; i < this.points.length; i++){
             let textureStr = i == this.scrollLayer.getCurrentLayerIndex() ? ImageTag.pointOn : ImageTag.pointOff;
@@ -196,6 +213,7 @@ export class LogoLayer extends PIXI.Container {
 
         this.updatePointTexture();
     }
+    */
 
 
 }

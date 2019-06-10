@@ -1,4 +1,4 @@
-import {SimpleGame} from "../app";
+import {SimpleGame} from "../SimpleGame";
 import InteractionEvent = PIXI.interaction.InteractionEvent;
 import {BoardView} from "./BoardView";
 import {ControllerAbstract} from "../controller/ControllerAbstract";
