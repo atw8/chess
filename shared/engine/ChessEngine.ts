@@ -31,14 +31,6 @@ export namespace ChessEngine {
         "isTwoPawn" : boolean;
         "enPassantSquare" ?: FileRank
     }
-
-    /*
-    export interface RunParams {
-        generateSan : boolean;
-        generateUCI : boolean;
-        generateFenStr : boolean;
-    }
-    */
 }
 
 function getSanMoveAnnotationExpr():string {
@@ -174,22 +166,6 @@ export class ChessEngine extends  AbstractEngine {
      */
     constructor(initParam : {isChess960 ?: boolean, beginFenStr ?: string, isAskDraw : boolean}){
         super(ChessEngine.getNumOfFiles(), ChessEngine.getNumOfRanks(),[PieceType.PAWN, PieceType.KNIGHT, PieceType.BISHOP, PieceType.ROOK, PieceType.QUEEN, PieceType.KING], [SideType.WHITE, SideType.BLACK]);
-
-        /*
-        if(runParams == undefined){
-            runParams = {};
-        }
-        if(runParams.generateSan == undefined){
-            runParams.generateSan = true;
-        }
-        if(runParams.generateSan == undefined){
-            runParams.generateUCI = true;
-        }
-        if(runParams.generateFenStr == undefined){
-            runParams.generateFenStr = true;
-        }
-        this.runParams = <RunParams>runParams;
-        */
 
         this.initGlobal();
         this.init(initParam);
@@ -537,14 +513,6 @@ export class ChessEngine extends  AbstractEngine {
 
 
 
-
-
-        /*
-        if(fenStrRegExp.test(this.initParam["beginFenStr"])){
-            console.debug("success");
-        }
-        */
-
         let fenStrResult : RegExpExecArray | null = ChessEngine.fenStrRegExp.exec(this.initParam["beginFenStr"]);
         if(fenStrResult == null){
             return;
@@ -712,9 +680,8 @@ export class ChessEngine extends  AbstractEngine {
 
         this.updateEnPassantSquare();
 
-        //if(this.runParams.generateFenStr){
-            this.fenStrings.push(this.getFenStrFromCurrentBoard());
-        //}
+
+        this.fenStrings.push(this.getFenStrFromCurrentBoard());
 
 
 
@@ -1114,18 +1081,11 @@ export class ChessEngine extends  AbstractEngine {
 
 
         if(generateData){
-            //if(this.runParams.generateUCI){
-                this.uciMoves.push(this.getUCIMoveForMoveClass(moveClass));
-            //}
+            this.uciMoves.push(this.getUCIMoveForMoveClass(moveClass));
 
-            //if(this.runParams.generateSan){
-                this.sanMoves.push(this.getSANMoveForLastMoveClass());
-            //}
+            this.sanMoves.push(this.getSANMoveForLastMoveClass());
 
-            //if(this.runParams.generateFenStr){
-                this.fenStrings.push(this.getFenStrFromCurrentBoard());
-            //}
-
+            this.fenStrings.push(this.getFenStrFromCurrentBoard());
         }
     }
 
@@ -1150,17 +1110,11 @@ export class ChessEngine extends  AbstractEngine {
 
 
         if(generateData){
-            //if(this.runParams.generateUCI){
-                this.uciMoves.pop();
-            //}
+            this.uciMoves.pop();
 
-            //if(this.runParams.generateSan){
-                this.sanMoves.pop();
-            //}
+            this.sanMoves.pop();
 
-            //if(this.runParams.generateFenStr){
-                this.fenStrings.pop();
-            //}
+            this.fenStrings.pop();
         }
     }
 
@@ -1611,14 +1565,7 @@ export class ChessEngine extends  AbstractEngine {
     public isDrawByInsufficientMaterial(){
         let activePieceMap : {[key : number] : FileRank[]}= {};
         for(let pieceType = PieceType.FIRST_PIECE; pieceType <= PieceType.LAST_PIECE; pieceType++){
-            activePieceMap[pieceType] = [];
-        }
-
-
-        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            for(let pieceType = PieceType.FIRST_PIECE; pieceType <= PieceType.LAST_PIECE; pieceType++){
-                activePieceMap[pieceType] = activePieceMap[pieceType].concat(this.getSquaresBySideTypePieceType(sideType, pieceType));
-            }
+            activePieceMap[pieceType] = this.getSquaresByPieceType(pieceType);
         }
 
 
@@ -1657,7 +1604,7 @@ export class ChessEngine extends  AbstractEngine {
         }
 
         return isDraw;
-    };
+    }
 
 
     public isDrawByNMoves(numOfMoves : number):boolean{
@@ -1882,7 +1829,6 @@ export class ChessEngine extends  AbstractEngine {
 
         let castlingMove = this.isCastlingMove(moveClass);
         if(castlingMove.isCastling){
-            let sType = <SideType>castlingMove.sideType;
             let cType = <CastleType>castlingMove.castleType;
 
             if(cType == CastleType.KING_SIDE){
@@ -2175,6 +2121,7 @@ export class ChessEngine extends  AbstractEngine {
     }
 
 
+
     public getSanMoves():string[]{
         return this.sanMoves;
     }
@@ -2185,6 +2132,7 @@ export class ChessEngine extends  AbstractEngine {
         return this.sanMoves[this.sanMoves.length - 1];
     }
 
+
     public getUCIMoves():string[]{
         return this.uciMoves;
     }
@@ -2194,6 +2142,7 @@ export class ChessEngine extends  AbstractEngine {
     public getLastUCIMove():string{
         return this.uciMoves[this.uciMoves.length - 1];
     }
+
 
     public getFenStrs():string[]{
         return this.fenStrings;
