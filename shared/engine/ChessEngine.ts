@@ -12,7 +12,6 @@ import {FairyLeaper} from "./Fairy/FairyLeaper";
 import {FairyRider} from "./Fairy/FairyRider";
 import {CastleType} from "./CastleType";
 import {WinStateEnum} from "./WinStateEnum";
-import MoveStruct = MoveClass.MoveStruct;
 
 
 export namespace ChessEngine {
@@ -2222,8 +2221,8 @@ export class ChessEngine extends  AbstractEngine {
 
 
 
-        let kingMoveStruct : MoveStruct | null = null;
-        let rookMoveStruct : MoveStruct | null = null;
+        let kingMoveStruct : MoveClass.MoveStruct | null = null;
+        let rookMoveStruct : MoveClass.MoveStruct | null = null;
 
 
         let moveStructs = removeAddMoveStruct.moveStructs;
