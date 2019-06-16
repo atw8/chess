@@ -12,7 +12,7 @@ const ScrollLayerSpeed : number = 10;
 const DisplayPoints : boolean = false;
 
 export class LogoLayer extends PIXI.Container {
-    //private logo : PIXI.Sprite;
+
 
     private scrollLayer : ScrollLayer;
     private controller : ControllerOuter;

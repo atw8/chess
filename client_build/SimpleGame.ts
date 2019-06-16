@@ -63,7 +63,8 @@ PIXI.Matrix.prototype.applyInverseVector = function(pos : PIXI.Point, newPos ?: 
 
 
 
-const windowInnerScale = 0.9;
+const windowWidthScale = 1.0;
+const windowHeightScale = 0.9;
 
 
 
@@ -142,18 +143,10 @@ export class SimpleGame extends PIXI.Application{
     }
 
 
-
     private constructor(){
         //super({backgroundColor : 0xFFFFFF, resizeTo : });
-        super({backgroundColor : 0xFFFFFF, width : window.innerWidth * windowInnerScale, height : window.innerHeight * windowInnerScale});
+        super({transparent : true, view : <HTMLCanvasElement>document.getElementById("VoteChessCanvas")});
 
-        let divElement : HTMLDivElement = <HTMLDivElement> document.createElement( "div" );
-        divElement.setAttribute("align", "center");
-        divElement.appendChild(this.view);
-
-
-
-        document.body.appendChild(divElement);
 
         /*
         {
@@ -225,7 +218,7 @@ export class SimpleGame extends PIXI.Application{
         SimpleGame.OrientationStatergy = {};
         SimpleGame.OrientationStatergy[ORIENTATION.LANDSCAPE] = {"stratergy" : ORIENTATION_STRATERGY.CONSTANT_HEIGHT, widthHeight : SimpleGame.getDefaultHeight()};
         SimpleGame.OrientationStatergy[ORIENTATION.PORTRAIT] = {"stratergy" : ORIENTATION_STRATERGY.CONSTANT_WIDTH, widthHeight : SimpleGame.getDefaultWidth()};
-
+        //this.onResizeScreen();
 
         for(let imageTag in ImageTag){
             this.loader.add(imageTag, getLocationForImageTag(<ImageTag>imageTag));
@@ -235,7 +228,7 @@ export class SimpleGame extends PIXI.Application{
 
 
     public onResizeScreen(){
-        this.renderer.resize(window.innerWidth * windowInnerScale, window.innerHeight * windowInnerScale);
+        this.renderer.resize(window.innerWidth * windowWidthScale, window.innerHeight * windowHeightScale);
 
 
         let orientationStratergy = SimpleGame.OrientationStatergy[SimpleGame.getOrientation()];
@@ -334,12 +327,38 @@ export class SimpleGame extends PIXI.Application{
         return 0x000000;
     }
 
-    public static getDefaultTextStyleOptions(fontSize : number):{fontFamily ?: string,
-        fontSize ?: number,
-        fontWeight ?: string,
-        fill ?: number}{
+    public static getDefaultTextStyleOptions(fontSize : number): {
+        align?: string;
+        breakWords?: boolean;
+        dropShadow?: boolean;
+        dropShadowAlpha?: number;
+        dropShadowAngle?: number;
+        dropShadowBlur?: number;
+        dropShadowColor?: string | number;
+        dropShadowDistance?: number;
+        fill?: string | string[] | number | number[] | CanvasGradient | CanvasPattern;
+        fillGradientType?: number;
+        fillGradientStops?: number[];
+        fontFamily?: string | string[];
+        fontSize?: number | string;
+        fontStyle?: string;
+        fontVariant?: string;
+        fontWeight?: string;
+        leading?: number;
+        letterSpacing?: number;
+        lineHeight?: number;
+        lineJoin?: string;
+        miterLimit?: number;
+        padding?: number;
+        stroke?: string | number;
+        strokeThickness?: number;
+        trim?: boolean;
+        textBaseline?: string;
+        whiteSpace?: boolean;
+        wordWrap?: boolean;
+        wordWrapWidth?: number; }{
 
-        let textStyleOptions = {
+        let textStyleOptions  = {
             fontFamily : "Helvetica",
             fontSize : Math.round(fontSize),
             fontWeight : "bold"

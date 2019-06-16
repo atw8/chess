@@ -42,6 +42,7 @@ export enum LanguageKey {
     VoteChess,
     WhiteMove,
     BlackMove,
+
 }
 
 export namespace LanguageHelper {

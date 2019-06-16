@@ -2,16 +2,66 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Multiplayer Chess</title>
+    <title>Vote Chess</title>
     <script src="bundle.js"></script>
 
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-141793264-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-141793264-1');
+    </script>
+
+
+    <!-- Google Adsense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+        (adsbygoogle = window.adsbygoogle || []).push({
+            google_ad_client: "ca-pub-7346995176200853",
+            enable_page_level_ads: true
+        });
+    </script>
 
     <style>
         body {
             background-color:silver;
         }
+
+        * {
+            margin: 0;
+        }
+        html, body {
+            height: 100%;
+        }
+        .footer {
+            padding: 10px;
+            left:0px;
+            bottom:0px;
+            height:100px;
+            width:100%;
+            background:#999;
+        }
+
+        .contact {
+            text-align: center
+        }
     </style>
 </head>
 <body>
+
+<div align="center">
+    <canvas id="VoteChessCanvas"></canvas>
+</div>
+
+<div class="footer">
+    <div class="contact">
+        For any comments, bug reports, feature requests. Please email votechess1@gmail.com
+    </div>
+</div>
+
 </body>
 </html>
