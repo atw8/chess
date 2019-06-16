@@ -1,10 +1,9 @@
-import {LogoLayer} from "./LogoLayer";
-import {SimpleGame} from "./SimpleGame";
-import {ImageTag} from "./ImageTag";
 
 import * as PIXI from 'pixi.js';
 import {WaitingNode} from "./BoardViewLayer/WaitingNode";
 import {LanguageKey} from "./LanguageHelper";
+import {SimpleGame} from "./SimpleGame";
+import {MultiText} from "./BoardViewLayer/Button/MultiText";
 
 export class SplashScreenLayer extends PIXI.Container {
     constructor(){
@@ -15,11 +14,19 @@ export class SplashScreenLayer extends PIXI.Container {
     }
     private timeDiffConstat : number = 3000;
 
-    private uiLogo : PIXI.Sprite;
+    private uiLogo : MultiText;
     private uiConnectingNode : WaitingNode;
     public onAdded(){
-        this.uiLogo = PIXI.Sprite.from(ImageTag.logo);
-        this.uiLogo.anchor.set(0.5, 0.5);
+
+
+
+        this.uiLogo = new MultiText();
+        let textStyleOptions = SimpleGame.getDefaultTextStyleOptions(110);
+        textStyleOptions.fill = SimpleGame.getDarkBrownColor();
+        this.uiLogo.addText("votechess", textStyleOptions);
+        textStyleOptions.fill = SimpleGame.getBlackColor();
+        this.uiLogo.addText(".com", textStyleOptions);
+        //this.uiLogo = PIXI.Sprite.from(ImageTag.logo);
         this.addChild(this.uiLogo);
 
 
@@ -29,9 +36,12 @@ export class SplashScreenLayer extends PIXI.Container {
         this.addChild(this.uiConnectingNode);
         this.uiConnectingNode.visible = false;
 
+
         setTimeout(()=>{
             this.uiConnectingNode.visible = true;
         }, this.timeDiffConstat);
+
+        this.onResizeScreen();
     }
 
     public onRemoved(){
@@ -39,6 +49,6 @@ export class SplashScreenLayer extends PIXI.Container {
     }
 
     public onResizeScreen(){
-
+        SimpleGame.arrangeVertically([this.uiLogo, this.uiConnectingNode]);
     }
 }
