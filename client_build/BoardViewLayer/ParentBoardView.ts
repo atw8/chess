@@ -51,7 +51,9 @@ export class ParentBoardView extends PIXI.Container {
         this.uiBoardView = new BoardView({size : 800,
             isBoardVisible : true,
             displaySquares : true,
-            initTouchLayer : true}, this.controllerInner);
+            initTouchLayer : true,
+            whiteColor : SimpleGame.getLightBrownColor(),
+            blackColor : SimpleGame.getDarkBrownColor()}, this.controllerInner);
 
         this.uiBoardView.zIndex = 0;
         this.addChild(this.uiBoardView);
@@ -87,7 +89,9 @@ export class ParentBoardView extends PIXI.Container {
                     displaySquares : false,
                     initTouchLayer : false,
                     moveSpeedNormal : 0.0005,
-                    pieceAlpha : 0.5};
+                    pieceAlpha : 0.5,
+                    whiteColor : SimpleGame.getLightBrownColor(),
+                    blackColor : SimpleGame.getDarkBrownColor()};
 
                 this.uiPredictBoardView = new BoardView(m_opts, this.controllerInner);
                 this.uiPredictBoardView.zIndex = 1;

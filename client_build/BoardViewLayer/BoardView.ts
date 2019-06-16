@@ -92,7 +92,11 @@ export class BoardView extends PIXI.Graphics {
         moveSpeedUndo : number,
 
         moveSpeedIllegal : number,
-        moveSpeedFlipBoard : number};
+        moveSpeedFlipBoard : number,
+
+        whiteColor : number,
+        blackColor : number,
+    };
 
     private controller: ControllerAbstract;
 
@@ -116,7 +120,9 @@ export class BoardView extends PIXI.Graphics {
         moveSpeedNormal ?: number,
         moveSpeedUndo ?: number,
         moveSpeedIllegal ?: number,
-        moveSpeedFlipBoard ?: number}, controller: ControllerAbstract) {
+        moveSpeedFlipBoard ?: number,
+        whiteColor : number,
+        blackColor : number}, controller: ControllerAbstract) {
 
         super();
         this.sortableChildren = true;
@@ -147,7 +153,7 @@ export class BoardView extends PIXI.Graphics {
 
         this.positionManager = new PositionManager();
 
-        this.beginFill(this.getColorForColorType_inNum(SideType.WHITE), this.m_opts.isBoardVisible ? 1.0 : 0.0);
+        this.beginFill(this.getColorForSideType(SideType.WHITE), this.m_opts.isBoardVisible ? 1.0 : 0.0);
         this.drawRect(-this.m_opts.size / 2, -this.m_opts.size / 2, this.m_opts.size, this.m_opts.size);
 
 
@@ -157,7 +163,7 @@ export class BoardView extends PIXI.Graphics {
 
 
         if(this.m_opts.isBoardVisible){
-            this.beginFill(this.getColorForColorType_inNum(SideType.BLACK));
+            this.beginFill(this.getColorForSideType(SideType.BLACK));
             for (let fileNumber = 1; fileNumber <= ChessEngine.getNumOfFiles(); fileNumber++) {
                 for (let rank = 1; rank <= ChessEngine.getNumOfRanks(); rank++) {
                     let fileRank = new FileRank(fileNumber, rank);
@@ -313,31 +319,22 @@ export class BoardView extends PIXI.Graphics {
 
 
 
-    private getColorForFileRank_inNum(fileRank : FileRank):number{
-        return this.getColorForColorType_inNum(ChessEngine.getColorTypeForFileRank(fileRank));
+    private getColorForFileRank(fileRank : FileRank):number{
+        return this.getColorForSideType(ChessEngine.getColorTypeForFileRank(fileRank));
     }
-    private getColorForFileRank_inString(fileRank : FileRank):string {
-        return this.getColorForColorType_inString(ChessEngine.getColorTypeForFileRank(fileRank));
-    }
-    private getColorForColorType_inNum(colorType : SideType):number{
-        let colors: { [key: number]: number } = {};
-        colors[SideType.WHITE] = 0xFFFFFF;
-        colors[SideType.BLACK] = 0x333333;
 
-        colors[SideType.WHITE] = 0xFBE2B2;
-        colors[SideType.BLACK] = 0xA66325;
+    private getColorForSideType(sideType : SideType):number{
+        let key : "whiteColor" | "blackColor" = "whiteColor";
+        switch (sideType){
+            case SideType.WHITE:
+                key = "whiteColor";
+                break;
+            case SideType.BLACK:
+                key = "blackColor";
+                break;
+        }
 
-        return colors[colorType];
-    }
-    private getColorForColorType_inString(colorType : SideType):string{
-        let colors: { [key: number]: string } = {};
-        colors[SideType.WHITE] = "#FFFFFF";
-        colors[SideType.BLACK] = "#333333";
-
-        colors[SideType.WHITE] = "#FBE2B2";
-        colors[SideType.BLACK] = "#A66325";
-
-        return colors[colorType];
+        return this.m_opts[key];
     }
 
 
@@ -671,7 +668,7 @@ export class BoardView extends PIXI.Graphics {
             let colorType = ChessEngine.getColorTypeForFileRank(fileRank);
             colorType = ChessEngine.getOppositeSideType(colorType);
 
-            let textStyleOptions = { fill : this.getColorForColorType_inString(colorType),
+            let textStyleOptions = { fill : this.getColorForSideType(colorType),
                 fontSize :  Math.round(this.m_opts.size/30)};
 
 
@@ -703,7 +700,7 @@ export class BoardView extends PIXI.Graphics {
             let colorType = ChessEngine.getColorTypeForFileRank(fileRank);
             colorType = ChessEngine.getOppositeSideType(colorType);
 
-            let textStyleOptions = { fill : this.getColorForColorType_inString(colorType),
+            let textStyleOptions = { fill : this.getColorForSideType(colorType),
                 fontSize :  Math.round(this.m_opts.size/30)};
 
             rankUi.style = new PIXI.TextStyle(textStyleOptions);
