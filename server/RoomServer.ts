@@ -41,8 +41,8 @@ export class RoomServer {
             let roomTypeEnum : RoomTypeEnum = RoomTypeEnum.MULTIPLAYER;
             // @ts-ignore
             let gameTimeStructs : GameTimeStructConfigs = {};
-            gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.MOVE, totalTime : 1 * 2 * 1000};
-            gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.MOVE, totalTime : 1 * 2 * 1000};
+            gameTimeStructs[SideType.WHITE] = {timeType : GameTimeType.MOVE, totalTime : 1 * 20 * 1000};
+            gameTimeStructs[SideType.BLACK] = {timeType : GameTimeType.MOVE, totalTime : 1 * 20 * 1000};
 
             let isAskDraw = true;
 
