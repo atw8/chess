@@ -1,7 +1,7 @@
 import * as http from "http";
 import * as SocketIO from "socket.io";
 
-import {RoomServer} from "./RoomServer";
+import {RoomServer} from "./Room/RoomServer";
 
 import {
     ClientServerMessage, ErrorCode, MessageType, OnRoomJoinMessage,

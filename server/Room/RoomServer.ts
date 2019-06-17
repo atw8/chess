@@ -7,20 +7,20 @@ import {
     OpRoomMakeMoveMessage, OpRoomMakeVoteMessage,
     RoomInitConfig,
     ServerClientMessage
-} from "../shared/MessageTypes";
+} from "../../shared/MessageTypes";
 
-import {SocketServerAgent} from "./SocketServerAgent";
+import {SocketServerAgent} from "../SocketServerAgent";
 
-import {RoomTypeEnum} from "../shared/RoomTypeEnum";
+import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 
 import {RoomAbstract} from "./RoomAbstract"
 import {RoomMultiplayer} from "./RoomMultiplayer"
 import {RoomNormal} from "./RoomNormal";
 
 import * as SocketIO from "socket.io";
-import {SideType} from "../shared/engine/SideType";
-import {GameTimeStructConfigs} from "../shared/gameTime/GameTimeManager";
-import {GameTimeType} from "../shared/gameTime/GameTimeType";
+import {SideType} from "../../shared/engine/SideType";
+import {GameTimeStructConfigs} from "../../shared/gameTime/GameTimeManager";
+import {GameTimeType} from "../../shared/gameTime/GameTimeType";
 
 export class RoomServer {
     private socketServerAgent : SocketServerAgent;

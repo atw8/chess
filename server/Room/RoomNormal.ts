@@ -11,12 +11,12 @@ import {
     RoomInitConfig,
     RoomStateConfig,
     ServerClientMessage
-} from "../shared/MessageTypes";
+} from "../../shared/MessageTypes";
 import {RoomServer} from "./RoomServer";
-import {SideType} from "../shared/engine/SideType";
-import {DomainMapStruct} from "./Containers/DomainMapStruct";
-import {RoomStateEnum} from "../shared/RoomStateEnum";
-import {ChessGameStateEnum} from "../shared/engine/ChessGameStateEnum";
+import {SideType} from "../../shared/engine/SideType";
+import {DomainMapStruct} from "../Containers/DomainMapStruct";
+import {RoomStateEnum} from "../../shared/RoomStateEnum";
+import {ChessGameStateEnum} from "../../shared/engine/ChessGameStateEnum";
 
 export class RoomNormal extends RoomAbstract {
     private sideTypeMapStruct : DomainMapStruct<SideType, number>;

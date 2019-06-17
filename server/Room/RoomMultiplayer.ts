@@ -12,11 +12,11 @@ import {
     ServerClientMessage,
     OnRoomTimeOutBroadcastMessage,
     OnRoomMultiplayerStateBroadcastMessage, OnRoomMultiplayerStateBroadcastMessageType
-} from "../shared/MessageTypes";
+} from "../../shared/MessageTypes";
 import {RoomServer} from "./RoomServer";
-import {SideType} from "../shared/engine/SideType";
-import {RoomStateEnum} from "../shared/RoomStateEnum";
-import {ChessGameStateEnum} from "../shared/engine/ChessGameStateEnum";
+import {SideType} from "../../shared/engine/SideType";
+import {RoomStateEnum} from "../../shared/RoomStateEnum";
+import {ChessGameStateEnum} from "../../shared/engine/ChessGameStateEnum";
 
 export class RoomMultiplayer extends RoomAbstract{
     private playerIds : Set<number>;

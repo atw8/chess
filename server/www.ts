@@ -1,8 +1,5 @@
-
-import express = require("express");
-import http = require("http");
-import https = require("https");
-import fs = require("fs");
+import * as express from "express";
+import * as http from "http";
 
 let app = express();
 app.use(require('morgan')('dev'));

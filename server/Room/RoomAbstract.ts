@@ -1,5 +1,5 @@
 import {RoomServer} from "./RoomServer";
-import {ChessEngine} from "../shared/engine/ChessEngine";
+import {ChessEngine} from "../../shared/engine/ChessEngine";
 import {
     ClientServerMessage,
     ErrorCode,
@@ -12,12 +12,12 @@ import {
     OpRoomMakeMoveMessage,
     RoomInitConfig,
     RoomStateConfig, ServerClientMessage
-} from "../shared/MessageTypes";
+} from "../../shared/MessageTypes";
 
 
-import {RoomStateEnum} from "../shared/RoomStateEnum";
-import {GameTimeManager} from "../shared/gameTime/GameTimeManager";
-import {RoomTypeEnum} from "../shared/RoomTypeEnum";
+import {RoomStateEnum} from "../../shared/RoomStateEnum";
+import {GameTimeManager} from "../../shared/gameTime/GameTimeManager";
+import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 
 export abstract class RoomAbstract {
     protected readonly roomServer : RoomServer;

@@ -1,6 +1,6 @@
-import {SideType} from "../shared/engine/SideType";
-import {ManyToManyMap} from "./Containers/ManyToManyMap";
-import {OneToManyMap} from "./Containers/OneToManyMap";
+import {SideType} from "../../shared/engine/SideType";
+import {ManyToManyMap} from "../Containers/ManyToManyMap";
+import {OneToManyMap} from "../Containers/OneToManyMap";
 
 export class RoomContainer {
     private roomIdSet : Set<number>;
