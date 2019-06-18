@@ -338,7 +338,9 @@ export class PredictPanel extends PIXI.Graphics {
         let addUiVotedMoveSprites : {sanStr : string, sideType : SideType}[] = [];
         for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
             for(let sanStr in votedSanMap[sideType]) {
-                addUiVotedMoveSprites.push({sanStr : sanStr, sideType : sideType});
+                if(this.uiVotedMovesSprites[sideType][sanStr] == undefined){
+                    addUiVotedMoveSprites.push({sanStr : sanStr, sideType : sideType});
+                }
             }
         }
 
