@@ -69,6 +69,9 @@ export class SanSprite extends PIXI.Container{
                 if(sanPatternResult[7] != undefined){
                     str += sanPatternResult[7];
                 }
+                if(sanPatternResult[8] != undefined){
+                    str += sanPatternResult[8];
+                }
 
                 if(str != ""){
                     pieceTypeStrArray.push(str);

@@ -33,7 +33,7 @@ export namespace ChessEngine {
 }
 
 function getSanMoveAnnotationExpr():string {
-    return "[\#\+\!\?]*";
+    return "([\#\+\!\?]*)";
 }
 function getSanMovePiecePatternRegExp():RegExp{
     let pieceType = "([NBRQK])?";
@@ -1797,6 +1797,17 @@ export class ChessEngine extends  AbstractEngine {
         return ret
     }
 
+
+    public getSANMoveForCurrentBoardAndUCIMove(uciMove : string):string | null {
+        let moveClass = this.getMoveClassForUCIMove(uciMove);
+        if(moveClass == null){
+            return null;
+        }
+        let sanMove = this.getSANMoveForCurrentBoardAndMoveClass(moveClass);
+
+        return sanMove;
+    }
+
     public getSANMovesForCurrentBoardAndMoveClasses(moveClasses : MoveClass[] | null):string[]{
         if(moveClasses == null){
             moveClasses = this.getAllLegalMoves(null, true);
@@ -1906,6 +1917,16 @@ export class ChessEngine extends  AbstractEngine {
 
 
 
+    public getUCIMoveForCurrentBoardAndSANMove(sanMove : string):string | null{
+        let moveClass = this.getMoveClassForCurrentBoardAndSanMove(sanMove);
+        if(moveClass == null){
+            return null;
+        }
+
+        let uciMove = this.getUCIMoveForMoveClass(moveClass);
+
+        return uciMove;
+    }
     public getUCIMovesForMoveClasses(moveClasses : MoveClass[] | null):string[]{
         if(moveClasses == null){
             moveClasses = this.getAllLegalMoves(null, true);
