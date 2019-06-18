@@ -11,7 +11,7 @@ export class UserStockfishManager {
         this.socketServerAgent = socketServerAgent;
 
         let stockfishParams :{setOptions : Stockfish.SetOptions, goOptions : Stockfish.GoOptions}[] = [];
-        for(let i = 0; i <= 20; i++){
+        for(let i = 0; i < 0; i++){
             stockfishParams.push({setOptions : {"Skill Level" : i, "MultiPV" : 2}, goOptions : {}});
         }
 

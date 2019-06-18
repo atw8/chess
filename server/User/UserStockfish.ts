@@ -11,7 +11,7 @@ import {
     OpRoomGetRoomStateMessage,
     OpRoomMakeVoteMessage,
     OnRoomMultiplayerStateBroadcastMessage,
-    OpUserLoginGuestMessage, OnRoomGetRoomStateMessage
+    OpUserLoginGuestMessage, OnRoomGetRoomStateMessage, OpRoomMakeVoteMessageType
 } from "../../shared/MessageTypes";
 import {SocketServerAgent} from "../SocketServerAgent";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
@@ -29,7 +29,7 @@ export class UserStockfish implements UserAbstract{
     private socketServerAgent : SocketServerAgent;
 
 
-    private uciMoveStack : { [key : number] : string[]};
+    private uciMoveStacks : { [key : number] : string[]};
     private chessEngines : {[key : number] : ChessEngine};
 
     constructor(socketServerAgent : SocketServerAgent, setOptions : Stockfish.SetOptions, goOptions : Stockfish.GoOptions){
@@ -39,10 +39,10 @@ export class UserStockfish implements UserAbstract{
         this.goOptions = goOptions;
 
 
-        this.uciMoveStack = {};
+        this.uciMoveStacks = {};
         this.chessEngines = {};
 
-
+        this.OpRoomMakeVoteTick();
     }
 
     private playerId : number;
@@ -105,6 +105,7 @@ export class UserStockfish implements UserAbstract{
 
                 if(msg.roomState == RoomStateEnum.END){
                     delete this.chessEngines[roomId];
+                    delete this.uciMoveStacks[roomId];
 
                     this.socketServerAgent.OpRoomGetRoomState(this.playerId, new OpRoomGetRoomStateMessage({}));
                 }else {
@@ -117,7 +118,7 @@ export class UserStockfish implements UserAbstract{
     }
 
     public OpRoomMakeVote(roomId : number){
-        this.uciMoveStack[roomId] = [];
+        this.uciMoveStacks[roomId] = [];
         if(this.chessEngines[roomId].getGameState() != ChessGameStateEnum.NORMAL){
             return;
         }
@@ -148,8 +149,12 @@ export class UserStockfish implements UserAbstract{
             }
 
             if(uciMove != null){
-                let topUciMove = this.uciMoveStack[roomId].
-                //this.uciMoveStack[roomId].push(uciMove);
+                let uciMoveStack = this.uciMoveStacks[roomId];
+
+                let topUciMove = uciMoveStack[uciMoveStack.length - 1];
+                if(topUciMove != uciMove){
+                    uciMoveStack.push(uciMove);
+                }
             }
 
         };
@@ -157,6 +162,34 @@ export class UserStockfish implements UserAbstract{
         Stockfish.getInstance().thinkMoveByAI(fenStr, callback, this.setOptions, this.goOptions);
     }
 
+
+    public OpRoomMakeVoteTick(){
+        for(let _roomId in this.uciMoveStacks){
+            let roomId = parseInt(_roomId);
+
+            let uciMoveStack = this.uciMoveStacks[roomId];
+            if(uciMoveStack == undefined){
+                return;
+            }
+            let uciMove = uciMoveStack.shift();
+            if(uciMove == undefined){
+                return;
+            }
+            let sanMove = this.chessEngines[roomId].getSANMoveForCurrentBoardAndUCIMove(uciMove);
+            if(sanMove == null){
+                return;
+            }
+
+            let opRoomMakeVoteMsgType :OpRoomMakeVoteMessageType= {roomId : roomId, myVoting: sanMove};
+            this.socketServerAgent.OpRoomMakeVote(this.playerId, new OpRoomMakeVoteMessage(opRoomMakeVoteMsgType));
+        }
+
+        let minTimeOut = 3000;
+        let maxTimeOut = 8000;
+        let timeOut = minTimeOut + Math.random()*(maxTimeOut - minTimeOut);
+
+        setTimeout(this.OpRoomMakeVoteTick.bind(this), timeOut);
+    }
 
 
 }
