@@ -506,26 +506,6 @@ export class SimpleGame extends PIXI.Application{
         //}
     }
 
-
-    public static setTitle(moveTurn : SideType | null){
-        let str = LanguageHelper.getTextForLanguageKey(LanguageKey.VoteChess)
-
-        let langKey : LanguageKey | null = null;
-        switch (moveTurn){
-            case SideType.WHITE:
-                langKey = LanguageKey.WhiteMove;
-                break;
-            case SideType.BLACK:
-                langKey = LanguageKey.BlackMove;
-                break;
-        }
-
-        if(langKey != null){
-            str += ", " + LanguageHelper.getTextForLanguageKey(langKey);
-        }
-
-        document.title = str;
-    }
 }
 
 

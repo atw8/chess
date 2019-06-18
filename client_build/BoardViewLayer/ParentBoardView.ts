@@ -299,8 +299,6 @@ export class ParentBoardView extends PIXI.Container {
 
     public setMoveTurn(moveTurn : SideType){
         this.uiTimePanel.setSideType(moveTurn);
-
-        SimpleGame.setTitle(moveTurn);
     }
 
 

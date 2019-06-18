@@ -114,8 +114,6 @@ export class ControllerOuter implements SocketClientInterface{
 
             this.removeController(roomId);
         }
-
-        SimpleGame.setTitle(null);
     }
     public OnConnectError() : void{
 
