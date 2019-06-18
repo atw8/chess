@@ -5,6 +5,7 @@ import {ChessEngine} from "../../shared/engine/ChessEngine";
 import {ControllerOuter} from "./ControllerOuter";
 import {SocketClientInterface} from "./SocketClientInterface";
 import {
+    OnRoomGetRoomStateMessage,
     OnRoomJoinBroadcastMessage, OnRoomJoinMessage, OnRoomMakeMoveBroadcastMessage,
     OnRoomMakeMoveMessage, OnRoomMakeVoteMessage, OnRoomMultiplayerStateBroadcastMessage,
     OnRoomTimeOutBroadcastMessage, OnRoomVotingUpdateBroadcastMessage,
@@ -85,6 +86,7 @@ export abstract class ControllerAbstract implements SocketClientInterface {
 
     public OnLoginGuest(onLoginGuestMsg: OnUserLoginGuestMessage): void {}
 
+    public OnRoomGetRoomState(onRoomGetRoomStateMsg : OnRoomGetRoomStateMessage): void {};
 
     public OnRoomJoin(onRoomJoinMsg: OnRoomJoinMessage): void {
         let roomInitConfig = <RoomInitConfig>onRoomJoinMsg.roomInitConfig;
@@ -164,7 +166,7 @@ export abstract class ControllerAbstract implements SocketClientInterface {
         if (roomStateConfig.roomState == RoomStateEnum.END) {
             let OnRoomFinish = () => {
                 this.controllerOuter.removeController(this.roomId);
-                this.controllerOuter.OpLoginGuest();
+                this.controllerOuter.OpRoomGetRoomState();
             };
 
             this.uiParentView.showWinNode(roomStateConfig.chessGameState, OnRoomFinish);

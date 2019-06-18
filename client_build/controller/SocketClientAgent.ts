@@ -6,7 +6,7 @@ import {
     ClientServerMessage,
     createMessageFromString,
     ErrorCode,
-    MessageType,
+    MessageType, OnRoomGetRoomStateMessage,
     OnRoomJoinBroadcastMessage,
     OnRoomJoinMessage,
     OnRoomMakeMoveBroadcastMessage,
@@ -15,7 +15,7 @@ import {
     OnRoomMultiplayerStateBroadcastMessage,
     OnRoomTimeOutBroadcastMessage,
     OnRoomVotingUpdateBroadcastMessage,
-    OnUserLoginGuestMessage,
+    OnUserLoginGuestMessage, OpRoomGetRoomStateMessage,
     OpRoomJoinMessage,
     OpRoomJoinMessageType,
     OpRoomMakeMoveMessage,
@@ -99,6 +99,8 @@ export class SocketClientAgent {
         this.socket.on("disconnect", this.OnDisconnect.bind(this));
 
         this.socket.on(MessageType.OnLoginGuest, this.OnLoginGuest.bind(this));
+
+        this.socket.on(MessageType.OnRoomGetRoomState, this.OnRoomGetRoomState.bind(this));
 
         this.socket.on(MessageType.OnRoomJoin, this.OnRoomJoin.bind(this));
         this.socket.on(MessageType.OnRoomJoinBroadcast, this.OnRoomJoinBroadcast.bind(this));
@@ -237,17 +239,32 @@ export class SocketClientAgent {
         this.playerId = onLoginGuestMessage.playerId;
 
 
-
-        for(let i = 0; i < onLoginGuestMessage.roomIds.length; i++){
-            let roomId = onLoginGuestMessage.roomIds[i];
-            this.OpRoomJoin({roomId : roomId})
-        }
-
+        this.OpRoomGetRoomState();
         this.socketClientInterface.OnLoginGuest(onLoginGuestMessage);
     }
 
 
 
+    public OpRoomGetRoomState(){
+        console.debug("OpRoomGetRoomState");
+        let opRoomGetRoomStateMsg : OpRoomGetRoomStateMessage = new OpRoomGetRoomStateMessage({});
+
+        this.emitClientServerMessage(opRoomGetRoomStateMsg);
+    }
+    public OnRoomGetRoomState(message : string){
+        console.debug("OnRoomGetRoomState ", message);
+        let onRoomGetRoomStateMsg = createMessageFromString(message, OnRoomGetRoomStateMessage);
+        if(onRoomGetRoomStateMsg == null){
+            return;
+        }
+
+        for(let i = 0; i < onRoomGetRoomStateMsg.roomIds.length; i++){
+            let roomId = onRoomGetRoomStateMsg.roomIds[i];
+            this.OpRoomJoin({roomId : roomId})
+        }
+
+        this.socketClientInterface.OnRoomGetRoomState(onRoomGetRoomStateMsg);
+    }
 
     public OpRoomJoin(opRoomJoinMsgType : OpRoomJoinMessageType){
         let opRoomJoinMsg : OpRoomJoinMessage  = new OpRoomJoinMessage(opRoomJoinMsgType);

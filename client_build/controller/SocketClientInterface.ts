@@ -5,7 +5,10 @@ import {
     OnRoomJoinBroadcastMessage,
     OnRoomMakeMoveBroadcastMessage,
     OnRoomTimeOutBroadcastMessage,
-    OnRoomVotingUpdateBroadcastMessage, OnRoomMakeVoteMessage, OnRoomMultiplayerStateBroadcastMessage
+    OnRoomVotingUpdateBroadcastMessage,
+    OnRoomMakeVoteMessage,
+    OnRoomMultiplayerStateBroadcastMessage,
+    OnRoomGetRoomStateMessage
 } from "../../shared/MessageTypes";
 
 export interface SocketClientInterface {
@@ -15,6 +18,8 @@ export interface SocketClientInterface {
     OnConnectTimeOut() : void;
 
     OnLoginGuest(onLoginGuestMsg :OnUserLoginGuestMessage) :void;
+
+    OnRoomGetRoomState(onRoomGetRoomStateMsg : OnRoomGetRoomStateMessage):void;
 
     OnRoomJoin(onRoomJoinMsg : OnRoomJoinMessage):void;
     OnRoomJoinBroadcast(onRoomJoinBroadcastMsg : OnRoomJoinBroadcastMessage):void;

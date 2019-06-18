@@ -12,6 +12,9 @@ export enum MessageType {
     OpLoginGuest = "OpLoginGuest",
     OnLoginGuest = "OnLoginGuest",
 
+    OpRoomGetRoomState = "OpRoomGetRoomState",
+    OnRoomGetRoomState = "OnRoomGetRoomState",
+
     OpRoomMakeMove = "OpRoomMakeMove",
     OnRoomMakeMove = "OnRoomMakeMove",
     OnRoomMakeMoveBroadcast = "OnRoomMakeMoveBroadcast",
@@ -546,19 +549,16 @@ export class OpUserLoginGuestMessage extends ClientServerMessage {
     }
 }
 
-export type OnUserLoginGuestMessageType = {guestToken : string, playerId : number, roomIds : number[]} & ServerClientMessageType;
+export type OnUserLoginGuestMessageType = {guestToken : string, playerId : number} & ServerClientMessageType;
 export class OnUserLoginGuestMessage extends ServerClientMessage {
     public guestToken : string;
     public playerId : number;
-
-    public roomIds : number[] = [];
 
     public constructor(json : OnUserLoginGuestMessageType){
         super(MessageType.OnLoginGuest, json);
 
         this.guestToken = json.guestToken;
         this.playerId = json.playerId;
-        this.roomIds = json.roomIds;
     }
 
     public static getSchema():Schema{
@@ -572,14 +572,8 @@ export class OnUserLoginGuestMessage extends ServerClientMessage {
                 "playerId" : {
                     "type" : "integer",
                 },
-                "roomIds" : {
-                    "type" : "array",
-                    "items": {
-                        "type": "number"
-                    }
-                }
             },
-            "required" : ["guestToken", "playerId", "roomIds"],
+            "required" : ["guestToken", "playerId"],
             "$ref": "/ServerClientMessage"
         };
 
@@ -589,6 +583,57 @@ export class OnUserLoginGuestMessage extends ServerClientMessage {
 
 
 //RELATED TO ROOM
+
+//Related to getting the roomstate
+export type OpRoomGetRoomStateMessageType = {} & ClientServerMessageType;
+export class OpRoomGetRoomStateMessage extends ClientServerMessage {
+    public constructor(json : OpRoomGetRoomStateMessageType){
+        super(MessageType.OpRoomGetRoomState, json);
+    }
+
+    public static getSchema():Schema{
+        let schema : Schema = {
+            "id" : "/OpRoomGetRoomStateMessage",
+            "type" : "object",
+            "properties" : {
+                "roomIds" : {
+                    "type" : "array",
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            },
+            "required" : [],
+            "$ref": "/ClientServerMessage"
+        };
+
+        return schema;
+    }
+}
+
+export type OnRoomGetRoomStateMessageType = {roomIds : number[]} & ServerClientMessageType;
+export class OnRoomGetRoomStateMessage extends ServerClientMessage {
+    public roomIds: number[];
+    public constructor(json : OnRoomGetRoomStateMessageType){
+        super(MessageType.OnRoomGetRoomState, json);
+
+        this.roomIds = json.roomIds;
+    }
+
+    public static getSchema():Schema{
+        let schema : Schema = {
+            "id" : "/OnRoomGetRoomStateMessage",
+            "type" : "object",
+            "required" : ["roomIds"],
+            "$ref": "/ServerClientMessage"
+        }
+
+        return schema;
+    }
+
+
+}
+
 //Related to joining a room
 export type OpRoomJoinMessageType = {roomId ?: number, roomInitConfig ?: RoomInitConfig, sideType ?: SideType} & ClientServerMessageType;
 export class OpRoomJoinMessage extends ClientServerMessage {

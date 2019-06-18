@@ -2,7 +2,7 @@ import {LogoLayer} from "../LogoLayer";
 import {SocketClientAgent} from "./SocketClientAgent";
 import {SocketClientInterface} from "./SocketClientInterface";
 import {
-    ErrorCode,
+    ErrorCode, OnRoomGetRoomStateMessage,
     OnRoomJoinBroadcastMessage,
     OnRoomJoinMessage,
     OnRoomMakeMoveBroadcastMessage,
@@ -128,11 +128,12 @@ export class ControllerOuter implements SocketClientInterface{
         this.socketClientAgent.OpLoginGuest(LocalStorageManager.getGuestToken());
     }
 
-    public OnLoginGuest(onLoginGuestMsg :OnUserLoginGuestMessage) :void {
-        if(!(onLoginGuestMsg.getErrorCode() == ErrorCode.SUCCESS)){
-            return;
-        }
+    public OnLoginGuest(onLoginGuestMsg :OnUserLoginGuestMessage) :void {}
 
+    public OpRoomGetRoomState(){
+        this.socketClientAgent.OpRoomGetRoomState();
+    }
+    public OnRoomGetRoomState(onRoomGetRoomStateMsg : OnRoomGetRoomStateMessage): void {
         let removeRoomIds : number[] = [];
 
         for(let _roomId in this.roomIdMap){
@@ -140,8 +141,8 @@ export class ControllerOuter implements SocketClientInterface{
 
             let isRemove : boolean = true;
 
-            for(let i = 0; i < onLoginGuestMsg.roomIds.length && isRemove; i++){
-                if(onLoginGuestMsg.roomIds[i] == roomId){
+            for(let i = 0; i < onRoomGetRoomStateMsg.roomIds.length && isRemove; i++){
+                if(onRoomGetRoomStateMsg.roomIds[i] == roomId){
                     isRemove = false;
                 }
             }
