@@ -1,8 +1,8 @@
 import {
     ClientServerMessage,
-    ErrorCode,
+    ErrorCode, OnRoomGetRoomStateMessage,
     OnRoomJoinMessage,
-    OnRoomMakeMoveMessage, OnRoomMakeVoteMessage,
+    OnRoomMakeMoveMessage, OnRoomMakeVoteMessage, OpRoomGetRoomStateMessage,
     OpRoomJoinMessage,
     OpRoomMakeMoveMessage, OpRoomMakeVoteMessage,
     RoomInitConfig,
@@ -17,10 +17,10 @@ import {RoomAbstract} from "./RoomAbstract"
 import {RoomMultiplayer} from "./RoomMultiplayer"
 import {RoomNormal} from "./RoomNormal";
 
-import * as SocketIO from "socket.io";
 import {SideType} from "../../shared/engine/SideType";
 import {GameTimeStructConfigs} from "../../shared/gameTime/GameTimeManager";
 import {GameTimeType} from "../../shared/gameTime/GameTimeType";
+import {UserAbstract} from "../User/UserAbstract";
 
 export class RoomServer {
     private socketServerAgent : SocketServerAgent;
@@ -87,6 +87,15 @@ export class RoomServer {
         this.roomsMap.set(roomId, room);
 
         return room;
+    }
+
+
+    public getRoomState(playerId : number, opRoomGetRoomStateMsg : OpRoomGetRoomStateMessage){
+        let onRoomGetRoomStateMsgType = {roomIds : this.getRoomIdsForPlayerId(playerId)};
+
+        let onRoomGetRoomStateMsg = new OnRoomGetRoomStateMessage(onRoomGetRoomStateMsgType);
+
+        this.emitMessage(playerId, opRoomGetRoomStateMsg, onRoomGetRoomStateMsg);
     }
 
     public joinRoom(playerId : number, opJoinRoomMessage : OpRoomJoinMessage):void{
@@ -161,7 +170,7 @@ export class RoomServer {
     }
 
 
-    public emitMessage(socket : SocketIO.Socket | number, clientServerMessage : ClientServerMessage | null, serverClientMessage : ServerClientMessage){
-        this.socketServerAgent.emitMessage(socket, clientServerMessage, serverClientMessage);
+    public emitMessage(playerId :  number | UserAbstract, clientServerMessage : ClientServerMessage | null, serverClientMessage : ServerClientMessage){
+        this.socketServerAgent.emitMessage(playerId, clientServerMessage, serverClientMessage);
     }
 }
