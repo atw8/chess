@@ -152,8 +152,10 @@ export class UserStockfish implements UserAbstract{
                 let uciMoveStack = this.uciMoveStacks[roomId];
 
                 let topUciMove = uciMoveStack[uciMoveStack.length - 1];
+
                 if(topUciMove != uciMove){
                     uciMoveStack.push(uciMove);
+
                 }
             }
 
