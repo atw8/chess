@@ -217,6 +217,7 @@ export class RoomMultiplayer extends RoomAbstract{
 
             this.gameTimeManager.doMove(timeStamp);
             this.chessEngine.doMoveSan(sanMove);
+            this.initVotingData();
 
 
             let onRoomMultiplayerStateBroadcastMsgType : OnRoomMultiplayerStateBroadcastMessageType = {
@@ -244,10 +245,12 @@ export class RoomMultiplayer extends RoomAbstract{
 
 
 
+
+
             this.emitOtherPlayerId(null, null, onRoomMultiplayerStateBroadcastMsg);
 
-            this.initVotingData();
-            this.tickVoting(0.0);
+
+
 
 
             if(this.roomStateEnum == RoomStateEnum.END){
