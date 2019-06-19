@@ -429,7 +429,8 @@ export class ChessEngine extends  AbstractEngine {
 
 
     public init(_initParam : {isChess960 ?: boolean, beginFenStr ?: string, isAskDraw : boolean}){
-        let initParam : {isChess960 ?: boolean, beginFenStr ?: string, isAskDraw : boolean} = {isAskDraw : _initParam.isAskDraw};
+        let initParam : {isChess960 ?: boolean, beginFenStr ?: string, isAskDraw : boolean} =
+            {isChess960 : _initParam.isChess960, beginFenStr : _initParam.beginFenStr, isAskDraw : _initParam.isAskDraw};
 
         if(initParam["isChess960"] == undefined){
             initParam["isChess960"] = false;
