@@ -51,20 +51,22 @@ export class LogoLayer extends PIXI.Container {
 
 
     public onAdded(){
+        this.controller = new ControllerOuter(this);
+
         this.timeStamp = Date.now();
 
         //let size = {width : SimpleGame.getDesignWidth(), height : SimpleGame.getDesignHeight()};
         this.scrollLayer = new ScrollLayer(ScrollLayer.DIRECTION.HORIZONTAL, SimpleGame.getDesignWidth(), ScrollLayerSpeed);
         this.addChild(this.scrollLayer);
 
-        this.scrollLayer.addLayer(new SplashScreenLayer());
+        this.scrollLayer.addLayer(new SplashScreenLayer(this.controller));
 
 
         //this.points = [];
         //this.addLayer(new ChooseGameLayer(this.onClickCallback.bind(this)));
 
 
-        this.controller = new ControllerOuter(this);
+
 
         /*
         for(let i = 1; i <= 2; i++){

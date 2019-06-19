@@ -3,6 +3,7 @@ export enum LanguageKey {
     Waiting,
 
     Connecting,
+    Connect,
 
     Error,
 
@@ -123,6 +124,9 @@ export namespace LanguageHelper {
                 break;
             case LanguageKey.Connecting:
                 ret = "Connecting";
+                break;
+            case LanguageKey.Connect:
+                ret = "Connect";
                 break;
             case LanguageKey.Ok:
                 ret = "Ok";
