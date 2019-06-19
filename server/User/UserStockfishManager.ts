@@ -124,7 +124,8 @@ export class UserStockfishManager {
 
                     if(msg.roomState == RoomStateEnum.END){
                         delete this.chessEngines[roomId];
-                        //delete this.uciMoveStacks[roomId];
+                        delete this.wbPlayerIds[roomId];
+                        
 
                         this.socketServerAgent.OpRoomGetRoomState(playerId, new OpRoomGetRoomStateMessage({}));
                     }else {
