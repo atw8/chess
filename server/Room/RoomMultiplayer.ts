@@ -126,8 +126,8 @@ export class RoomMultiplayer extends RoomAbstract{
             onJoinRoomMsg.roomInitConfig = this.getRoomInitConfig();
             onJoinRoomMsg.roomStateConfig = this.getRoomStateConfig(playerId);
         }
-        this.emitPlayerId(playerId, opJoinRoomMsg, onJoinRoomMsg);
 
+        this.emitPlayerId(playerId, opJoinRoomMsg, onJoinRoomMsg);
     }
 
 
@@ -166,7 +166,6 @@ export class RoomMultiplayer extends RoomAbstract{
         this.votingData[sanStr]++;
 
         this.emitPlayerId(playerId, opRoomMakeVoteMoveMsg, onRoomMakeVoteMoveMsg);
-
     }
 
 
@@ -174,15 +173,15 @@ export class RoomMultiplayer extends RoomAbstract{
         if(this.roomStateEnum != RoomStateEnum.NORMAL || !this.isVotingDataDirty){
             return;
         }
+        this.isVotingDataDirty = false;
 
         let onRoomVotingUpdateBroadcastMsgType = {
             roomId : this.getRoomId(),
             votingData : this.votingData
         };
         let onRoomVotingUpdateBroadcastMsg = new OnRoomVotingUpdateBroadcastMessage(onRoomVotingUpdateBroadcastMsgType);
-        this.emitOtherPlayerId(null, null, onRoomVotingUpdateBroadcastMsg);
 
-        this.isVotingDataDirty = false;
+        this.emitOtherPlayerId(null, null, onRoomVotingUpdateBroadcastMsg);
     }
 
 
@@ -245,18 +244,12 @@ export class RoomMultiplayer extends RoomAbstract{
 
 
 
-
-
-            this.emitOtherPlayerId(null, null, onRoomMultiplayerStateBroadcastMsg);
-
-
-
-
-
             if(this.roomStateEnum == RoomStateEnum.END){
                 this.roomServer.removeRoom(this);
                 this.roomServer.createRoom(this.getRoomInitConfig());
             }
+
+            this.emitOtherPlayerId(null, null, onRoomMultiplayerStateBroadcastMsg);
         }
     }
 }

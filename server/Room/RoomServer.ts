@@ -47,7 +47,7 @@ export class RoomServer {
 
             let roomInitConfig = new RoomInitConfig(roomTypeEnum, gameTimeStructs, isAskDraw);
             roomInitConfig.isChess960 = false;
-            roomInitConfig.beginFenStr = "8/PPPPPPPP/K7/8/8/k7/pppppppp/8 w - - 0 1";
+            //roomInitConfig.beginFenStr = "8/8/K7/8/8/k7/pppppppp/8 w - - 0 1";
 
             this.createRoom(roomInitConfig);
         }
