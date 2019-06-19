@@ -82,6 +82,12 @@ export class UserNormalManager {
 
         let playerId = onUserLoginGuestMsg.playerId;
 
+        {
+            let _socket = this.playerIdSocketMap.get(playerId);
+            if(_socket != undefined){
+                _socket.disconnect(true);
+            }
+        }
         this.playerIdSocketMap.set(playerId, socket);
         this.socketPlayerIdMap.set(socket, playerId);
 
