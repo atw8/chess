@@ -1,6 +1,5 @@
 import * as http from "http";
-import * as SocketIO from "socket.io";
-
+import {Stockfish} from "./Stockfish"
 import {RoomServer} from "./Room/RoomServer";
 
 import {
@@ -9,15 +8,11 @@ import {
     OpUserLoginGuestMessage, OpRoomMakeMoveMessage,
     ServerClientMessage, createMessageFromString, OpRoomMakeVoteMessage, OpRoomGetRoomStateMessage
 } from "./../shared/MessageTypes";
-import {UserAbstract} from "./User/UserAbstract";
 import {UserNormalManager} from "./User/UserNormalManager";
 import {UserStockfishManager} from "./User/UserStockfishManager";
 
 
 export class SocketServerAgent {
-    private playerIdUserAbstractMap : Map<number, UserAbstract>;
-
-
     private userNormalManager : UserNormalManager;
     private userStockfishManager : UserStockfishManager;
     private roomServer : RoomServer;
@@ -25,41 +20,32 @@ export class SocketServerAgent {
 
 
     constructor(server : http.Server){
-        this.playerIdUserAbstractMap = new Map<number, UserAbstract>();
-
         this.roomServer = new RoomServer(this);
 
         this.userNormalManager = new UserNormalManager(this, server);
         this.userStockfishManager = new UserStockfishManager(this);
 
 
+        let stockFishParams : {setOptions : Stockfish.SetOptions, goOptions : Stockfish.GoOptions}[] = [];
+
+        let numOfStockFishParams : number = 4;
+        for(let i = 0; i < numOfStockFishParams; i++){
+            let skillLevel = Math.floor(0 + (20 - 0)*(i/numOfStockFishParams));
+
+            stockFishParams.push({setOptions : {"Skill Level" : i, "MultiPV" : 2}, goOptions : {}});
+            stockFishParams.push({setOptions : {"Skill Level" : i, "MultiPV" : 2}, goOptions : {}});
+        }
+        this.userStockfishManager.init(stockFishParams);
     }
 
-    public removePlayerIdMap(playerId : number){
-        console.log("SocketServerAgent.removePlayerIdMap");
-
-        this.playerIdUserAbstractMap.delete(playerId);
-    }
-    public addPlayerIdMap(playerId : number, userAbstract : UserAbstract){
-        console.log("SocketServerAgent.addPlayerIdMap");
-
-        this.playerIdUserAbstractMap.set(playerId, userAbstract);
-    }
-
-    public emitMessage(userAbstract : UserAbstract | number | undefined, clientServerMessage : ClientServerMessage | null, serverClientMessage : ServerClientMessage){
+    public emitMessage(playerId : number, clientServerMessage : ClientServerMessage | null, serverClientMessage : ServerClientMessage){
         serverClientMessage.setTimeStamp(Date.now());
         if(clientServerMessage != null){
             serverClientMessage.setRequestId(clientServerMessage.getRequestId());
         }
 
-
-        if(typeof(userAbstract) == "number"){
-            userAbstract = this.playerIdUserAbstractMap.get(userAbstract);
-        }
-
-        if(typeof(userAbstract) != "undefined") {
-            userAbstract.emit(serverClientMessage);
-        }
+        this.userNormalManager.emit(playerId, serverClientMessage);
+        this.userStockfishManager.emit(playerId, serverClientMessage);
     }
 
     public OpRoomGetRoomState(playerId : number, opRoomGetRoomStateMsg : OpRoomGetRoomStateMessage){
