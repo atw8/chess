@@ -1,5 +1,4 @@
 import {SocketServerAgent} from "../SocketServerAgent";
-import {UserStockfish} from "./UserStockfish";
 import {UserSingleton} from "./UserSingleton";
 import {
     MessageType,
@@ -26,7 +25,6 @@ import {Stockfish} from "../Stockfish"
 
 export class UserStockfishManager {
     private socketServerAgent : SocketServerAgent;
-    private playerIdUserStockfishMap : Map<number, UserStockfish>;
 
     //private uciMoveStacks : { [key : number] : string[]};
     private chessEngines : {[key : number] : ChessEngine} = {};
@@ -38,7 +36,6 @@ export class UserStockfishManager {
 
     constructor(socketServerAgent : SocketServerAgent){
         this.socketServerAgent = socketServerAgent;
-        this.playerIdUserStockfishMap = new Map<number, UserStockfish>();
     }
 
     public init(stockfishParams : {setOptions : Stockfish.SetOptions, goOptions : Stockfish.GoOptions}[]){
@@ -125,7 +122,7 @@ export class UserStockfishManager {
                     if(msg.roomState == RoomStateEnum.END){
                         delete this.chessEngines[roomId];
                         delete this.wbPlayerIds[roomId];
-                        
+
 
                         this.socketServerAgent.OpRoomGetRoomState(playerId, new OpRoomGetRoomStateMessage({}));
                     }else {
