@@ -1,5 +1,4 @@
 import {Stockfish} from "../Stockfish"
-import {UserAbstract} from "./UserAbstract";
 import {
     ServerClientMessage,
     MessageType,
@@ -20,9 +19,8 @@ import {SideType} from "../../shared/engine/SideType";
 
 import {ChessGameStateEnum} from "../../shared/engine/ChessGameStateEnum";
 import {RoomStateEnum} from "../../shared/RoomStateEnum";
-import FirstToken = Stockfish.FirstToken;
 
-export class UserStockfish implements UserAbstract{
+export class UserStockfish {
     private setOptions : Stockfish.SetOptions;
     private goOptions : Stockfish.GoOptions;
 

@@ -21,7 +21,7 @@ export class UserSingleton {
     }
 
 
-    public getUserDataGorGuestToken(guestToken ?: string):{guestToken : string, playerId : number}{
+    public getUserDataForGuestToken(guestToken ?: string):{guestToken : string, playerId : number}{
         if(guestToken == undefined){
             guestToken = <string>uuidv4();
         }

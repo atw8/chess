@@ -5,9 +5,8 @@ import {
     createMessageFromString,
     MessageType, OnUserLoginGuestMessage, OpRoomGetRoomStateMessage, OpRoomJoinMessage,
     OpRoomMakeMoveMessage, OpRoomMakeVoteMessage,
-    OpUserLoginGuestMessage
+    OpUserLoginGuestMessage, ServerClientMessage
 } from "../../shared/MessageTypes";
-import {UserNormal} from "./UserNormal";
 import {UserSingleton} from "./UserSingleton";
 
 export class UserNormalManager {
@@ -16,15 +15,24 @@ export class UserNormalManager {
     private io : SocketIO.Server;
 
     private socketPlayerIdMap : Map<SocketIO.Socket, number>;
+    private playerIdSocketMap : Map<number, SocketIO.Socket>;
 
     constructor(socketServerAgent : SocketServerAgent, server : http.Server){
         this.socketServerAgent = socketServerAgent;
 
         this.socketPlayerIdMap = new Map<SocketIO.Socket, number>();
+        this.playerIdSocketMap = new Map<number, SocketIO.Socket>();
 
         this.io = SocketIO(server);
 
         this.io.on("connection", this.onConnection.bind(this));
+    }
+
+    public emit(playerId : number, serverClientMessage : ServerClientMessage){
+        let socket : SocketIO.Socket | undefined = this.playerIdSocketMap.get(playerId);
+        if(socket != undefined){
+            socket.emit(serverClientMessage.getMessageType(), JSON.stringify(serverClientMessage));
+        }
     }
 
     public onConnection(socket : SocketIO.Socket){
@@ -45,22 +53,21 @@ export class UserNormalManager {
         console.log("UserNormalManager.onConnectionDisconnect");
 
         let playerId : number | undefined = this.socketPlayerIdMap.get(socket);
-        if(playerId == undefined){
-            return;
+        if(playerId != undefined){
+            this.playerIdSocketMap.delete(playerId);
         }
-
         this.socketPlayerIdMap.delete(socket);
-        this.socketServerAgent.removePlayerIdMap(playerId);
     }
 
 
     public OpLoginGuest(socket : SocketIO.Socket, message : string){
         console.log("SocketServerAgent.OpLoginGuest");
         {
-            let playerId = this.socketPlayerIdMap.get(socket);
+            let playerId : number | undefined = this.socketPlayerIdMap.get(socket);
             if(playerId != undefined){
-                this.socketServerAgent.removePlayerIdMap(playerId);
+                this.playerIdSocketMap.delete(playerId);
             }
+            this.socketPlayerIdMap.delete(socket);
         }
 
         let opUserLoginGuestMsg = createMessageFromString(message, OpUserLoginGuestMessage);
@@ -69,14 +76,13 @@ export class UserNormalManager {
         }
 
 
-        let onUserLoginGuestMsgType = UserSingleton.getInstance().getUserDataGorGuestToken(opUserLoginGuestMsg.guestToken);
+        let onUserLoginGuestMsgType = UserSingleton.getInstance().getUserDataForGuestToken(opUserLoginGuestMsg.guestToken);
         let onUserLoginGuestMsg  = new OnUserLoginGuestMessage(onUserLoginGuestMsgType);
 
 
         let playerId = onUserLoginGuestMsg.playerId;
-        let userNormal = new UserNormal(socket);
 
-        this.socketServerAgent.addPlayerIdMap(playerId, userNormal);
+        this.playerIdSocketMap.set(playerId, socket);
         this.socketPlayerIdMap.set(socket, playerId);
 
 
