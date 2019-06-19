@@ -20,7 +20,6 @@ import {RoomNormal} from "./RoomNormal";
 import {SideType} from "../../shared/engine/SideType";
 import {GameTimeStructConfigs} from "../../shared/gameTime/GameTimeManager";
 import {GameTimeType} from "../../shared/gameTime/GameTimeType";
-import {UserAbstract} from "../User/UserAbstract";
 
 export class RoomServer {
     private socketServerAgent : SocketServerAgent;
@@ -170,7 +169,7 @@ export class RoomServer {
     }
 
 
-    public emitMessage(playerId :  number | UserAbstract, clientServerMessage : ClientServerMessage | null, serverClientMessage : ServerClientMessage){
+    public emitMessage(playerId :  number, clientServerMessage : ClientServerMessage | null, serverClientMessage : ServerClientMessage){
         this.socketServerAgent.emitMessage(playerId, clientServerMessage, serverClientMessage);
     }
 }
