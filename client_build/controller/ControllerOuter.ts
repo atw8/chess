@@ -18,7 +18,7 @@ import {ControllerMultiplayerGame} from "./ControllerMultiplayerGame";
 
 import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 import {LocalStorageManager} from "../LocalStorageManager";
-import {SimpleGame} from "../SimpleGame";
+import {SplashScreenLayer} from "../SplashScreenLayer";
 
 export class ControllerOuter implements SocketClientInterface{
     private uiLogoLayer : LogoLayer;
@@ -95,12 +95,27 @@ export class ControllerOuter implements SocketClientInterface{
     }
 
 
+    private uiSplashScreen : SplashScreenLayer | null;
+    public setSplashScreen(uiSplashScreen : SplashScreenLayer){
+        this.uiSplashScreen = uiSplashScreen;
+    }
 
 
     public OnConnect() : void {
-        console.log()
+        if(this.uiSplashScreen != null){
+            this.uiSplashScreen.updateConnectState();
+        }
     }
-    public OnDisconnect() : void {
+    public connect(){
+        this.socketClientAgent.connect();
+    }
+    public isConnected():boolean{
+        return this.socketClientAgent.isConnected();
+    }
+    public isDisconnected():boolean{
+        return this.socketClientAgent.isDisconnected();
+    }
+    public OnDisconnect(reason : "io server disconnect" | "io client disconnect" | "ping timeout") : void {
         let removeRoomIds : number[] = [];
 
         for(let _roomId in this.roomIdMap){
@@ -113,6 +128,10 @@ export class ControllerOuter implements SocketClientInterface{
             let roomId = removeRoomIds[i];
 
             this.removeController(roomId);
+        }
+
+        if(this.uiSplashScreen != null){
+            this.uiSplashScreen.updateConnectState();
         }
     }
     public OnConnectError() : void{

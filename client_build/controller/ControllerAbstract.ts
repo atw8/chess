@@ -77,7 +77,7 @@ export abstract class ControllerAbstract implements SocketClientInterface {
 
     public OnConnect(): void {
     }
-    public OnDisconnect(): void {
+    public OnDisconnect(reason : "io server disconnect" | "io client disconnect" | "ping timeout"): void {
     }
     public OnConnectError() : void{
     }

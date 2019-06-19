@@ -1,5 +1,4 @@
-import SocketIO = require("socket.io-client");
-//import * as SocketIO from "socket.io-client";
+import * as io from "socket.io-client"
 
 
 import {
@@ -88,8 +87,11 @@ export class SocketClientAgent {
         socketOpts.reconnection = true;
         socketOpts.reconnectionAttempts = Infinity;
         //opts.
-        this.socket = SocketIO(socketOpts);
 
+
+
+        this.socket = io.connect(socketOpts);
+        //this.socket = SocketIO(socketOpts);
 
         this.socket.on("connect", this.OnConnect.bind(this));
 
@@ -126,9 +128,15 @@ export class SocketClientAgent {
 
         this.OpLoginGuest(LocalStorageManager.getGuestToken());
     }
+    public connect(){
 
+        this.socket.connect();
+    }
     public isConnected():boolean{
         return this.socket.connected;
+    }
+    public isDisconnected():boolean{
+        return this.socket.disconnected;
     }
 
 
@@ -143,10 +151,10 @@ export class SocketClientAgent {
         this.socketClientInterface.OnConnectTimeOut();
     }
 
-    public OnDisconnect(){
+    public OnDisconnect(reason : "io server disconnect" | "io client disconnect" | "ping timeout"){
         console.debug("onDisconnect");
 
-        this.socketClientInterface.OnDisconnect();
+        this.socketClientInterface.OnDisconnect(reason);
     }
 
     public emitClientServerMessage(clientServerMessage : ClientServerMessage){
@@ -328,7 +336,9 @@ export class SocketClientAgent {
 
         if(onRoomMakeMoveMsg.getErrorCode() == ErrorCode.SUCCESS){
             let roomStateConfig = this.roomStateConfigs[onRoomMakeMoveMsg.roomId];
-
+            if(roomStateConfig == undefined){
+                return;
+            }
             roomStateConfig.sanMoves.push(onRoomMakeMoveMsg.sanMove);
             roomStateConfig.timeStamps.push(onRoomMakeMoveMsg.timeStamp);
 
@@ -351,6 +361,9 @@ export class SocketClientAgent {
 
         if(onRoomMakeMoveBroadcastMsg.getErrorCode() == ErrorCode.SUCCESS){
             let roomStateConfig = this.roomStateConfigs[onRoomMakeMoveBroadcastMsg.roomId];
+            if(roomStateConfig == undefined){
+                return;
+            }
 
             roomStateConfig.sanMoves.push(onRoomMakeMoveBroadcastMsg.sanMove);
             roomStateConfig.timeStamps.push(onRoomMakeMoveBroadcastMsg.timeStamp);
@@ -377,6 +390,9 @@ export class SocketClientAgent {
 
         if(onRoomTimeOutBroadcastMsg.getErrorCode() == ErrorCode.SUCCESS){
             let roomStateConfig = this.roomStateConfigs[onRoomTimeOutBroadcastMsg.roomId];
+            if(roomStateConfig == undefined){
+                return;
+            }
 
             roomStateConfig.roomState = onRoomTimeOutBroadcastMsg.roomState;
             roomStateConfig.chessGameState = onRoomTimeOutBroadcastMsg.chessGameState;
@@ -402,6 +418,9 @@ export class SocketClientAgent {
         }
 
         let roomStateConfig = this.roomStateConfigs[onRoomMakeVoteMsg.roomId];
+        if(roomStateConfig == undefined){
+            return;
+        }
         roomStateConfig.myVoting = onRoomMakeVoteMsg.myVoting;
 
         this.socketClientInterface.OnRoomMakeVote(onRoomMakeVoteMsg);
@@ -415,6 +434,9 @@ export class SocketClientAgent {
         }
 
         let roomStateConfig = this.roomStateConfigs[onRoomVotingUpdateBroadcastMsg.roomId];
+        if(roomStateConfig == undefined){
+            return;
+        }
         roomStateConfig.votingData = onRoomVotingUpdateBroadcastMsg.votingData;
 
 
@@ -430,6 +452,9 @@ export class SocketClientAgent {
         }
 
         let roomStateConfig = this.roomStateConfigs[onRoomMultiplayerStateBroadcastMsg.roomId];
+        if(roomStateConfig == undefined){
+            return;
+        }
         roomStateConfig.sanMoves.push(onRoomMultiplayerStateBroadcastMsg.sanMove);
         roomStateConfig.timeStamps.push(onRoomMultiplayerStateBroadcastMsg.moveTimeStamp);
 

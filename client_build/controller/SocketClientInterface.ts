@@ -13,7 +13,7 @@ import {
 
 export interface SocketClientInterface {
     OnConnect() : void;
-    OnDisconnect() : void;
+    OnDisconnect(reason : "io server disconnect" | "io client disconnect" | "ping timeout") : void;
     OnConnectError() : void;
     OnConnectTimeOut() : void;
 
