@@ -209,6 +209,9 @@ export class UserStockfishManager {
                     };
 
                     callback2 = ()=> {
+                        if(this.chessEngines[roomId] == undefined){
+                            return;
+                        }
                         if(fenStr != this.chessEngines[roomId].getLastFenStr()){
                             return;
                         }
