@@ -151,8 +151,16 @@ export class SocketClientAgent {
         this.socketClientInterface.OnConnectTimeOut();
     }
 
-    public OnDisconnect(reason : "io server disconnect" | "io client disconnect" | "ping timeout"){
-        console.debug("onDisconnect");
+
+    private disconnectReason : "io server disconnect" | "io client disconnect" | "ping timeout" | "transport close" | "" = "";
+    public getDisconnectReason():"io server disconnect" | "io client disconnect" | "ping timeout" | "transport close" | ""{
+        return this.disconnectReason;
+    }
+
+
+    public OnDisconnect(reason : "io server disconnect" | "io client disconnect" | "ping timeout" | "transport close"){
+        console.debug("onDisconnect ", reason);
+        this.disconnectReason = reason;
 
         this.socketClientInterface.OnDisconnect(reason);
     }

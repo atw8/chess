@@ -115,7 +115,10 @@ export class ControllerOuter implements SocketClientInterface{
     public isDisconnected():boolean{
         return this.socketClientAgent.isDisconnected();
     }
-    public OnDisconnect(reason : "io server disconnect" | "io client disconnect" | "ping timeout") : void {
+    public getDisconnectReason():"io server disconnect" | "io client disconnect" | "ping timeout" | "transport close" | ""{
+        return this.socketClientAgent.getDisconnectReason();
+    }
+    public OnDisconnect(reason : "io server disconnect" | "io client disconnect" | "ping timeout" | "transport close") : void {
         let removeRoomIds : number[] = [];
 
         for(let _roomId in this.roomIdMap){

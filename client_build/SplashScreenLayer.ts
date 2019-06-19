@@ -50,14 +50,16 @@ export class SplashScreenLayer extends PIXI.Container {
 
 
         this.onResizeScreen();
-        //this.updateConnectState();
+
+        setTimeout(this.updateConnectState.bind(this), 3000);
+
 
 
         this.controllerOuter.setSplashScreen(this);
     }
 
     private onConnectBtnPress(){
-
+        this.controllerOuter.connect();
     }
 
     public onRemoved(){
@@ -72,7 +74,12 @@ export class SplashScreenLayer extends PIXI.Container {
         let isConnected = this.controllerOuter.isConnected();
         let isDisconnected = this.controllerOuter.isDisconnected();
 
-        isDisconnected = false;
+        let disconnectReason = this.controllerOuter.getDisconnectReason();
+        if(isDisconnected){
+            if(!(disconnectReason == "io server disconnect" || disconnectReason == "io client disconnect")){
+                isDisconnected = false;
+            }
+        }
 
         if(isConnected){
             this.uiConnectingNode.visible = false;
