@@ -6,7 +6,7 @@ export enum SideType {
 }
 
 export namespace SideType {
-    export function getRandomSideType():SideType{
+    export function Random():SideType{
         let sideTypes = [SideType.WHITE, SideType.BLACK];
 
         return sideTypes[Math.floor(Math.random()*sideTypes.length)];
