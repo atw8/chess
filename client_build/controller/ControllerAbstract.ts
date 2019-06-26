@@ -27,7 +27,10 @@ export abstract class ControllerAbstract implements SocketClientInterface {
     protected readonly controllerOuter: ControllerOuter;
 
 
-    public abstract isFlipBoardBtn():boolean;
+    public isFlipBoardBtn():boolean{
+        let roomStateConfig = <RoomStateConfig>this.controllerOuter.getRoomStateConfig(this.roomId);
+        return roomStateConfig.mySideType == undefined;
+    }
 
     protected gameTimeManager: GameTimeManager;
 
@@ -129,7 +132,10 @@ export abstract class ControllerAbstract implements SocketClientInterface {
             }
         }
 
-        this.uiBoardView.setBoardFacing(roomStateConfig.mySideType, false);
+        if(roomStateConfig.mySideType != undefined){
+            this.uiBoardView.setBoardFacing(roomStateConfig.mySideType, false);
+        }
+
 
         this._OnRoomJoin(onRoomJoinMsg);
     }
@@ -175,7 +181,12 @@ export abstract class ControllerAbstract implements SocketClientInterface {
         if(roomStateConfig.roomState != RoomStateEnum.NORMAL){
             this.uiBoardView.setTouchEnabled(false);
         }else {
-            this.uiBoardView.setTouchEnabled(roomStateConfig.mySideType == this.chessEngine.getMoveTurn());
+            if(roomStateConfig.mySideType == undefined){
+                this.uiBoardView.setTouchEnabled(true);
+            }else {
+                this.uiBoardView.setTouchEnabled(roomStateConfig.mySideType == this.chessEngine.getMoveTurn());
+            }
+
         }
 
         this.uiParentView.setMoveTurn(this.chessEngine.getMoveTurn());
