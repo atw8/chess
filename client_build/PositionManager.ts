@@ -78,7 +78,14 @@ export class PositionManager {
         this.movingSprites.push({sprite : sprite, tween : tween, finishCallback : finishCallback, endPosition : endPosition.clone()});
     }
 
+    private isInStopMoving : boolean = false;
+    public getIsInStopMoving():boolean{
+        return this.isInStopMoving;
+    }
+
     public stopMoving(sprite : PIXI.DisplayObject | null){
+        this.isInStopMoving = true;
+
         let finishCallbacks : (() => void)[] = [];
 
         let index = 0;
@@ -102,6 +109,8 @@ export class PositionManager {
         for(let i = 0; i < finishCallbacks.length; i++){
             finishCallbacks[i]();
         }
+
+        this.isInStopMoving = false;
     }
 
     public isMoving(sprite : PIXI.DisplayObject | null):boolean{
