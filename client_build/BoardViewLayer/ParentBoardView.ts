@@ -13,7 +13,7 @@ import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 import {ControllerMultiplayerGame} from "../controller/ControllerMultiplayerGame";
 import {LanguageHelper, LanguageKey} from "../LanguageHelper";
 import {LanguageButton} from "./Button/LanguageButton";
-
+import {TableContainer} from "./Table/TableContainer";
 
 import * as PIXI from 'pixi.js';
 
@@ -107,10 +107,24 @@ export class ParentBoardView extends PIXI.Container {
                         predictPanelHeight -= this.uiFlipBoardBtn.height;
                     }
 
-                    this.uiPredictPanel[ORIENTATION.LANDSCAPE] = new PredictPanel(predictPanelHeight, 350, 50, 1, <ControllerMultiplayerGame>this.controllerInner);
+                    let properties : TableContainer.Properties = {
+                        width : 350,
+                        height : predictPanelHeight,
+                        rowHeight : 50,
+                        numOfCols : 1
+                    };
+
+                    this.uiPredictPanel[ORIENTATION.LANDSCAPE] = new PredictPanel(properties, <ControllerMultiplayerGame>this.controllerInner);
                 }
                 {
-                    this.uiPredictPanel[ORIENTATION.PORTRAIT] = new PredictPanel(300, 800, 50, 2, <ControllerMultiplayerGame>this.controllerInner);
+                    let properties : TableContainer.Properties = {
+                        width : 800,
+                        height :300,
+                        rowHeight : 50,
+                        numOfCols : 2
+                    };
+
+                    this.uiPredictPanel[ORIENTATION.PORTRAIT] = new PredictPanel(properties, <ControllerMultiplayerGame>this.controllerInner);
                 }
 
                 for(let orientation = ORIENTATION.FIRST_ORIENTATION; orientation <= ORIENTATION.LAST_ORIENTATION; orientation++){
@@ -245,9 +259,9 @@ export class ParentBoardView extends PIXI.Container {
         }
     }
 
-    public setVotingData(votingData : { [key : string] : number}, sideType : SideType){
+    public setVotingData(votingData : { [key : string] : number}, moveTurn : SideType){
         for(let orientation = ORIENTATION.FIRST_ORIENTATION; orientation <= ORIENTATION.LAST_ORIENTATION; orientation++){
-            this.uiPredictPanel[orientation].setVotingData(votingData, sideType);
+            this.uiPredictPanel[orientation].setVotingData(votingData, moveTurn);
         }
 
     }
