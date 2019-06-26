@@ -191,10 +191,13 @@ let validator : Validator;
                 },
                 "isAskDraw" : {
                     "type" : "boolean"
+                },
+                "isSideTypeProperty" :{
+                    "type" : "boolean"
                 }
 
             },
-            "required" : ["roomTypeEnum", "gameTimeStructs", "isAskDraw"]
+            "required" : ["roomTypeEnum", "gameTimeStructs", "isAskDraw", "isSideTypeProperty"]
         };
         validator.addSchema(roomInitConfig, "/RoomInitConfig");
 
@@ -264,15 +267,17 @@ export class RoomInitConfig {
     public roomTypeEnum : RoomTypeEnum;
     public gameTimeStructs : GameTimeStructConfigs;
 
+    public isSideTypeProperty ?: boolean;
     public isChess960 ?: boolean;
     public beginFenStr ?: string;
     public isAskDraw : boolean;
 
 
-    constructor(roomTypeEnum : RoomTypeEnum, gameTimeStructs : { [key in SideType] : {"timeType" : GameTimeType, "totalTime" ?: number, "incrTime" ?: number}}, isAskDraw : boolean){
+    constructor(roomTypeEnum : RoomTypeEnum, gameTimeStructs :GameTimeStructConfigs, isAskDraw : boolean, isSideTypeProperty : boolean){
         this.roomTypeEnum = roomTypeEnum;
         this.gameTimeStructs = gameTimeStructs;
         this.isAskDraw = isAskDraw;
+        this.isSideTypeProperty = isSideTypeProperty;
     }
 
     public static getRoomInitConfigStr(roomInitConfig : RoomInitConfig):string{
@@ -306,9 +311,10 @@ export class RoomInitConfig {
 
         let roomTypeEnum : RoomTypeEnum = json.roomTypeEnum;
         let gameTimeStructs : GameTimeStructConfigs = json.gameTimeStructs;
-        let isAskDraw : boolean = json.isAskDraw
+        let isAskDraw : boolean = json.isAskDraw;
+        let isSideTypeProperty : boolean = json.isSideTypeProperty;
 
-        let roomInitConfig : RoomInitConfig = new RoomInitConfig(roomTypeEnum, gameTimeStructs, isAskDraw);
+        let roomInitConfig : RoomInitConfig = new RoomInitConfig(roomTypeEnum, gameTimeStructs, isAskDraw, isSideTypeProperty);
 
         roomInitConfig.beginFenStr = json.beginFenStr;
         roomInitConfig.isChess960 = json.isChess960;
@@ -321,7 +327,7 @@ export class RoomStateConfig {
     public votingData : { [key : string] : number};
     public myVoting : string;
 
-    public mySideType : SideType;
+    public mySideType : SideType | undefined;
 
     public currentFenStr : string;
 

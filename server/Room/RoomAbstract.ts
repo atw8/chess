@@ -22,8 +22,8 @@ import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
 export abstract class RoomAbstract {
     protected readonly roomServer : RoomServer;
 
-    private readonly roomId : number;
-    private readonly roomInitConfig : RoomInitConfig;
+    protected readonly roomId : number;
+    protected readonly roomInitConfig : RoomInitConfig;
 
     public roomStateEnum : RoomStateEnum;
 

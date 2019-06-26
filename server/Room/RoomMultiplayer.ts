@@ -30,10 +30,13 @@ export class RoomMultiplayer extends RoomAbstract{
         super(roomServer, roomId, roomInitConfig);
 
         this.playerIds = new Set<number>();
-        //@ts-ignore
-        this.wbPlayerIds = {};
-        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-            this.wbPlayerIds[sideType] = new Set<number>();
+
+        if(this.roomInitConfig.isSideTypeProperty){
+            //@ts-ignore
+            this.wbPlayerIds = {};
+            for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+                this.wbPlayerIds[sideType] = new Set<number>();
+            }
         }
 
         this.initVotingData();
@@ -62,13 +65,14 @@ export class RoomMultiplayer extends RoomAbstract{
                 roomStateConfig.myVoting = this.playerIdSanStrMap[playerId];
             }
 
-            for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-                let wbPlayerIdSet = this.wbPlayerIds[sideType];
-                if(wbPlayerIdSet.has(playerId)){
-                    roomStateConfig.mySideType = sideType;
+            if(this.roomInitConfig.isSideTypeProperty){
+                for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+                    let wbPlayerIdSet = this.wbPlayerIds[sideType];
+                    if(wbPlayerIdSet.has(playerId)){
+                        roomStateConfig.mySideType = sideType;
+                    }
                 }
             }
-
         }
 
 
@@ -87,28 +91,26 @@ export class RoomMultiplayer extends RoomAbstract{
 
 
     public joinRoom(playerId : number, opJoinRoomMsg : OpRoomJoinMessage, onJoinRoomMsg : OnRoomJoinMessage):void{
-
         if(!this.playerIds.has(playerId)){
-            let whiteSideTypes = this.wbPlayerIds[SideType.WHITE].size;
-            let blackSideTypes = this.wbPlayerIds[SideType.BLACK].size;
+            if(this.roomInitConfig.isSideTypeProperty){
+                let whiteSideTypes = this.wbPlayerIds[SideType.WHITE].size;
+                let blackSideTypes = this.wbPlayerIds[SideType.BLACK].size;
 
-            let mySideType : SideType;
-            if(whiteSideTypes > blackSideTypes){
-                mySideType = SideType.BLACK;
-            }else if(whiteSideTypes < blackSideTypes){
-                mySideType = SideType.WHITE;
-            }else {
-                mySideType = SideType.getRandomSideType();
+                let mySideType : SideType;
+                if(whiteSideTypes > blackSideTypes){
+                    mySideType = SideType.BLACK;
+                }else if(whiteSideTypes < blackSideTypes){
+                    mySideType = SideType.WHITE;
+                }else {
+                    mySideType = SideType.Random();
+                }
+
+                this.wbPlayerIds[mySideType].add(playerId);
             }
 
-            this.wbPlayerIds[mySideType].add(playerId);
             this.playerIds.add(playerId);
+
         }
-
-
-
-
-
 
 
         //this.playerIds.add(playerId);
@@ -123,7 +125,7 @@ export class RoomMultiplayer extends RoomAbstract{
 
         if(onJoinRoomMsg.getErrorCode() == ErrorCode.SUCCESS || onJoinRoomMsg.getErrorCode() == ErrorCode.JOIN_ROOM_ALREADY_IN_ROOM){
             onJoinRoomMsg.roomId = this.getRoomId();
-            onJoinRoomMsg.roomInitConfig = this.getRoomInitConfig();
+            onJoinRoomMsg.roomInitConfig = this.roomInitConfig;
             onJoinRoomMsg.roomStateConfig = this.getRoomStateConfig(playerId);
         }
 
@@ -143,11 +145,15 @@ export class RoomMultiplayer extends RoomAbstract{
             this.emitPlayerId(playerId, opRoomMakeVoteMoveMsg, onRoomMakeVoteMoveMsg);
             return;
         }
-        if(!this.wbPlayerIds[this.chessEngine.getMoveTurn()].has(playerId)){
-            onRoomMakeVoteMoveMsg.setErrorCode(ErrorCode.DO_MOVE_NOT_MOVE_TURN);
-            this.emitPlayerId(playerId, opRoomMakeVoteMoveMsg, onRoomMakeVoteMoveMsg);
-            return;
+
+        if(this.roomInitConfig.isSideTypeProperty){
+            if(!this.wbPlayerIds[this.chessEngine.getMoveTurn()].has(playerId)){
+                onRoomMakeVoteMoveMsg.setErrorCode(ErrorCode.DO_MOVE_NOT_MOVE_TURN);
+                this.emitPlayerId(playerId, opRoomMakeVoteMoveMsg, onRoomMakeVoteMoveMsg);
+                return;
+            }
         }
+
 
 
         let sanStr = onRoomMakeVoteMoveMsg.myVoting;

@@ -82,14 +82,17 @@ export class UserStockfishManager {
                 let roomInitConfig = <RoomInitConfig>msg.roomInitConfig;
                 let roomStateConfig = <RoomStateConfig>msg.roomStateConfig;
 
-                if(this.wbPlayerIds[roomId] == undefined){
-                    //@ts-ignore
-                    this.wbPlayerIds[roomId] = {};
-                    for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
-                        this.wbPlayerIds[roomId][sideType] = [];
+                if(roomStateConfig.mySideType != undefined){
+                    if(this.wbPlayerIds[roomId] == undefined){
+                        //@ts-ignore
+                        this.wbPlayerIds[roomId] = {};
+                        for(let sideType = SideType.FIRST_SIDE; sideType <= SideType.LAST_SIDE; sideType++){
+                            this.wbPlayerIds[roomId][sideType] = [];
+                        }
                     }
+                    this.wbPlayerIds[roomId][roomStateConfig.mySideType].push(playerId);
                 }
-                this.wbPlayerIds[roomId][roomStateConfig.mySideType].push(playerId);
+
 
                 if(playerId == this.representPlayerId){
                     this.chessEngines[roomId] = new ChessEngine(roomInitConfig);
@@ -148,8 +151,17 @@ export class UserStockfishManager {
         let fenStr = this.chessEngines[roomId].getLastFenStr();
         let moveTurn = this.chessEngines[roomId].getMoveTurn();
 
-        for(let i = 0; i < this.wbPlayerIds[roomId][moveTurn].length; i++){
-            let playerId = this.wbPlayerIds[roomId][moveTurn][i];
+
+
+        let playerIdArray : number[];
+        if(this.wbPlayerIds[roomId] != undefined){
+            playerIdArray = this.wbPlayerIds[roomId][moveTurn];
+        }else {
+            playerIdArray = this.playerIds;
+        }
+
+        for(let i = 0; i < playerIdArray.length; i++){
+            let playerId = playerIdArray[i];
             let stockfishParam = <{setOptions : Stockfish.SetOptions, goOptions : Stockfish.GoOptions}>this.playerIdMap.get(playerId);
 
 
@@ -184,14 +196,6 @@ export class UserStockfishManager {
                         uciMoveSet.add(uciMove);
                         uciMoveArray.push(uciMove);
                     }
-
-                    /*
-                    let sanMove = this.chessEngines[roomId].getSANMoveForCurrentBoardAndUCIMove(uciMove);
-                    if(sanMove != null){
-                        let opRoomMakeVoteMsgType :OpRoomMakeVoteMessageType= {roomId : roomId, myVoting: sanMove};
-                        this.socketServerAgent.OpRoomMakeVote(playerId, new OpRoomMakeVoteMessage(opRoomMakeVoteMsgType));
-                    }
-                    */
                 }
 
                 if(firstToken == Stockfish.FirstToken.bestmove){
