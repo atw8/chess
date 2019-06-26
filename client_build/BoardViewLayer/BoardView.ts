@@ -23,6 +23,34 @@ import {ControllerAbstract} from "../controller/ControllerAbstract";
 import {TouchLayer} from "./TouchLayer";
 import * as PIXI from 'pixi.js';
 
+export namespace BoardView {
+    export interface ACTION_INTERFACE {
+        readonly type : string;
+    }
+    export interface MOVE_CLASS_INTERFACE extends ACTION_INTERFACE {
+        readonly type : "MOVE_CLASS";
+
+        moveClass : MoveClass;
+    }
+    export interface SEQUENCE_INTERFACE extends ACTION_INTERFACE {
+        readonly type : "SEQUENCE";
+
+        seq : ACTION_INTERFACE[];
+    }
+    export interface REPEAT_INTERFACE extends ACTION_INTERFACE{
+        readonly type : "REPEAT";
+
+        action : ACTION_INTERFACE;
+        numOfTimes : number;
+    }
+    export interface REPEAT_FOREVER_INTERFACE extends ACTION_INTERFACE{
+        readonly type : "REPEAT_FOREVER";
+
+        action : ACTION_INTERFACE;
+    }
+}
+
+
 
 enum TouchTypes {
     NO_TOUCH = 0,
@@ -148,7 +176,7 @@ export class BoardView extends PIXI.Graphics {
 
         this.controller = controller;
 
-        this.boardFacing = SideType.getRandomSideType();
+        this.boardFacing = SideType.Random();
 
 
         this.positionManager = new PositionManager();
@@ -780,7 +808,10 @@ export class BoardView extends PIXI.Graphics {
 
     public updateViewToModel(chessEngine: ChessEngine | null) {
         //Hide all possible sprites, that can be displayed
-        this.positionManager.stopMoving(null);
+        while(this.positionManager.isMoving(null)){
+            this.positionManager.stopMoving(null);
+        }
+
 
         this.removeAllPoints();
         this.removeAllSquares();
@@ -1021,6 +1052,30 @@ export class BoardView extends PIXI.Graphics {
 
 
 
+    /*
+    export class MOVE_CLASS extends ACTION {
+    public readonly type = "MOVE_CLASS";
+
+    public moveClass : MoveClass;
+}
+export class SEQUENCE extends ACTION {
+    public readonly type = "SEQUENCE";
+
+    public seq : ACTION[];
+}
+export class REPEAT extends ACTION{
+    public readonly type = "REPEAT";
+
+    public action : ACTION;
+    public numOfTimes : number;
+}
+export class REPEAT_FOREVER extends ACTION{
+    public readonly type = "REPEAT_FOREVER";
+
+    public action : ACTION;
+}
+
+     */
 
 
 
@@ -1034,6 +1089,85 @@ export class BoardView extends PIXI.Graphics {
         this.doMoveAnimation(moveClass, false, true, cb);
         this.addLastMoveSquares(moveClass);
     }
+    public doMoveAction(action : BoardView.ACTION_INTERFACE, cb : (() => void) | null = null){
+        switch (action.type){
+            case "MOVE_CLASS":
+            {
+                let actionMoveClass = (<BoardView.MOVE_CLASS_INTERFACE>action);
+                let cbInner = ()=>{
+                    if(cb != null){
+                        cb();
+                    }
+                };
+
+                this.doMove(actionMoveClass.moveClass, cbInner);
+            }
+                break;
+            case "SEQUENCE":
+            {
+                this.doMoveSequence(<BoardView.SEQUENCE_INTERFACE>action, cb);
+            }
+                break;
+            case "REPEAT":
+            {
+                this.doMoveRepeat(<BoardView.REPEAT_INTERFACE>action, cb);
+            }
+                break;
+            case "REPEAT_FOREVER":
+            {
+                this.doMoveRepeatForever(<BoardView.REPEAT_FOREVER_INTERFACE>action, cb);
+            }
+                break;
+        }
+    }
+    public doMoveSequence(actionSequence : BoardView.SEQUENCE_INTERFACE, cb : (() => void) | null = null){
+        let actionSequenceIndex = 0;
+        let cbInner = () => {
+            let action = actionSequence.seq[actionSequenceIndex];
+            if(action == undefined){
+                if(cb != null){
+                    cb();
+                }
+            }else {
+                actionSequenceIndex++;
+                this.doMoveAction(action, cbInner);
+            }
+
+        };
+
+        cbInner();
+    }
+    public doMoveRepeat(actionRepeat : BoardView.REPEAT_INTERFACE, cb : (() => void) | null = null){
+        let actionRepeatIndex = 0;
+        let cbInner = () => {
+            if(actionRepeatIndex >= actionRepeat.numOfTimes){
+                if(cb != null){
+                    cb();
+                }
+            }else {
+                actionRepeatIndex++;
+                this.doMoveAction(actionRepeat.action, cbInner);
+            }
+        };
+
+        cbInner();
+    }
+    public doMoveRepeatForever(actionRepeatForever : BoardView.REPEAT_FOREVER_INTERFACE,  cb : (() => void) | null = null){
+        let cbInner = () => {
+            if(this.positionManager.getIsInStopMoving()){
+                if(cb != null){
+                    cb();
+                }
+            }else {
+                this.doMoveAction(actionRepeatForever.action, cbInner)
+            }
+
+        };
+
+        cbInner();
+    }
+
+
 
     public doMoveAnimation(moveClass : MoveClass, isUndoMove : boolean, isStrictMove : boolean, endAnimation : ((moveClass : MoveClass, isUndoMove : boolean) => void) | null){
         if(this.touchType != TouchTypes.NO_TOUCH) {
@@ -1183,23 +1317,24 @@ export class BoardView extends PIXI.Graphics {
                 }
             }
 
-            if(moveStructCounter == moveStructs.length && isStrictMove){
-                for(let i = 0; i < removeStructs.length; i++) {
-                    let removeStruct = removeStructs[i];
+            if(moveStructCounter == moveStructs.length){
+                if(isStrictMove){
+                    for(let i = 0; i < removeStructs.length; i++) {
+                        let removeStruct = removeStructs[i];
 
-                    this.removePieceView(<PieceView>removeStruct.sprite);
+                        this.removePieceView(<PieceView>removeStruct.sprite);
+                    }
+
+                    for(let i = 0; i < addStructs.length; i++) {
+                        let addStruct = moveStructs[i];
+
+                        (<PieceView>addStruct.sprite).visible = true;
+                    }
                 }
 
-                for(let i = 0; i < addStructs.length; i++) {
-                    let addStruct = moveStructs[i];
-
-                    (<PieceView>addStruct.sprite).visible = true;
+                if(endAnimation != null){
+                    endAnimation(moveClass, isUndoMove);
                 }
-
-            }
-
-            if(endAnimation != null){
-                endAnimation(moveClass, isUndoMove);
             }
         };
 
@@ -1210,6 +1345,7 @@ export class BoardView extends PIXI.Graphics {
             let destFileRank = moveStruct.destFileRank;
 
             let sprite = moveStruct.sprite;
+
 
 
             let localMoveCallback : ( () => void ) | null = () => {
@@ -1241,6 +1377,52 @@ export class BoardView extends PIXI.Graphics {
     }
 }
 
+export namespace BoardView {
+    export abstract class ACTION implements ACTION_INTERFACE{
+        readonly type : string;
+    }
+    export class MOVE_CLASS extends ACTION implements MOVE_CLASS_INTERFACE {
+        readonly type : "MOVE_CLASS" = "MOVE_CLASS";
+        public moveClass : MoveClass;
+
+        constructor(moveClass : MoveClass){
+            super();
+            this.moveClass = moveClass;
+        }
+    }
+    export class SEQUENCE extends ACTION implements SEQUENCE_INTERFACE{
+        readonly type : "SEQUENCE" = "SEQUENCE";
+        public seq : ACTION[];
+
+        constructor(seq : ACTION[]){
+            super();
+            this.seq = seq;
+        }
+
+    }
+    export class REPEAT extends ACTION implements REPEAT_INTERFACE{
+        readonly type : "REPEAT" = "REPEAT";
+        public action : ACTION;
+        public numOfTimes : number;
+
+        constructor(action : ACTION, numOfTimes : number){
+            super();
+            this.action = action;
+            this.numOfTimes = numOfTimes;
+        }
 
 
+    }
+    export class REPEAT_FOREVER extends ACTION implements REPEAT_FOREVER_INTERFACE{
+        readonly type : "REPEAT_FOREVER" = "REPEAT_FOREVER";
+        public action : ACTION;
+
+        constructor(action : ACTION){
+            super();
+            this.action = action;
+        }
+
+
+    }
+}
 
