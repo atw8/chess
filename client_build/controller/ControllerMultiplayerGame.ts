@@ -24,9 +24,6 @@ import * as underscore from "underscore";
 export class ControllerMultiplayerGame extends ControllerAbstract {
     private uiPredictBoardView : BoardView;
 
-    public isFlipBoardBtn():boolean{
-        return false;
-    }
     constructor(roomId :number, controllerOuter : ControllerOuter){
         super(roomId, RoomTypeEnum.MULTIPLAYER, controllerOuter);
     }
@@ -59,11 +56,13 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
     }
 
     public _OnRoomJoin(onRoomJoinMsg : OnRoomJoinMessage):void{
+        this.uiParentView.setMoveTurn(this.chessEngine.getMoveTurn());
+
         let roomStateConfig = <RoomStateConfig>onRoomJoinMsg.roomStateConfig;
         this.uiParentView.setMyVoting(roomStateConfig.myVoting, this.chessEngine.getMoveTurn());
         this.uiParentView.setVotingData(roomStateConfig.votingData, this.chessEngine.getMoveTurn());
 
-        this.uiPredictBoardView.setBoardFacing(roomStateConfig.mySideType, false);
+        this.uiPredictBoardView.setBoardFacing(this.uiBoardView.getBoardFacing(), false);
 
         this.syncrhonizeRoomState();
     }
@@ -82,23 +81,40 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
     }
 
     public OnRoomVotingUpdateBroadcast(onRoomVotingUpdateBroadcastMsg : OnRoomVotingUpdateBroadcastMessage):void{
-        this.uiParentView.setVotingData(onRoomVotingUpdateBroadcastMsg.votingData,  this.chessEngine.getMoveTurn());
+        this.uiParentView.setVotingData(onRoomVotingUpdateBroadcastMsg.votingData, this.chessEngine.getMoveTurn());
     }
 
 
+    /*
+            this.uiPredictBoardView.updateViewToModel(null);
+        if(sanObject == null){
+            return;
+        }
+        let moveClass = this.chessEngine.getMoveClassForCurrentBoardAndSanMove(sanObject.sanStr);
+        if(moveClass == null){
+            return;
+        }
+        let uMoveClass = ChessEngine.flipMoveClass(moveClass);
+
+        let bMoveClass : BoardView.MOVE_CLASS = {type : "MOVE_CLASS", moveClass : moveClass};
+        let bUMoveClass : BoardView.MOVE_CLASS = {type : "MOVE_CLASS", moveClass : uMoveClass};
+
+        let seq : BoardView.SEQUENCE = {type : "SEQUENCE", seq : [bMoveClass, bUMoveClass]};
+        let repeatForever : BoardView.REPEAT_FOREVER = {type : "REPEAT_FOREVER", action : seq};
+
+        this.uiPredictBoardView.doMoveAction(repeatForever);
+     */
+
     private predictMoveSanObject : {sanStr : string, sideType : SideType} | null = null;
     public predictMovePress(sanObject : {sanStr : string, sideType : SideType} | null){
-        let oldPredictMoveSanObject = this.predictMoveSanObject;
-
-        this.predictMoveSanObject = null;
-
         this.uiPredictBoardView.updateViewToModel(null);
 
-        if(oldPredictMoveSanObject != null){
-            this.uiParentView.setIsHighlighted(oldPredictMoveSanObject, false);
+        if(this.predictMoveSanObject != null){
+            this.uiParentView.setIsHighlighted(this.predictMoveSanObject, false);
         }
 
-        if(underscore.isEqual(oldPredictMoveSanObject, sanObject)){
+        if(underscore.isEqual(this.predictMoveSanObject, sanObject)){
+            this.predictMoveSanObject = null;
             return;
         }
         this.predictMoveSanObject = sanObject;
@@ -107,18 +123,15 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
             return;
         }
 
+
         let moveClass = <MoveClass>this.chessEngine.getMoveClassForCurrentBoardAndSanMove(this.predictMoveSanObject.sanStr);
+        let m1Action = new BoardView.MOVE_CLASS(moveClass);
+        let m2Action = new BoardView.MOVE_CLASS(ChessEngine.flipMoveClass(moveClass));
+        let seq = new BoardView.SEQUENCE([m1Action, m2Action]);
+        let repeatForever = new BoardView.REPEAT_FOREVER(seq);
 
-        let cb = (moveClass : MoveClass)=>{
-            if(this.predictMoveSanObject == null){
-                return;
-            }
 
-            moveClass = ChessEngine.flipMoveClass(moveClass);
-            this.uiPredictBoardView.doMove(moveClass, cb);
-        };
-
-        this.uiPredictBoardView.doMove(moveClass, cb);
+        this.uiPredictBoardView.doMoveAction(repeatForever);
 
         this.uiParentView.setIsHighlighted(this.predictMoveSanObject, true);
     }
