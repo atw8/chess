@@ -12,10 +12,10 @@ import {SanSprite} from "./SanSprite";
 import {TableContainer} from "./Table/TableContainer";
 
 import {NestedMap} from "../NestedMap";
-import {stringify} from "querystring";
+import {SanObject} from "../../shared/engine/SanObject";
 
 class PredictButton  extends DefaultButton {
-    private sanObject : {sanStr : string, sideType : SideType} | null;
+    private sanObject : SanObject.Interface | null;
 
     private uiPercentage : PIXI.Text;
     private uiSanSprite : SanSprite | null = null;
@@ -59,10 +59,10 @@ class PredictButton  extends DefaultButton {
         this.uiPercentage.text = str;
     }
 
-    public getSanObject():{sanStr : string, sideType : SideType}|null{
+    public getSanObject():SanObject.Interface|null{
         return this.sanObject;
     }
-    public setSanObject(sanObject : {sanStr : string, sideType : SideType} | null){
+    public setSanObject(sanObject : SanObject.Interface | null){
         this.sanObject = sanObject;
 
 
@@ -143,7 +143,7 @@ export class PredictPanel extends TableContainer {
 
 
 
-    public setIsHighlighted(sanObject : {sanStr : string, sideType : SideType}, isHighlighted : boolean):void{
+    public setIsHighlighted(sanObject : SanObject.Interface, isHighlighted : boolean):void{
         let myMoveSanObject = this.uiMyMoveSprite.getSanObject();
         if(myMoveSanObject != null && (myMoveSanObject.sanStr == sanObject.sanStr && myMoveSanObject.sideType == sanObject.sideType)){
             this.uiMyMoveSprite.setIsHighlighted(isHighlighted);
@@ -181,33 +181,40 @@ export class PredictPanel extends TableContainer {
     }
 
 
-    public setMyVoting(sanStr : string, moveTurn : SideType):void{
-        this.uiMyMoveSprite.setSanObject({sanStr : sanStr, sideType : moveTurn});
+    public setMyVoting(sanObject : SanObject.Interface | null):void{
+        this.uiMyMoveSprite.setSanObject(sanObject);
     }
 
 
 
 
-
-    public setVotingData(m_votingData : {[key : string] : number}, moveTurn : SideType){
+    public setVotingData(m_votingData : {sanObject : SanObject.Interface, number : number}[]){
         let numOfVotes : number = 0;
-        for(let k in m_votingData){
-            numOfVotes += m_votingData[k];
+        for(let i = 0; i < m_votingData.length; i++){
+            numOfVotes += m_votingData[i].number;
         }
 
-
-
+        let m_votingDataMap = new NestedMap.Double<SideType, string, number>();
         {
-            let m_votingDataArray = [];
-
-            for(let k in m_votingData){
-                m_votingDataArray.push({sanStr : k, number : m_votingData[k]});
-            }
-
-            m_votingDataArray.sort((a:{ sanStr : string, number : number}, b:{ sanStr : string, number : number})=>{
+            m_votingData.sort((a:{ sanObject : SanObject.Interface, number : number}, b:{sanObject : SanObject.Interface, number : number})=>{
                 let ret : number;
+
                 if(b.number == a.number){
-                    ret = -b.sanStr.localeCompare(a.sanStr);
+                    let hasA = this.uiVotedMovesSprites.has(a.sanObject.sideType, a.sanObject.sanStr);
+                    let hasB = this.uiVotedMovesSprites.has(b.sanObject.sideType, b.sanObject.sanStr);
+
+                    if(hasA && hasB || !hasA && !hasB){
+                        ret = -b.sanObject.sanStr.localeCompare(a.sanObject.sanStr);
+                    }else {
+                        if(hasA){
+                            ret = -1;
+                        }else {
+                            ret = 1;
+                        }
+                    }
+
+
+                    //ret =
                 }else {
                     ret = b.number - a.number;
                 }
@@ -215,9 +222,13 @@ export class PredictPanel extends TableContainer {
             });
 
 
-            for(let i = this.maxNumOfUiVotedMoveSprites; i < m_votingDataArray.length; i++){
-                let sanStr = m_votingDataArray[i].sanStr;
-                delete m_votingData[sanStr];
+
+            for(let i = 0; i < Math.min(m_votingData.length, this.maxNumOfUiVotedMoveSprites); i++){
+                let sideType = m_votingData[i].sanObject.sideType;
+                let sanStr = m_votingData[i].sanObject.sanStr;
+                let number = m_votingData[i].number;
+
+                m_votingDataMap.set(number, sideType, sanStr);
             }
         }
 
@@ -225,9 +236,9 @@ export class PredictPanel extends TableContainer {
 
 
         //Remove all the uiVotedMoveSprites
-        let removeUiVotedVotedMoveSprites : {sanStr : string, sideType : SideType}[] = [];
+        let removeUiVotedVotedMoveSprites : SanObject.Interface[] = [];
         this.uiVotedMovesSprites.forEach((uiVotedMoveSprite : PredictButton, sideType : SideType, sanStr : string)=>{
-            if(m_votingData[sanStr] == undefined || sideType != moveTurn){
+            if(!m_votingDataMap.has(sideType, sanStr)){
                 removeUiVotedVotedMoveSprites.push({sanStr : sanStr, sideType : sideType});
             }
         });
@@ -243,14 +254,14 @@ export class PredictPanel extends TableContainer {
 
 
         //Add all the new uiVotedMoveSprites
-        let addUiVotedMoveSprites : {sanStr : string, sideType : SideType}[] = [];
-        for(let sanStr in m_votingData) {
-            if(this.uiVotedMovesSprites.get(moveTurn, sanStr) == undefined){
-                if(m_votingData[sanStr] != 0){
-                    addUiVotedMoveSprites.push({sanStr : sanStr, sideType : moveTurn});
+        let addUiVotedMoveSprites : SanObject.Interface[] = [];
+        m_votingDataMap.forEach((number : number, sideType : SideType, sanStr : string)=>{
+            if(number != 0){
+                if(!this.uiVotedMovesSprites.has(sideType, sanStr)){
+                    addUiVotedMoveSprites.push({sanStr : sanStr, sideType : sideType});
                 }
             }
-        }
+        });
         for(let i = 0; i < addUiVotedMoveSprites.length; i++){
             let sanStr = addUiVotedMoveSprites[i].sanStr;
             let sideType = addUiVotedMoveSprites[i].sideType;
@@ -274,7 +285,9 @@ export class PredictPanel extends TableContainer {
             if(numOfVotes == 0){
                 uiVotedMoveSprite.setPercentage(0);
             }else {
-                uiVotedMoveSprite.setPercentage(100*m_votingData[sanStr]/numOfVotes);
+                let number = <number>m_votingDataMap.get(sideType, sanStr);
+
+                uiVotedMoveSprite.setPercentage(100*number/numOfVotes);
             }
         });
 
