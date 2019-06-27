@@ -325,7 +325,7 @@ export class RoomInitConfig {
 
 export class RoomStateConfig {
     public votingData : { [key : string] : number};
-    public myVoting : string;
+    public myVoting ?: string;
 
     public mySideType : SideType | undefined;
 

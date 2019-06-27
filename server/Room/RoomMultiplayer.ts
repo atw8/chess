@@ -59,7 +59,6 @@ export class RoomMultiplayer extends RoomAbstract{
 
     public _getRoomStateConfig(playerId : number | null, roomStateConfig : RoomStateConfig):void{
         roomStateConfig.votingData = this.votingData;
-        roomStateConfig.myVoting = "";
         if(playerId != null){
             if(playerId in this.playerIdSanStrMap){
                 roomStateConfig.myVoting = this.playerIdSanStrMap[playerId];
