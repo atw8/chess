@@ -6,22 +6,15 @@ import {ChessEngine} from "../../shared/engine/ChessEngine";
 
 import {SimpleGame} from "../SimpleGame";
 import * as PIXI from 'pixi.js';
+import {SanObject} from "../../shared/engine/SanObject";
 
 
 export class SanSprite extends PIXI.Container{
-    private sanObject : {sanStr : string, sideType : SideType};
+    private sanObject : SanObject.Interface;
     private m_size : number;
 
 
-//    private sanText : string;
-
-    //private pieceType : PieceType;
-
-
-    //private uiPieceView : PieceView | null;
-    //private uiSanText : PIXI.Text;
-
-    constructor(sanObject : {sanStr : string, sideType : SideType}, m_size : number){
+    constructor(sanObject : SanObject.Interface, m_size : number){
         super();
 
 
@@ -103,10 +96,5 @@ export class SanSprite extends PIXI.Container{
 
         SimpleGame.arrangeHorizontally(displayContainers);
     }
-
-
-
-
-
 }
 
