@@ -16,6 +16,7 @@ import {LanguageButton} from "./Button/LanguageButton";
 import {TableContainer} from "./Table/TableContainer";
 
 import * as PIXI from 'pixi.js';
+import {SanObject} from "../../shared/engine/SanObject";
 
 
 export class ParentBoardView extends PIXI.Container {
@@ -259,18 +260,18 @@ export class ParentBoardView extends PIXI.Container {
         }
     }
 
-    public setVotingData(votingData : { [key : string] : number}, moveTurn : SideType){
+    public setVotingData(votingData : { sanObject : SanObject.Interface, number : number}[]){
         for(let orientation = ORIENTATION.FIRST_ORIENTATION; orientation <= ORIENTATION.LAST_ORIENTATION; orientation++){
-            this.uiPredictPanel[orientation].setVotingData(votingData, moveTurn);
+            this.uiPredictPanel[orientation].setVotingData(votingData);
         }
 
     }
-    public setMyVoting(myVoting : string, sideType : SideType){
+    public setMyVoting(myVoting : SanObject.Interface | null){
         for(let orientation = ORIENTATION.FIRST_ORIENTATION; orientation <= ORIENTATION.LAST_ORIENTATION; orientation++) {
-            this.uiPredictPanel[orientation].setMyVoting(myVoting, sideType);
+            this.uiPredictPanel[orientation].setMyVoting(myVoting);
         }
     }
-    public setIsHighlighted(sanObject : {sanStr : string, sideType : SideType}, isHighlighted : boolean){
+    public setIsHighlighted(sanObject : SanObject.Interface, isHighlighted : boolean){
         for(let orientation = ORIENTATION.FIRST_ORIENTATION; orientation <= ORIENTATION.LAST_ORIENTATION; orientation++){
             this.uiPredictPanel[orientation].setIsHighlighted(sanObject, isHighlighted);
         }
