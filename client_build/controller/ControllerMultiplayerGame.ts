@@ -14,12 +14,11 @@ import {
     RoomStateConfig
 } from "../../shared/MessageTypes";
 import {RoomTypeEnum} from "../../shared/RoomTypeEnum";
-import {RoomStateEnum} from "../../shared/RoomStateEnum";
 import {ChessEngine} from "../../shared/engine/ChessEngine";
 import {SideType} from "../../shared/engine/SideType";
 import {ParentBoardView} from "../BoardViewLayer/ParentBoardView";
 
-import * as underscore from "underscore";
+import {SanObject} from "../../shared/engine/SanObject";
 
 export class ControllerMultiplayerGame extends ControllerAbstract {
     private uiPredictBoardView : BoardView;
@@ -59,8 +58,10 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
         this.uiParentView.setMoveTurn(this.chessEngine.getMoveTurn());
 
         let roomStateConfig = <RoomStateConfig>onRoomJoinMsg.roomStateConfig;
-        this.uiParentView.setMyVoting(roomStateConfig.myVoting, this.chessEngine.getMoveTurn());
-        this.uiParentView.setVotingData(roomStateConfig.votingData, this.chessEngine.getMoveTurn());
+        if(roomStateConfig.myVoting != undefined){
+            this.uiParentView.setMyVoting({sanStr : roomStateConfig.myVoting, sideType : this.chessEngine.getMoveTurn()});
+        }
+        this.setVotingData(roomStateConfig.votingData);
 
         this.uiPredictBoardView.setBoardFacing(this.uiBoardView.getBoardFacing(), false);
 
@@ -75,48 +76,44 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
 
 
     public OnRoomMakeVote(onRoomMakeVoteMsg : OnRoomMakeVoteMessage):void{
-        this.uiParentView.setMyVoting(onRoomMakeVoteMsg.myVoting, this.chessEngine.getMoveTurn());
+        let sanObject = {sanStr : onRoomMakeVoteMsg.myVoting, sideType : this.chessEngine.getMoveTurn()};
 
-        this.predictMovePress({sanStr : onRoomMakeVoteMsg.myVoting, sideType : this.chessEngine.getMoveTurn()} );
+        this.uiParentView.setMyVoting(sanObject);
+
+        this.predictMovePress(sanObject);
     }
 
     public OnRoomVotingUpdateBroadcast(onRoomVotingUpdateBroadcastMsg : OnRoomVotingUpdateBroadcastMessage):void{
-        this.uiParentView.setVotingData(onRoomVotingUpdateBroadcastMsg.votingData, this.chessEngine.getMoveTurn());
+        this.setVotingData(onRoomVotingUpdateBroadcastMsg.votingData);
     }
 
 
-    /*
-            this.uiPredictBoardView.updateViewToModel(null);
-        if(sanObject == null){
-            return;
+    private setVotingData(_votingData :  { [key : string] : number}){
+        let votingData : {sanObject : SanObject.Interface, number : number}[] = [];
+
+        let sideType = this.chessEngine.getMoveTurn();
+        for(let sanStr in _votingData){
+            let sanObject = {sanStr : sanStr, sideType : sideType};
+            votingData.push({sanObject : sanObject, number : _votingData[sanStr]});
         }
-        let moveClass = this.chessEngine.getMoveClassForCurrentBoardAndSanMove(sanObject.sanStr);
-        if(moveClass == null){
-            return;
-        }
-        let uMoveClass = ChessEngine.flipMoveClass(moveClass);
+        this.uiParentView.setVotingData(votingData);
+    }
 
-        let bMoveClass : BoardView.MOVE_CLASS = {type : "MOVE_CLASS", moveClass : moveClass};
-        let bUMoveClass : BoardView.MOVE_CLASS = {type : "MOVE_CLASS", moveClass : uMoveClass};
 
-        let seq : BoardView.SEQUENCE = {type : "SEQUENCE", seq : [bMoveClass, bUMoveClass]};
-        let repeatForever : BoardView.REPEAT_FOREVER = {type : "REPEAT_FOREVER", action : seq};
-
-        this.uiPredictBoardView.doMoveAction(repeatForever);
-     */
-
-    private predictMoveSanObject : {sanStr : string, sideType : SideType} | null = null;
-    public predictMovePress(sanObject : {sanStr : string, sideType : SideType} | null){
+    private predictMoveSanObject : SanObject.Interface | null = null;
+    public predictMovePress(sanObject : SanObject.Interface | null){
         this.uiPredictBoardView.updateViewToModel(null);
 
         if(this.predictMoveSanObject != null){
             this.uiParentView.setIsHighlighted(this.predictMoveSanObject, false);
         }
 
-        if(underscore.isEqual(this.predictMoveSanObject, sanObject)){
-            this.predictMoveSanObject = null;
-            return;
+        if(this.predictMoveSanObject != null && sanObject != null){
+            if(SanObject.isEqual(this.predictMoveSanObject, sanObject)){
+                sanObject = null;
+            }
         }
+
         this.predictMoveSanObject = sanObject;
 
         if(this.predictMoveSanObject == null){
@@ -144,8 +141,8 @@ export class ControllerMultiplayerGame extends ControllerAbstract {
 
         this.predictMovePress(null);
         this.uiParentView.setMoveTurn(this.chessEngine.getMoveTurn());
-        this.uiParentView.setMyVoting("", this.chessEngine.getMoveTurn());
-        this.uiParentView.setVotingData({}, this.chessEngine.getMoveTurn());
+        this.uiParentView.setMyVoting(null);
+        this.uiParentView.setVotingData([]);
 
         this.syncrhonizeRoomState();
     }
